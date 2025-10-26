@@ -44,8 +44,18 @@ class CustomBottomNavBar extends StatelessWidget {
             children: [
               _buildNavItem(Icons.home_outlined, Icons.home, 'Home', 0),
               _buildNavItem(Icons.article_outlined, Icons.article, 'Feed', 1),
-              _buildNavItem(Icons.notifications_outlined, Icons.notifications, 'Notification', 2),
-              _buildNavItem(Icons.shopping_bag_outlined, Icons.shopping_bag, 'Orders', 3),
+              _buildNavItem(
+                Icons.notifications_outlined,
+                Icons.notifications,
+                'Notification',
+                2,
+              ),
+              _buildNavItem(
+                Icons.shopping_bag_outlined,
+                Icons.shopping_bag,
+                'Orders',
+                3,
+              ),
             ],
           ),
         ),
@@ -53,7 +63,12 @@ class CustomBottomNavBar extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem(IconData outlinedIcon, IconData filledIcon, String label, int index) {
+  Widget _buildNavItem(
+    IconData outlinedIcon,
+    IconData filledIcon,
+    String label,
+    int index,
+  ) {
     final isSelected = currentIndex == index;
     return GestureDetector(
       onTap: () {
@@ -103,4 +118,3 @@ class CustomBottomNavBar extends StatelessWidget {
     );
   }
 }
-

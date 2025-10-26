@@ -3,7 +3,7 @@ import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/common/CustomBottomNavBar.dart';
 import 'package:bukidlink/widgets/common/SearchBarWidget.dart';
-import 'package:bukidlink/widgets/home/ProductCard.dart';
+import 'package:bukidlink/widgets/common/ProductCard.dart';
 import 'package:bukidlink/widgets/category/CategoryAppBar.dart';
 import 'package:bukidlink/widgets/category/FilterChip.dart';
 import 'package:bukidlink/widgets/category/SortBottomSheet.dart';
@@ -41,18 +41,24 @@ class _CategoryPageState extends State<CategoryPage> {
 
   void _loadProducts() {
     setState(() {
-      _filteredProducts = ProductData.getProductsByCategory(widget.categoryName);
+      _filteredProducts = ProductData.getProductsByCategory(
+        widget.categoryName,
+      );
       _applyFilters();
     });
   }
 
   void _applyFilters() {
-    List<Product> products = ProductData.getProductsByCategory(widget.categoryName);
+    List<Product> products = ProductData.getProductsByCategory(
+      widget.categoryName,
+    );
 
     // Apply search filter
     if (_searchQuery.isNotEmpty) {
       products = products.where((product) {
-        return product.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+        return product.name.toLowerCase().contains(
+              _searchQuery.toLowerCase(),
+            ) ||
             product.farmName.toLowerCase().contains(_searchQuery.toLowerCase());
       }).toList();
     }
@@ -139,7 +145,7 @@ class _CategoryPageState extends State<CategoryPage> {
             categoryName: widget.categoryName,
             categoryIcon: widget.categoryIcon,
           ),
-          
+
           Expanded(
             child: CustomScrollView(
               slivers: [
@@ -160,16 +166,17 @@ class _CategoryPageState extends State<CategoryPage> {
                         bottomRight: Radius.circular(24),
                       ),
                     ),
-                    child: SearchBarWidget(
-                      onChanged: _onSearchChanged,
-                    ),
+                    child: SearchBarWidget(onChanged: _onSearchChanged),
                   ),
                 ),
 
                 // Filter and Sort Section
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
                     child: Row(
                       children: [
                         Expanded(
@@ -207,7 +214,9 @@ class _CategoryPageState extends State<CategoryPage> {
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                                  color: AppColors.primaryGreen.withValues(
+                                    alpha: 0.3,
+                                  ),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -238,7 +247,10 @@ class _CategoryPageState extends State<CategoryPage> {
                 // Product Count
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: Text(
                       '${_filteredProducts.length} Products Found',
                       style: AppTextStyles.farmName.copyWith(
@@ -259,7 +271,9 @@ class _CategoryPageState extends State<CategoryPage> {
                               Icon(
                                 Icons.search_off,
                                 size: 80,
-                                color: AppColors.TEXT_SECONDARY.withValues(alpha: 0.5),
+                                color: AppColors.TEXT_SECONDARY.withValues(
+                                  alpha: 0.5,
+                                ),
                               ),
                               const SizedBox(height: 16),
                               Text(
@@ -278,27 +292,33 @@ class _CategoryPageState extends State<CategoryPage> {
                         ),
                       )
                     : SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         sliver: SliverGrid(
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.68,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                          ),
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              return ProductCard(product: _filteredProducts[index]);
-                            },
-                            childCount: _filteredProducts.length,
-                          ),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 0.68,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                              ),
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            return ProductCard(
+                              product: _filteredProducts[index],
+                              layout: ProductCardLayout.grid,
+                              showAddButton: true,
+                            );
+                          }, childCount: _filteredProducts.length),
                         ),
                       ),
 
                 // Bottom spacing
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: 16),
-                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
               ],
             ),
           ),

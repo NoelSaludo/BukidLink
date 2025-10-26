@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 enum PageTransitionType {
-  slideFromTop,      // Default: slide from top
-  slideFromRight,    // Smooth slide from right (for category pages)
-  fadeIn,            // Fade transition (for modals/dialogs)
-  scaleAndFade,      // Scale and fade (for detail pages)
-  slideFromBottom,   // Slide from bottom (for sheets)
+  slideFromTop, // Default: slide from top
+  slideFromRight, // Smooth slide from right (for category pages)
+  fadeIn, // Fade transition (for modals/dialogs)
+  scaleAndFade, // Scale and fade (for detail pages)
+  slideFromBottom, // Slide from bottom (for sheets)
 }
 
 class PageNavigator {
@@ -24,9 +24,9 @@ class PageNavigator {
     Widget page,
     PageTransitionType transitionType,
   ) {
-    Navigator.of(context).pushReplacement(
-      CreateRouteWithTransition(page, transitionType),
-    );
+    Navigator.of(
+      context,
+    ).pushReplacement(CreateRouteWithTransition(page, transitionType));
   }
 
   void goToAndKeepWithTransition(
@@ -34,16 +34,14 @@ class PageNavigator {
     Widget page,
     PageTransitionType transitionType,
   ) {
-    Navigator.of(context).push(
-      CreateRouteWithTransition(page, transitionType),
-    );
+    Navigator.of(context).push(CreateRouteWithTransition(page, transitionType));
   }
 
   // Sleek fade and slide for category/product pages (most common for homepage navigation)
   void goToSleek(BuildContext context, Widget page) {
-    Navigator.of(context).push(
-      CreateRouteWithTransition(page, PageTransitionType.slideFromRight),
-    );
+    Navigator.of(
+      context,
+    ).push(CreateRouteWithTransition(page, PageTransitionType.slideFromRight));
   }
 
   void goBack(BuildContext context) {
@@ -79,16 +77,16 @@ class PageNavigator {
     switch (type) {
       case PageTransitionType.slideFromTop:
         return _createSlideFromTopRoute(page);
-      
+
       case PageTransitionType.slideFromRight:
         return _createSlideFromRightRoute(page);
-      
+
       case PageTransitionType.fadeIn:
         return _createFadeRoute(page);
-      
+
       case PageTransitionType.scaleAndFade:
         return _createScaleAndFadeRoute(page);
-      
+
       case PageTransitionType.slideFromBottom:
         return _createSlideFromBottomRoute(page);
     }
@@ -131,7 +129,7 @@ class PageNavigator {
 
         final slideTween = Tween(begin: begin, end: end);
         final fadeTween = Tween<double>(begin: 0.0, end: 1.0);
-        
+
         final curvedAnimation = CurvedAnimation(
           parent: animation,
           curve: curve,
@@ -157,16 +155,13 @@ class PageNavigator {
       pageBuilder: (context, animation, secondaryAnimation) => page,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         const curve = Curves.easeInOut;
-        
+
         final curvedAnimation = CurvedAnimation(
           parent: animation,
           curve: curve,
         );
 
-        return FadeTransition(
-          opacity: curvedAnimation,
-          child: child,
-        );
+        return FadeTransition(opacity: curvedAnimation, child: child);
       },
     );
   }
@@ -179,7 +174,7 @@ class PageNavigator {
       pageBuilder: (context, animation, secondaryAnimation) => page,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         const curve = Curves.easeInOutCubicEmphasized;
-        
+
         final curvedAnimation = CurvedAnimation(
           parent: animation,
           curve: curve,
@@ -225,4 +220,3 @@ class PageNavigator {
     );
   }
 }
-

@@ -53,10 +53,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     child: Column(
-                      children: [
-                        const SearchBarWidget(),
-                        const CategoryGrid(),
-                      ],
+                      children: [const SearchBarWidget(), const CategoryGrid()],
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -81,4 +78,3 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-

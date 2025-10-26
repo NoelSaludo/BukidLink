@@ -6,25 +6,27 @@ class CustomBackButton extends StatelessWidget {
   const CustomBackButton({super.key, required this.onPressed});
 
   @override
-  Widget build(BuildContext context){
+  Widget build(BuildContext context) {
     return Container(
       child: Padding(
         padding: EdgeInsets.all(30.0),
         child: InkWell(
-              onTap: () {
-                // Define what happens when the button is tapped
-                onPressed();
-              },
-              borderRadius: BorderRadius.circular(8.0), // Match Material's border radius
-              child: Image.asset(
-                'assets/icons/back_icon.png',
-                fit: BoxFit.cover, // Adjust how the image fits
-                width: 25.0,
-                height: 23.0,
-              ),
-            ),
-        )
-            // elevation: 4.0, // Add a shadow for better visual appearance
+          onTap: () {
+            // Define what happens when the button is tapped
+            onPressed();
+          },
+          borderRadius: BorderRadius.circular(
+            8.0,
+          ), // Match Material's border radius
+          child: Image.asset(
+            'assets/icons/back_icon.png',
+            fit: BoxFit.cover, // Adjust how the image fits
+            width: 25.0,
+            height: 23.0,
+          ),
+        ),
+      ),
+      // elevation: 4.0, // Add a shadow for better visual appearance
     );
   }
 }

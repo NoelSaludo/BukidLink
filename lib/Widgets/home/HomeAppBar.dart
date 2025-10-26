@@ -29,22 +29,27 @@ class HomeAppBar extends StatelessWidget {
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 28),
+                    icon: const Icon(
+                      Icons.chat_bubble_outline,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                     onPressed: () {
                       HapticFeedback.lightImpact();
                       print("Chat tapped");
                     },
                   ),
-                  const Text(
-                    'BukidLink',
-                    style: AppTextStyles.BUKIDLINK_LOGO,
-                  ),
+                  const Text('BukidLink', style: AppTextStyles.BUKIDLINK_LOGO),
                 ],
               ),
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white, size: 28),
+                    icon: const Icon(
+                      Icons.shopping_cart_outlined,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                     onPressed: () {
                       HapticFeedback.lightImpact();
                       print("Cart tapped");
@@ -52,7 +57,11 @@ class HomeAppBar extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.person_outline, color: Colors.white, size: 28),
+                    icon: const Icon(
+                      Icons.person_outline,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                     onPressed: () {
                       HapticFeedback.lightImpact();
                       print("Profile tapped");
@@ -67,4 +76,3 @@ class HomeAppBar extends StatelessWidget {
     );
   }
 }
-

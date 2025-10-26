@@ -6,7 +6,7 @@ class FormValidator {
     if (value == null || value.isEmpty) {
       return 'This field is required';
     }
-    if (value.length != value.replaceAll(' ', '').length){
+    if (value.length != value.replaceAll(' ', '').length) {
       return 'Username must not contain spaces';
     }
     if (int.tryParse(value[0]) != null) {
@@ -29,7 +29,7 @@ class FormValidator {
     if (value == null || value.isEmpty) {
       return 'This field is required';
     }
-    if (value.length != value.replaceAll(' ', '').length){
+    if (value.length != value.replaceAll(' ', '').length) {
       return 'Password must not contain spaces';
     }
     if (value.length <= 9) {
@@ -42,7 +42,7 @@ class FormValidator {
     if (value == null || value.isEmpty) {
       return 'This field is required';
     }
-    if (value.length != value.replaceAll(' ', '').length){
+    if (value.length != value.replaceAll(' ', '').length) {
       return 'Username must not contain spaces';
     }
     if (int.tryParse(value[0]) != null) {
@@ -76,17 +76,17 @@ class FormValidator {
     if (value == null || value.isEmpty) {
       return 'This field is required';
     }
-    if (!EmailValidator.validate(value.trim())){
+    if (!EmailValidator.validate(value.trim())) {
       return 'Incorrect Email Address format';
     }
     return null;
   }
-  
+
   String? tempAddressValidator(String? value) {
     if (value == null || value.isEmpty) {
       return 'This field is required';
     }
-    if (value.length != value.replaceAll(' ', '').length){
+    if (value.length != value.replaceAll(' ', '').length) {
       return 'Address must not contain spaces';
     }
     if (int.tryParse(value[0]) != null) {
@@ -102,7 +102,7 @@ class FormValidator {
     if (value == null || value.isEmpty) {
       return 'This field is required';
     }
-    if (value.length != value.replaceAll(' ', '').length){
+    if (value.length != value.replaceAll(' ', '').length) {
       return 'Address must not contain spaces';
     }
     if (int.tryParse(value[0]) != null) {

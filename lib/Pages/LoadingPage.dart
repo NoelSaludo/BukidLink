@@ -30,36 +30,36 @@ class _LoadingPageState extends State<LoadingPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-      width: 350.0,
-      height: 380.0,
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 202, 232, 109),
-        shape: BoxShape.circle,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.only(top: 100),
-          child: Image.asset(
-          'assets/icons/bukidlink_white_logo.png',
-          width: 146.79,
-          height: 109.18,
-        ),
-        ),
-        Text(
-          'BukidLink',
-          style: TextStyle(
-            height: 0.8,
-            fontSize: 50.0,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+              width: 350.0,
+              height: 380.0,
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(255, 202, 232, 109),
+                shape: BoxShape.circle,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(top: 100),
+                    child: Image.asset(
+                      'assets/icons/bukidlink_white_logo.png',
+                      width: 146.79,
+                      height: 109.18,
+                    ),
+                  ),
+                  Text(
+                    'BukidLink',
+                    style: TextStyle(
+                      height: 0.8,
+                      fontSize: 50.0,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             ),
-        ),
-      ],
-      ),
-      ),
 
             const SizedBox(height: 50),
 

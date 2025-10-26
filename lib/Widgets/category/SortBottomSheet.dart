@@ -115,8 +115,9 @@ class SortBottomSheet extends StatelessWidget {
                               color: isSelected
                                   ? AppColors.primaryGreen
                                   : AppColors.DARK_TEXT,
-                              fontWeight:
-                                  isSelected ? FontWeight.w600 : FontWeight.w500,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
                             ),
                           ),
                         ),
