@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
+import 'package:bukidlink/utils/PageNavigator.dart';
+import 'package:bukidlink/pages/CategoryPage.dart';
 
 class CategoryCard extends StatelessWidget {
   final String iconPath;
@@ -17,7 +19,13 @@ class CategoryCard extends StatelessWidget {
     return InkWell(
       onTap: () {
         HapticFeedback.lightImpact();
-        print("$label category tapped");
+        PageNavigator().goToSleek(
+          context,
+          CategoryPage(
+            categoryName: label,
+            categoryIcon: iconPath,
+          ),
+        );
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
