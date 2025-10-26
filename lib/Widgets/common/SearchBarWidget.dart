@@ -5,11 +5,7 @@ class SearchBarWidget extends StatelessWidget {
   final Function(String)? onChanged;
   final String? hintText;
 
-  const SearchBarWidget({
-    super.key,
-    this.onChanged,
-    this.hintText,
-  });
+  const SearchBarWidget({super.key, this.onChanged, this.hintText});
 
   @override
   Widget build(BuildContext context) {
@@ -33,11 +29,13 @@ class SearchBarWidget extends StatelessWidget {
             hintText: hintText ?? 'Search',
             prefixIcon: const Icon(Icons.search, color: AppColors.iconColor),
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 15,
+            ),
           ),
         ),
       ),
     );
   }
 }
-
