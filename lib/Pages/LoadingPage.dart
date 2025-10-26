@@ -43,7 +43,7 @@ class _LoadingPageState extends State<LoadingPage> {
         Padding(
           padding: EdgeInsets.only(top: 100),
           child: Image.asset(
-          'assets/Logo.png',
+          'assets/icons/bukidlink_white_logo.png',
           width: 146.79,
           height: 109.18,
         ),

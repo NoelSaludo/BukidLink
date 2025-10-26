@@ -62,12 +62,12 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-assets:
-  - assets/icons/
-  - assets/images/
-  - assets/fonts/
+  assets:
+    - assets/icons/
+    - assets/images/
+    - assets/fonts/
 
-fonts:
+  fonts:
     - family: Outfit
       fonts:
         - asset: assets/fonts/Outfit-Thin.ttf
