@@ -15,4 +15,3 @@ class WelcomeText extends StatelessWidget {
     );
   }
 }
-
