@@ -12,12 +12,13 @@ import 'package:bukidlink/Widgets/ForgotPassword.dart';
 import 'package:bukidlink/Widgets/SignUpAndLogin/LoginLogo.dart';
 import 'package:bukidlink/Widgets/SignUpAndLogin/GoToSignUp.dart';
 
-class LoginPage extends StatefulWidget{
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
-  
+
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
+
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -31,17 +32,18 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void onChanged(String value){
-  if(forceErrorText != null) {
-    setState(() {
-      forceErrorText = null;
-    });
+  void onChanged(String value) {
+    if (forceErrorText != null) {
+      setState(() {
+        forceErrorText = null;
+      });
+    }
   }
- }
+
   void handleLogin(BuildContext context) {
     final bool isValid = formKey.currentState?.validate() ?? false;
 
-    if(!isValid) {
+    if (!isValid) {
       return;
     }
 
@@ -72,73 +74,72 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildContent(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
 
-  return Stack(
-    alignment: Alignment.bottomCenter,
-    children: [
-      Positioned(
-        bottom: height * 0.55 - 140,
-        child: const LoginLogo(),
-      ),
-      Align(
-        alignment: Alignment.bottomCenter,
-        child: Container(
-          width: double.infinity,
-          height: height * 0.55,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20.0),
-              topRight: Radius.circular(20.0),
+    return Stack(
+      alignment: Alignment.bottomCenter,
+      children: [
+        Positioned(bottom: height * 0.55 - 140, child: const LoginLogo()),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            width: double.infinity,
+            height: height * 0.55,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20.0),
+                topRight: Radius.circular(20.0),
+              ),
+            ),
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 20.0),
+                  UsernameField(controller: usernameController, mode: 'Login'),
+                  PasswordField(controller: passwordController, mode: 'Login'),
+                  ForgotPassword(onPressed: () => handleLogin(context)),
+                  const Spacer(),
+                  LoginorSigninButton(
+                    onPressed: () => handleLogin(context),
+                    mode: 'Login',
+                  ),
+                  GoToSignUp(onPressed: () => goToSignUp(context)),
+                  const SizedBox(height: 17.0),
+                ],
+              ),
             ),
           ),
-          child: Form(
-            key: formKey,
-            child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 20.0),
-              UsernameField(controller: usernameController, mode:'Login'),
-              PasswordField(controller: passwordController, mode:'Login'),
-              ForgotPassword(onPressed: () => handleLogin(context)),
-              const Spacer(),
-              LoginorSigninButton(onPressed: () => handleLogin(context), mode:'Login'),
-              GoToSignUp(onPressed: () => goToSignUp(context)),
-              const SizedBox(height: 17.0,)
-            ],
-          ),
         ),
-      ),
-      ),
-    ],
-  );
+      ],
+    );
   }
 
-  void goToSignUp(BuildContext context){
+  void goToSignUp(BuildContext context) {
     PageNavigator().goToAndKeep(context, SignUpPage());
   }
 
-
-Widget _buildTabButton(String label, bool isActive, VoidCallback onPressed) {
-  return ElevatedButton(
-    style: ElevatedButton.styleFrom(
-      backgroundColor: isActive ? Colors.green : Colors.white,
-      foregroundColor: isActive ? Colors.white : Colors.green[800],
-      minimumSize: const Size(100, 35),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+  Widget _buildTabButton(String label, bool isActive, VoidCallback onPressed) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isActive ? Colors.green : Colors.white,
+        foregroundColor: isActive ? Colors.white : Colors.green[800],
+        minimumSize: const Size(100, 35),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-    ),
-    onPressed: onPressed,
-    child: Text(label),
-  );
-}
+      onPressed: onPressed,
+      child: Text(label),
+    );
+  }
 
-  void goBack(BuildContext context){
+  void goBack(BuildContext context) {
     PageNavigator().goBack(context);
   }
 
-  Future<String?> validateInputFromServer(String emailAddress, String address, String contactNumber) async {
-    
-  }
+  Future<String?> validateInputFromServer(
+    String emailAddress,
+    String address,
+    String contactNumber,
+  ) async {}
 }
