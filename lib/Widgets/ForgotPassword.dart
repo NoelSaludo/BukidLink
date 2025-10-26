@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bukidlink/Utils/constants/app_text_styles.dart';
+import 'package:bukidlink/Utils/constants/AppTextStyles.dart';
 
 class ForgotPassword extends StatelessWidget {
   final VoidCallback onPressed;

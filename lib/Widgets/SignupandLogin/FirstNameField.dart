@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/Utils/FormValidator.dart';
-import 'package:bukidlink/Utils/constants/app_colors.dart';
-import 'package:bukidlink/Utils/constants/app_text_styles.dart';
+import 'package:bukidlink/Utils/constants/AppColors.dart';
+import 'package:bukidlink/Utils/constants/AppTextStyles.dart';
 
 class FirstNameField extends StatelessWidget{
   final TextEditingController controller;

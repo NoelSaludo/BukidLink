@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:bukidlink/Utils/constants/app_colors.dart';
-import 'package:bukidlink/Utils/constants/app_text_styles.dart';
+import 'package:bukidlink/Utils/constants/AppColors.dart';
+import 'package:bukidlink/Utils/constants/AppTextStyles.dart';
 
 class LoginLogo extends StatelessWidget {
   const LoginLogo({super.key});
