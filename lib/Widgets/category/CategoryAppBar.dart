@@ -57,9 +57,7 @@ class CategoryAppBar extends StatelessWidget {
               Expanded(
                 child: Text(
                   categoryName,
-                  style: AppTextStyles.BUKIDLINK_LOGO.copyWith(
-                    fontSize: 28,
-                  ),
+                  style: AppTextStyles.BUKIDLINK_LOGO.copyWith(fontSize: 28),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

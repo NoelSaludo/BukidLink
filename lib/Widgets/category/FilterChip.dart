@@ -28,7 +28,9 @@ class CustomFilterChip extends StatelessWidget {
           color: isSelected ? AppColors.primaryGreen : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.primaryGreen : AppColors.BORDER_GREY.withValues(alpha: 0.3),
+            color: isSelected
+                ? AppColors.primaryGreen
+                : AppColors.BORDER_GREY.withValues(alpha: 0.3),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
