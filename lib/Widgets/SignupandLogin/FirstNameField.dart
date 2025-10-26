@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/Utils/FormValidator.dart';
+import 'package:bukidlink/Utils/constants/app_colors.dart';
+import 'package:bukidlink/Utils/constants/app_text_styles.dart';
 
 class FirstNameField extends StatelessWidget{
   final TextEditingController controller;
@@ -14,10 +16,7 @@ return Column(
       padding: EdgeInsets.only(left: 10.0),
       child: Text(
       "First Name",
-      style: TextStyle(
-        fontWeight: FontWeight.bold,
-        fontSize: 16.0,
-      ),
+      style: AppTextStyles.FORM_LABEL,
       ),
       ),
     SizedBox(
@@ -29,20 +28,18 @@ return Column(
       decoration: InputDecoration(
         // labelText: 'FirstName',
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: AppColors.INACTIVE_GREY,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20.0),
           borderSide: BorderSide(
-            color: Colors.blue,
+            color: AppColors.BORDER_GREY,
             width: 2.0,
           ),
         ),
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
       ),
-      style: TextStyle(
-        fontSize: 14.0,
-      ),
+      style: AppTextStyles.BODY_MEDIUM,
       controller: controller,
       validator: FormValidator().nameValidator,
       ),
