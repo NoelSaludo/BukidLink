@@ -30,4 +30,3 @@ class CategoryGrid extends StatelessWidget {
     );
   }
 }
-

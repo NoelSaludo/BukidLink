@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bukidlink/widgets/home/ProductCard.dart';
+import 'package:bukidlink/widgets/common/ProductCard.dart';
 import 'package:bukidlink/data/ProductData.dart';
 
 class ProductGrid extends StatelessWidget {
@@ -22,9 +22,12 @@ class ProductGrid extends StatelessWidget {
       ),
       itemCount: products.length,
       itemBuilder: (context, index) {
-        return ProductCard(product: products[index]);
+        return ProductCard(
+          product: products[index],
+          layout: ProductCardLayout.grid,
+          showAddButton: true,
+        );
       },
     );
   }
 }
-

@@ -8,11 +8,7 @@ class CategoryCard extends StatelessWidget {
   final String iconPath;
   final String label;
 
-  const CategoryCard({
-    super.key,
-    required this.iconPath,
-    required this.label,
-  });
+  const CategoryCard({super.key, required this.iconPath, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -21,10 +17,7 @@ class CategoryCard extends StatelessWidget {
         HapticFeedback.lightImpact();
         PageNavigator().goToSleek(
           context,
-          CategoryPage(
-            categoryName: label,
-            categoryIcon: iconPath,
-          ),
+          CategoryPage(categoryName: label, categoryIcon: iconPath),
         );
       },
       borderRadius: BorderRadius.circular(12),
@@ -44,12 +37,7 @@ class CategoryCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
-              iconPath,
-              width: 48,
-              height: 48,
-              fit: BoxFit.contain,
-            ),
+            Image.asset(iconPath, width: 48, height: 48, fit: BoxFit.contain),
             const SizedBox(height: 6),
             Text(
               label,
@@ -62,4 +50,3 @@ class CategoryCard extends StatelessWidget {
     );
   }
 }
-

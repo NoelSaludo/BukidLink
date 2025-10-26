@@ -3,21 +3,24 @@ import 'package:flutter/services.dart';
 import 'package:bukidlink/models/Product.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
+import 'package:bukidlink/utils/PageNavigator.dart';
+import 'package:bukidlink/pages/ProductInfoPage.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
 
-  const ProductCard({
-    super.key,
-    required this.product,
-  });
+  const ProductCard({super.key, required this.product});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
         HapticFeedback.lightImpact();
-        print("${product.name} tapped");
+        PageNavigator().goToAndKeepWithTransition(
+          context,
+          ProductInfoPage(product: product),
+          PageTransitionType.scaleAndFade,
+        );
       },
       borderRadius: BorderRadius.circular(20),
       child: Container(
@@ -113,7 +116,7 @@ class ProductCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          product.priceInfo,
+                          '₱${product.price.toStringAsFixed(0)} per ${product.unit ?? "kilo"}',
                           style: AppTextStyles.price.copyWith(
                             fontWeight: FontWeight.w700,
                             color: AppColors.primaryGreen,
@@ -143,7 +146,9 @@ class ProductCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                                color: AppColors.primaryGreen.withValues(
+                                  alpha: 0.3,
+                                ),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
@@ -167,4 +172,3 @@ class ProductCard extends StatelessWidget {
     );
   }
 }
-
