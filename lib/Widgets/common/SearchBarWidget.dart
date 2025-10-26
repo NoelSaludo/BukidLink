@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 
 class SearchBarWidget extends StatelessWidget {
-  const SearchBarWidget({super.key});
+  final Function(String)? onChanged;
+  final String? hintText;
+
+  const SearchBarWidget({
+    super.key,
+    this.onChanged,
+    this.hintText,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,8 +28,9 @@ class SearchBarWidget extends StatelessWidget {
           ],
         ),
         child: TextField(
+          onChanged: onChanged,
           decoration: InputDecoration(
-            hintText: 'Search',
+            hintText: hintText ?? 'Search',
             prefixIcon: const Icon(Icons.search, color: AppColors.iconColor),
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
