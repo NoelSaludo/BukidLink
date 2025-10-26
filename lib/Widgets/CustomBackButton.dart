@@ -9,7 +9,7 @@ class CustomBackButton extends StatelessWidget {
   Widget build(BuildContext context){
     return Container(
       child: Padding(
-        padding: EdgeInsetsGeometry.all(30.0),
+        padding: EdgeInsets.all(30.0),
         child: InkWell(
               onTap: () {
                 // Define what happens when the button is tapped
@@ -17,7 +17,7 @@ class CustomBackButton extends StatelessWidget {
               },
               borderRadius: BorderRadius.circular(8.0), // Match Material's border radius
               child: Image.asset(
-                'assets/BackIcon.png',
+                'assets/icons/back_icon.png',
                 fit: BoxFit.cover, // Adjust how the image fits
                 width: 25.0,
                 height: 23.0,

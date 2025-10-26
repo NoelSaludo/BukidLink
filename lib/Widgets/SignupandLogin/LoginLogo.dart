@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:bukidlink/Utils/constants/AppColors.dart';
+import 'package:bukidlink/Utils/constants/AppTextStyles.dart';
 
 class LoginLogo extends StatelessWidget {
   const LoginLogo({super.key});
@@ -9,7 +11,7 @@ class LoginLogo extends StatelessWidget {
       width: 350.0,
       height: 380.0,
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 202, 232, 109),
+        color: AppColors.ACCENT_LIME,
         shape: BoxShape.circle,
       ),
       child: Column(
@@ -19,19 +21,14 @@ class LoginLogo extends StatelessWidget {
         Padding(
           padding: EdgeInsets.only(top: 40),
           child: Image.asset(
-          'assets/Logo.png',
+            'assets/icons/bukidlink_white_logo.png',
           width: 146.79,
           height: 109.18,
         ),
         ),
         Text(
           'BukidLink',
-          style: TextStyle(
-            height: 0.8,
-            fontSize: 50.0,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            ),
+          style: AppTextStyles.BUKIDLINK_LOGO,
         ),
       ],
       ),

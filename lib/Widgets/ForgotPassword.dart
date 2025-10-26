@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bukidlink/Utils/constants/AppTextStyles.dart';
 
 class ForgotPassword extends StatelessWidget {
   final VoidCallback onPressed;
@@ -9,7 +10,8 @@ class ForgotPassword extends StatelessWidget {
     return TextButton(
       onPressed: onPressed,
       child: Text(
-        'Forgot Password?'
+        'Forgot Password?',
+        style: AppTextStyles.FORGOT_PASSWORD,
       ),
     );
   }
