@@ -27,4 +27,12 @@ class AppColors {
   static const Color primaryGreen = Color(0xFF6EAF46);
   static const Color backgroundYellow = Color(0xFFFFFDE7);
   static const Color iconColor = Colors.black;
+
+  // Product Info specific colors
+  static const Color STAR_RATING = Color(0xFFFFB800);
+  static const Color SUCCESS_GREEN = Color(0xFF4CAF50);
+  static const Color WARNING_ORANGE = Color(0xFFFF9800);
+  static const Color ERROR_RED = Color(0xFFF44336);
+  static const Color CARD_BACKGROUND = Color(0xFFFFFFFF);
+  static const Color APP_BACKGROUND = Color(0xFFF8F8F8);
 }
