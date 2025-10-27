@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
+import 'package:bukidlink/widgets/common/CartIconWithBadge.dart';
+import 'package:bukidlink/pages/CartPage.dart';
 
 class CategoryAppBar extends StatelessWidget {
   final String categoryName;
@@ -13,6 +15,15 @@ class CategoryAppBar extends StatelessWidget {
     required this.categoryName,
     required this.categoryIcon,
   });
+
+  void _handleCartPressed(BuildContext context) {
+    HapticFeedback.lightImpact();
+    PageNavigator().goToAndKeepWithTransition(
+      context,
+      const CartPage(),
+      PageTransitionType.slideFromRight,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,24 +74,9 @@ class CategoryAppBar extends StatelessWidget {
                 ),
               ),
 
-              // Cart Icon
-              GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  // Navigate to cart
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.shopping_cart_outlined,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
+              // Cart Icon with Badge
+              CartIconWithBadge(
+                onPressed: () => _handleCartPressed(context),
               ),
               const SizedBox(width: 8),
 
