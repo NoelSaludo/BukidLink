@@ -143,7 +143,7 @@ class ProductCard extends StatelessWidget {
                         const SizedBox(height: 4),
                       ],
                       Text(
-                        'PHP ${product.price.toStringAsFixed(0)}/${product.unit ?? 'kg'}',
+                        '\u20B1${product.price.toStringAsFixed(0)}/${product.unit ?? 'kg'}',
                         style: AppTextStyles.PRICE_LARGE,
                       ),
                     ],
@@ -257,7 +257,7 @@ class ProductCard extends StatelessWidget {
                             const SizedBox(height: 4),
                           ],
                           Text(
-                            'PHP ${product.price.toStringAsFixed(0)}/${product.unit ?? 'kg'}',
+                            '\u20B1${product.price.toStringAsFixed(0)}/${product.unit ?? 'kg'}',
                             style: AppTextStyles.PRICE_LARGE,
                           ),
                         ],
