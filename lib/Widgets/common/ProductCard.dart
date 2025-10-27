@@ -5,6 +5,9 @@ import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
 import 'package:bukidlink/pages/ProductInfoPage.dart';
+import 'package:bukidlink/widgets/common/AddToCartDialog.dart';
+import 'package:bukidlink/services/CartService.dart';
+import 'package:bukidlink/utils/SnackBarHelper.dart';
 
 enum ProductCardLayout {
   compact, // Compact layout for recommended products (horizontal scroll)
@@ -24,6 +27,28 @@ class ProductCard extends StatelessWidget {
     this.showAddButton = false,
     this.onAddToCart,
   });
+
+  void _showAddToCartDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AddToCartDialog(
+        product: product,
+        onAddToCart: (quantity) {
+          if (onAddToCart != null) {
+            onAddToCart!();
+          } else {
+            // Default behavior: add to cart service
+            final cartService = CartService();
+            cartService.addItem(product, quantity);
+            SnackBarHelper.showSuccess(
+              context,
+              'Added $quantity x ${product.name} to cart',
+            );
+          }
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,9 +167,57 @@ class ProductCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                       ],
-                      Text(
-                        '\u20B1${product.price.toStringAsFixed(0)}/${product.unit ?? 'kg'}',
-                        style: AppTextStyles.PRICE_LARGE,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '\u20B1${product.price.toStringAsFixed(0)}/${product.unit ?? 'kg'}',
+                              style: AppTextStyles.PRICE_LARGE,
+                            ),
+                          ),
+                          if (showAddButton) ...[
+                            const SizedBox(width: 4),
+                            Builder(
+                              builder: (context) => GestureDetector(
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  _showAddToCartDialog(context);
+                                },
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        AppColors.HEADER_GRADIENT_END,
+                                        AppColors.HEADER_GRADIENT_START,
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.primaryGreen.withValues(
+                                          alpha: 0.3,
+                                        ),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.add,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
@@ -265,42 +338,40 @@ class ProductCard extends StatelessWidget {
                     ),
                     if (showAddButton) ...[
                       const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          if (onAddToCart != null) {
-                            onAddToCart!();
-                          } else {
-                            print("Add ${product.name} to cart");
-                          }
-                        },
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                AppColors.HEADER_GRADIENT_END,
-                                AppColors.HEADER_GRADIENT_START,
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primaryGreen.withValues(
-                                  alpha: 0.3,
-                                ),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
+                      Builder(
+                        builder: (context) => GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            _showAddToCartDialog(context);
+                          },
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [
+                                  AppColors.HEADER_GRADIENT_END,
+                                  AppColors.HEADER_GRADIENT_START,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.add,
-                            color: Colors.white,
-                            size: 20,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primaryGreen.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.add,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                         ),
                       ),
