@@ -17,14 +17,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _currentIndex = 0;
-
-  void _onNavBarTap(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
-
   void _handleCartPressed() {
     PageNavigator().goToAndKeepWithTransition(
       context,
@@ -81,9 +73,8 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: _onNavBarTap,
+      bottomNavigationBar: const CustomBottomNavBar(
+        currentIndex: 0,
       ),
     );
   }

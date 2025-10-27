@@ -1,16 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
+import 'package:bukidlink/utils/PageNavigator.dart';
+import 'package:bukidlink/pages/HomePage.dart';
+import 'package:bukidlink/pages/NewsFeedPage.dart';
+import 'package:bukidlink/pages/NotificationPage.dart';
+import 'package:bukidlink/pages/OrdersPage.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
-  final Function(int) onTap;
 
   const CustomBottomNavBar({
     super.key,
     required this.currentIndex,
-    required this.onTap,
   });
+
+  void _navigateToPage(BuildContext context, int index) {
+    // Don't navigate if already on the current page
+    if (index == currentIndex) return;
+
+    Widget page;
+    switch (index) {
+      case 0:
+        page = const HomePage();
+        break;
+      case 1:
+        page = const NewsFeedPage();
+        break;
+      case 2:
+        page = const NotificationPage();
+        break;
+      case 3:
+        page = const OrdersPage();
+        break;
+      default:
+        page = const HomePage();
+    }
+
+    PageNavigator().goToWithTransition(
+      context,
+      page,
+      PageTransitionType.fadeIn,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,15 +74,17 @@ class CustomBottomNavBar extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(Icons.home_outlined, Icons.home, 'Home', 0),
-              _buildNavItem(Icons.article_outlined, Icons.article, 'Feed', 1),
+              _buildNavItem(context, Icons.home_outlined, Icons.home, 'Home', 0),
+              _buildNavItem(context, Icons.article_outlined, Icons.article, 'Feed', 1),
               _buildNavItem(
+                context,
                 Icons.notifications_outlined,
                 Icons.notifications,
                 'Notification',
                 2,
               ),
               _buildNavItem(
+                context,
                 Icons.shopping_bag_outlined,
                 Icons.shopping_bag,
                 'Orders',
@@ -64,6 +98,7 @@ class CustomBottomNavBar extends StatelessWidget {
   }
 
   Widget _buildNavItem(
+    BuildContext context,
     IconData outlinedIcon,
     IconData filledIcon,
     String label,
@@ -73,7 +108,7 @@ class CustomBottomNavBar extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        onTap(index);
+        _navigateToPage(context, index);
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),

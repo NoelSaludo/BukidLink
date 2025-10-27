@@ -9,7 +9,7 @@ enum PageTransitionType {
 }
 
 class PageNavigator {
-  // Default navigation with slide from top (original behavior)
+  // Default navigation with slide from top
   void goTo(BuildContext context, Widget page) {
     Navigator.of(context).pushReplacement(CreateRoute(page));
   }
@@ -37,7 +37,7 @@ class PageNavigator {
     Navigator.of(context).push(CreateRouteWithTransition(page, transitionType));
   }
 
-  // Sleek fade and slide for category/product pages (most common for homepage navigation)
+  // Sleek fade and slide for category/product pages
   void goToSleek(BuildContext context, Widget page) {
     Navigator.of(
       context,
@@ -92,7 +92,7 @@ class PageNavigator {
     }
   }
 
-  // Slide from top (original)
+  // Slide from top
   Route _createSlideFromTopRoute(Widget page) {
     return PageRouteBuilder(
       transitionDuration: const Duration(milliseconds: 700),
@@ -116,7 +116,7 @@ class PageNavigator {
     );
   }
 
-  // Sleek slide from right with fade (perfect for category/product pages)
+  // Sleek slide from right with fade
   Route _createSlideFromRightRoute(Widget page) {
     return PageRouteBuilder(
       transitionDuration: const Duration(milliseconds: 400),
@@ -147,7 +147,7 @@ class PageNavigator {
     );
   }
 
-  // Simple fade (for overlays/modals)
+  // Simple fade
   Route _createFadeRoute(Widget page) {
     return PageRouteBuilder(
       transitionDuration: const Duration(milliseconds: 300),
@@ -166,7 +166,7 @@ class PageNavigator {
     );
   }
 
-  // Scale and fade (for detail pages with emphasis)
+  // Scale and fade
   Route _createScaleAndFadeRoute(Widget page) {
     return PageRouteBuilder(
       transitionDuration: const Duration(milliseconds: 450),
@@ -194,7 +194,7 @@ class PageNavigator {
     );
   }
 
-  // Slide from bottom (for bottom sheets or upward navigation)
+  // Slide from bottom
   Route _createSlideFromBottomRoute(Widget page) {
     return PageRouteBuilder(
       transitionDuration: const Duration(milliseconds: 400),
