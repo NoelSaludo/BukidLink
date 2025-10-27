@@ -8,7 +8,7 @@ class ProductGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Get popular products from ProductData
-    final products = ProductData.getPopularProducts(limit: 6);
+    final products = ProductData.getPopularProducts(limit: 10);
 
     return GridView.builder(
       shrinkWrap: true,

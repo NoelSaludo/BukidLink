@@ -4,6 +4,8 @@ import 'package:bukidlink/utils/PageNavigator.dart';
 import 'package:bukidlink/utils/SnackBarHelper.dart';
 import 'package:bukidlink/data/ProductData.dart';
 import 'package:bukidlink/data/ReviewData.dart';
+import 'package:bukidlink/services/CartService.dart';
+import 'package:bukidlink/pages/CartPage.dart';
 import 'package:bukidlink/widgets/productinfo/ProductInfoAppBar.dart';
 import 'package:bukidlink/widgets/productinfo/ProductImageCard.dart';
 import 'package:bukidlink/widgets/productinfo/ProductHeaderWithQuantity.dart';
@@ -31,6 +33,7 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
   static const int _minQuantity = 1;
   static const int _recommendedProductsLimit = 6;
 
+  final CartService _cartService = CartService();
   int _quantity = _minQuantity;
   late double _totalPrice;
 
@@ -48,38 +51,40 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
   }
 
   void _handleAddToBasket() {
-    SnackBarHelper.showSnackBar(
+    _cartService.addItem(widget.product, _quantity);
+
+    SnackBarHelper.showSuccess(
       context,
-      icon: Icons.check_circle,
-      message: 'Added $_quantity x ${widget.product.name} to basket',
+      'Added $_quantity x ${widget.product.name} to basket',
     );
 
-    // TODO: Implement basket functionality
     debugPrint(
       'Added to basket: ${widget.product.name} x $_quantity = PHP $_totalPrice',
     );
   }
 
   void _handleCartPressed() {
-    SnackBarHelper.showSnackBar(
+    PageNavigator().goToAndKeepWithTransition(
       context,
-      icon: Icons.shopping_cart,
-      message: 'Cart feature coming soon!',
-      backgroundColor: AppColors.HEADER_GRADIENT_START,
+      const CartPage(),
+      PageTransitionType.slideFromRight,
     );
-
-    // TODO: Navigate to cart page
   }
 
   void _handleCheckout() {
-    SnackBarHelper.showSnackBar(
+    _cartService.addItem(widget.product, _quantity);
+
+    PageNavigator().goToAndKeepWithTransition(
       context,
-      icon: Icons.payment,
-      message:
-          'Proceeding to checkout with $_quantity x ${widget.product.name}',
+      const CartPage(),
+      PageTransitionType.slideFromRight,
     );
 
-    // TODO: Implement checkout functionality
+    SnackBarHelper.showInfo(
+      context,
+      'Item added to cart. Proceed to checkout',
+    );
+
     debugPrint(
       'Checkout: ${widget.product.name} x $_quantity = PHP $_totalPrice',
     );

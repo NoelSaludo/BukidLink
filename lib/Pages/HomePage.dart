@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
+import 'package:bukidlink/utils/PageNavigator.dart';
+import 'package:bukidlink/pages/CartPage.dart';
 import 'package:bukidlink/widgets/home/HomeAppBar.dart';
 import 'package:bukidlink/widgets/common/SearchBarWidget.dart';
 import 'package:bukidlink/widgets/home/CategoryGrid.dart';
@@ -23,6 +25,14 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void _handleCartPressed() {
+    PageNavigator().goToAndKeepWithTransition(
+      context,
+      const CartPage(),
+      PageTransitionType.slideFromRight,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,7 +40,7 @@ class _HomePageState extends State<HomePage> {
       body: Column(
         children: [
           // AppBar with gradient background
-          const HomeAppBar(),
+          HomeAppBar(onCartPressed: _handleCartPressed),
           Expanded(
             child: SingleChildScrollView(
               child: Column(

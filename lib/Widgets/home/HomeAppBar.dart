@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
+import 'package:bukidlink/widgets/common/CartIconWithBadge.dart';
 
 class HomeAppBar extends StatelessWidget {
-  const HomeAppBar({super.key});
+  final VoidCallback? onCartPressed;
+
+  const HomeAppBar({
+    super.key,
+    this.onCartPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -44,15 +50,14 @@ class HomeAppBar extends StatelessWidget {
               ),
               Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.shopping_cart_outlined,
-                      color: Colors.white,
-                      size: 28,
-                    ),
+                  CartIconWithBadge(
                     onPressed: () {
                       HapticFeedback.lightImpact();
-                      print("Cart tapped");
+                      if (onCartPressed != null) {
+                        onCartPressed!();
+                      } else {
+                        print("Cart tapped");
+                      }
                     },
                   ),
                   const SizedBox(width: 8),

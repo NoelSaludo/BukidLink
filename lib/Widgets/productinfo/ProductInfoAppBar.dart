@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
+import 'package:bukidlink/widgets/common/CartIconWithBadge.dart';
 
 class ProductInfoAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onBackPressed;
@@ -47,12 +48,7 @@ class ProductInfoAppBar extends StatelessWidget implements PreferredSizeWidget {
         centerTitle: true,
         actions: [
           if (onCartPressed != null)
-            IconButton(
-              icon: const Icon(
-                Icons.shopping_cart_outlined,
-                color: Colors.white,
-                size: 24,
-              ),
+            CartIconWithBadge(
               onPressed: () {
                 HapticFeedback.lightImpact();
                 onCartPressed!();
