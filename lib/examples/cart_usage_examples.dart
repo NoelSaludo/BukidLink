@@ -184,6 +184,8 @@ void cartOperationsExample(BuildContext context) {
     imagePath: 'assets/images/tomato.png',
     category: 'Vegetables',
     price: 50.0,
+    availability: "In Stock",
+    stockCount: 180,
   );
 
   // Add item
