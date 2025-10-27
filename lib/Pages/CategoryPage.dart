@@ -25,7 +25,6 @@ class CategoryPage extends StatefulWidget {
 }
 
 class _CategoryPageState extends State<CategoryPage> {
-  int _currentIndex = 0;
   String _selectedFilter = 'All';
   String _sortBy = 'Popular';
   String _searchQuery = '';
@@ -102,12 +101,6 @@ class _CategoryPageState extends State<CategoryPage> {
 
     setState(() {
       _filteredProducts = products;
-    });
-  }
-
-  void _onNavBarTap(int index) {
-    setState(() {
-      _currentIndex = index;
     });
   }
 
@@ -324,9 +317,8 @@ class _CategoryPageState extends State<CategoryPage> {
           ),
         ],
       ),
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: _onNavBarTap,
+      bottomNavigationBar: const CustomBottomNavBar(
+        currentIndex: 0,
       ),
     );
   }
