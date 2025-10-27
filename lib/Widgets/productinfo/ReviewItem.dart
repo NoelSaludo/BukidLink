@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bukidlink/models/Product.dart';
+import 'package:bukidlink/models/ProductReview.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 
