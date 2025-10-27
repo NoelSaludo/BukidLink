@@ -5,6 +5,7 @@ import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
 import 'package:bukidlink/pages/ProductInfoPage.dart';
+import 'package:bukidlink/widgets/common/PesoText.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -115,14 +116,14 @@ class ProductCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
-                        child: Text(
-                          '₱${product.price.toStringAsFixed(0)} per ${product.unit ?? "kilo"}',
+                        child: PesoText(
+                          amount: product.price,
+                          decimalPlaces: 0,
+                          suffix: ' per ${product.unit ?? "kilo"}',
                           style: AppTextStyles.price.copyWith(
                             fontWeight: FontWeight.w700,
                             color: AppColors.primaryGreen,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(width: 8),

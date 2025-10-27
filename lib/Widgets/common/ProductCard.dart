@@ -8,6 +8,7 @@ import 'package:bukidlink/pages/ProductInfoPage.dart';
 import 'package:bukidlink/widgets/common/AddToCartDialog.dart';
 import 'package:bukidlink/services/CartService.dart';
 import 'package:bukidlink/utils/SnackBarHelper.dart';
+import 'package:bukidlink/widgets/common/PesoText.dart';
 
 enum ProductCardLayout {
   compact, // Compact layout for recommended products (horizontal scroll)
@@ -172,8 +173,10 @@ class ProductCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Expanded(
-                            child: Text(
-                              '\u20B1${product.price.toStringAsFixed(0)}/${product.unit ?? 'kg'}',
+                            child: PesoText(
+                              amount: product.price,
+                              decimalPlaces: 0,
+                              suffix: '/${product.unit ?? 'kg'}',
                               style: AppTextStyles.PRICE_LARGE,
                             ),
                           ),
@@ -329,8 +332,10 @@ class ProductCard extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                           ],
-                          Text(
-                            '\u20B1${product.price.toStringAsFixed(0)}/${product.unit ?? 'kg'}',
+                          PesoText(
+                            amount: product.price,
+                            decimalPlaces: 0,
+                            suffix: '/${product.unit ?? 'kg'}',
                             style: AppTextStyles.PRICE_LARGE,
                           ),
                         ],

@@ -4,6 +4,7 @@ import 'package:bukidlink/models/CartItem.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/cart/CartQuantityControls.dart';
+import 'package:bukidlink/widgets/common/PesoText.dart';
 
 class CartItemCard extends StatefulWidget {
   final CartItem cartItem;
@@ -170,8 +171,9 @@ class _CartItemCardState extends State<CartItemCard>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              '\u20B1${widget.cartItem.product.price.toStringAsFixed(2)}',
+            PesoText(
+              amount: widget.cartItem.product.price,
+              decimalPlaces: 2,
               style: const TextStyle(
                 fontFamily: AppTextStyles.FONT_FAMILY,
                 fontSize: 16,

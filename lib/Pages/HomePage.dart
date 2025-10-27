@@ -31,14 +31,12 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: AppColors.backgroundYellow,
       body: Column(
         children: [
-          // AppBar with gradient background
           HomeAppBar(onCartPressed: _handleCartPressed),
           Expanded(
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Combined gradient section for search and categories
                   Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
