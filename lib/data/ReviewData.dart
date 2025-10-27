@@ -1,4 +1,4 @@
-import 'package:bukidlink/models/Product.dart';
+import 'package:bukidlink/models/ProductReview.dart';
 
 class ReviewData {
   ReviewData._();

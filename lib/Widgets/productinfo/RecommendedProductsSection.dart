@@ -38,6 +38,7 @@ class RecommendedProductsSection extends StatelessWidget {
                 return ProductCard(
                   product: products[index],
                   layout: ProductCardLayout.compact,
+                  showAddButton: true,
                 );
               },
             ),

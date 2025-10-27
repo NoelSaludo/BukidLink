@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
+import 'package:bukidlink/utils/PageNavigator.dart';
+import 'package:bukidlink/pages/StorePage.dart';
 
 class ProductDetailsCard extends StatelessWidget {
   final String description;
@@ -11,6 +14,15 @@ class ProductDetailsCard extends StatelessWidget {
     required this.description,
     required this.farmName,
   });
+
+  void _navigateToStore(BuildContext context) {
+    HapticFeedback.lightImpact();
+    PageNavigator().goToAndKeepWithTransition(
+      context,
+      StorePage(farmName: farmName),
+      PageTransitionType.slideFromRight,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,55 +48,58 @@ class ProductDetailsCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(description, style: AppTextStyles.DESCRIPTION_TEXT),
           const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.backgroundYellow.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.ACCENT_LIME.withValues(alpha: 0.2),
-                width: 1,
+          GestureDetector(
+            onTap: () => _navigateToStore(context),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.backgroundYellow.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.ACCENT_LIME.withValues(alpha: 0.2),
+                  width: 1,
+                ),
               ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        AppColors.HEADER_GRADIENT_START,
-                        AppColors.HEADER_GRADIENT_END,
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          AppColors.HEADER_GRADIENT_START,
+                          AppColors.HEADER_GRADIENT_END,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.store_outlined,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Sold by',
+                          style: AppTextStyles.SELLER_LABEL_MEDIUM,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(farmName, style: AppTextStyles.SELLER_NAME_LARGE),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
-                    Icons.store_outlined,
-                    color: Colors.white,
-                    size: 20,
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 16,
+                    color: AppColors.TEXT_SECONDARY.withValues(alpha: 0.5),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Sold by',
-                        style: AppTextStyles.SELLER_LABEL_MEDIUM,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(farmName, style: AppTextStyles.SELLER_NAME_LARGE),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 16,
-                  color: AppColors.TEXT_SECONDARY.withValues(alpha: 0.5),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

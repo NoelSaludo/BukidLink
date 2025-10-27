@@ -1,30 +1,82 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
-import 'package:bukidlink/widgets/productinfo/AddToBasketButton.dart';
-import 'package:bukidlink/widgets/productinfo/CheckoutButton.dart';
+import 'package:bukidlink/utils/constants/AppTextStyles.dart';
+import 'package:flutter/services.dart';
 
-class BottomActionBar extends StatelessWidget {
+class BottomActionBar extends StatefulWidget {
   final double totalPrice;
   final int quantity;
   final VoidCallback onAddToBasket;
-  final VoidCallback onCheckout;
 
   const BottomActionBar({
     super.key,
     required this.totalPrice,
     required this.quantity,
     required this.onAddToBasket,
-    required this.onCheckout,
   });
+
+  @override
+  State<BottomActionBar> createState() => _BottomActionBarState();
+}
+
+class _BottomActionBarState extends State<BottomActionBar>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  bool _isPressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _handleTapDown(TapDownDetails details) {
+    setState(() => _isPressed = true);
+    _animationController.forward();
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    setState(() => _isPressed = false);
+    _animationController.reverse();
+  }
+
+  void _handleTapCancel() {
+    setState(() => _isPressed = false);
+    _animationController.reverse();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.APP_BACKGROUND,
+        gradient: const LinearGradient(
+          colors: [
+            AppColors.HEADER_GRADIENT_START,
+            AppColors.HEADER_GRADIENT_END,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),
@@ -32,28 +84,76 @@ class BottomActionBar extends StatelessWidget {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: AddToBasketButton(
-                    totalPrice: totalPrice,
-                    quantity: quantity,
-                    onPressed: onAddToBasket,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Left side - Total Price
+              Text(
+                '₱${widget.totalPrice.toStringAsFixed(2)}',
+                style: AppTextStyles.PRODUCT_NAME_LARGE.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 28,
+                ),
+              ),
+              // Right side - Add to Basket Button
+              GestureDetector(
+                onTapDown: _handleTapDown,
+                onTapUp: _handleTapUp,
+                onTapCancel: _handleTapCancel,
+                onTap: () {
+                  HapticFeedback.mediumImpact();
+                  widget.onAddToBasket();
+                },
+                child: ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 14,
+                      horizontal: 24,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                          spreadRadius: 0,
+                        ),
+                        if (_isPressed)
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                            spreadRadius: 0,
+                          ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.shopping_cart_outlined,
+                          color: AppColors.DARK_TEXT,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Add to Basket',
+                          style: AppTextStyles.BUTTON_TEXT.copyWith(
+                            color: AppColors.DARK_TEXT,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: CheckoutButton(
-                    totalPrice: totalPrice,
-                    quantity: quantity,
-                    onPressed: onCheckout,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

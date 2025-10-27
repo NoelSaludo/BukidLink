@@ -133,7 +133,7 @@ class AppTextStyles {
 
   static const TextStyle PRODUCT_NAME_LARGE = TextStyle(
     fontFamily: FONT_FAMILY,
-    fontSize: 26.0,
+    fontSize: 30.0,
     fontWeight: FontWeight.w700,
     color: AppColors.DARK_TEXT,
     letterSpacing: -0.5,

@@ -5,7 +5,6 @@ import 'package:bukidlink/widgets/common/CustomBottomNavBar.dart';
 import 'package:bukidlink/widgets/common/SearchBarWidget.dart';
 import 'package:bukidlink/widgets/common/ProductCard.dart';
 import 'package:bukidlink/widgets/category/CategoryAppBar.dart';
-import 'package:bukidlink/widgets/category/FilterChip.dart';
 import 'package:bukidlink/widgets/category/SortBottomSheet.dart';
 import 'package:bukidlink/data/ProductData.dart';
 import 'package:bukidlink/models/Product.dart';
@@ -25,12 +24,9 @@ class CategoryPage extends StatefulWidget {
 }
 
 class _CategoryPageState extends State<CategoryPage> {
-  String _selectedFilter = 'All';
   String _sortBy = 'Popular';
   String _searchQuery = '';
   List<Product> _filteredProducts = [];
-
-  final List<String> _filterOptions = ['All', 'Low Price', 'High Price', 'New'];
 
   @override
   void initState() {
@@ -79,23 +75,6 @@ class _CategoryPageState extends State<CategoryPage> {
       case 'Popular':
       default:
         // Keep original order (assumed to be by popularity)
-        break;
-    }
-
-    // Apply filter
-    switch (_selectedFilter) {
-      case 'Low Price':
-        products = products.where((p) => p.price < 100).toList();
-        break;
-      case 'High Price':
-        products = products.where((p) => p.price >= 100).toList();
-        break;
-      case 'New':
-        // In real app, would filter by date added
-        products = products.take(6).toList();
-        break;
-      case 'All':
-      default:
         break;
     }
 
@@ -172,29 +151,6 @@ class _CategoryPageState extends State<CategoryPage> {
                     ),
                     child: Row(
                       children: [
-                        Expanded(
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: _filterOptions.map((filter) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 8),
-                                  child: CustomFilterChip(
-                                    label: filter,
-                                    isSelected: _selectedFilter == filter,
-                                    onTap: () {
-                                      setState(() {
-                                        _selectedFilter = filter;
-                                      });
-                                      _applyFilters();
-                                    },
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
                         GestureDetector(
                           onTap: _showSortOptions,
                           child: Container(
