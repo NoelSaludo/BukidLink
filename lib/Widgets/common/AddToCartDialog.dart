@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:bukidlink/models/Product.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
+import 'package:bukidlink/widgets/common/PesoText.dart';
 
 class AddToCartDialog extends StatefulWidget {
   final Product product;
@@ -179,16 +180,14 @@ class _AddToCartDialogState extends State<AddToCartDialog> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          '₱${widget.product.price.toStringAsFixed(2)}',
+                        PesoText(
+                          amount: widget.product.price,
+                          decimalPlaces: 2,
+                          suffix: ' / ${widget.product.unit}',
                           style: AppTextStyles.PRICE_LARGE.copyWith(
                             color: AppColors.primaryGreen,
                             fontWeight: FontWeight.bold,
                           ),
-                        ),
-                        Text(
-                          ' / ${widget.product.unit}',
-                          style: AppTextStyles.SELLER_LABEL,
                         ),
                       ],
                     ),
@@ -270,8 +269,9 @@ class _AddToCartDialogState extends State<AddToCartDialog> {
                         'Total Price',
                         style: AppTextStyles.SELLER_NAME_LARGE,
                       ),
-                      Text(
-                        '₱${_totalPrice.toStringAsFixed(2)}',
+                      PesoText(
+                        amount: _totalPrice,
+                        decimalPlaces: 2,
                         style: AppTextStyles.PRODUCT_NAME_LARGE.copyWith(
                           color: AppColors.primaryGreen,
                           fontWeight: FontWeight.bold,

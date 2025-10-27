@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:flutter/services.dart';
+import 'package:bukidlink/widgets/common/PesoText.dart';
 
 class BottomActionBar extends StatefulWidget {
   final double totalPrice;
@@ -89,8 +90,9 @@ class _BottomActionBarState extends State<BottomActionBar>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // Left side - Total Price
-              Text(
-                '₱${widget.totalPrice.toStringAsFixed(2)}',
+              PesoText(
+                amount: widget.totalPrice,
+                decimalPlaces: 2,
                 style: AppTextStyles.PRODUCT_NAME_LARGE.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,

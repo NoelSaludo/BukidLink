@@ -88,6 +88,10 @@ flutter:
           weight: 800
         - asset: assets/fonts/Outfit-Black.ttf
           weight: 900
+    - family: Roboto Condensed
+      fonts:
+        - asset: assets/fonts/Roboto_Condensed-Regular.ttf
+          weight: 400
 
   # To add assets to your application, add an assets section, like this:
   # assets:

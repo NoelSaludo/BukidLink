@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
+import 'package:bukidlink/widgets/common/PesoText.dart';
 
 class CartSummaryCard extends StatelessWidget {
   final double subtotal;
@@ -66,8 +67,9 @@ class CartSummaryCard extends StatelessWidget {
             color: AppColors.TEXT_SECONDARY,
           ),
         ),
-        Text(
-          '\u20B1${amount.toStringAsFixed(2)}',
+        PesoText(
+          amount: amount,
+          decimalPlaces: 2,
           style: const TextStyle(
             fontFamily: AppTextStyles.FONT_FAMILY,
             fontSize: 15,
@@ -92,8 +94,9 @@ class CartSummaryCard extends StatelessWidget {
             color: AppColors.DARK_TEXT,
           ),
         ),
-        Text(
-          '\u20B1${total.toStringAsFixed(2)}',
+        PesoText(
+          amount: total,
+          decimalPlaces: 2,
           style: const TextStyle(
             fontFamily: AppTextStyles.FONT_FAMILY,
             fontSize: 20,

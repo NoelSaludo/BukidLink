@@ -75,9 +75,10 @@ class _CartPageState extends State<CartPage> {
 
     setState(() => _isProcessing = false);
 
+    final totalAmount = _cartService.total.toStringAsFixed(2);
     SnackBarHelper.showSuccess(
       context,
-      'Order placed successfully! Total: ₱${_cartService.total.toStringAsFixed(2)}',
+      'Order placed successfully! Total: ₱$totalAmount',
     );
 
     // TODO: Navigate to order confirmation page

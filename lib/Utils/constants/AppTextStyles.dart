@@ -5,6 +5,7 @@ class AppTextStyles {
   AppTextStyles._();
 
   static const String FONT_FAMILY = 'Outfit';
+  static const String PESO_FONT_FAMILY = 'Roboto Condensed';
 
   static const TextStyle BUKIDLINK_LOGO = TextStyle(
     fontFamily: FONT_FAMILY,
@@ -335,5 +336,11 @@ class AppTextStyles {
     fontSize: 16.0,
     fontWeight: FontWeight.w700,
     color: Colors.white,
+  );
+
+  // Peso Currency Symbol Style
+  static const TextStyle PESO_SYMBOL = TextStyle(
+    fontFamily: PESO_FONT_FAMILY,
+    fontWeight: FontWeight.w400,
   );
 }

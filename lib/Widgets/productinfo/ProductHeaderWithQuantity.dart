@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:bukidlink/models/Product.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
+import 'package:bukidlink/widgets/common/PesoText.dart';
 
 class ProductHeaderWithQuantity extends StatefulWidget {
   final Product product;
@@ -183,8 +184,9 @@ class _ProductHeaderWithQuantityState extends State<ProductHeaderWithQuantity> {
   Widget _buildPricePerUnit() {
     return Row(
       children: [
-        Text(
-          '₱${widget.product.price.toStringAsFixed(2)}',
+        PesoText(
+          amount: widget.product.price,
+          decimalPlaces: 2,
           style: AppTextStyles.PRODUCT_NAME_LARGE.copyWith(
             color: AppColors.primaryGreen,
             fontWeight: FontWeight.bold,

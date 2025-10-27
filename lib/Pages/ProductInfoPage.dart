@@ -6,6 +6,7 @@ import 'package:bukidlink/data/ProductData.dart';
 import 'package:bukidlink/data/ReviewData.dart';
 import 'package:bukidlink/services/CartService.dart';
 import 'package:bukidlink/pages/CartPage.dart';
+import 'package:bukidlink/pages/AllReviewsPage.dart';
 import 'package:bukidlink/widgets/productinfo/ProductInfoAppBar.dart';
 import 'package:bukidlink/widgets/productinfo/ProductImageCard.dart';
 import 'package:bukidlink/widgets/productinfo/ProductHeaderWithQuantity.dart';
@@ -108,10 +109,13 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
             ),
             ProductReviewsSection(
               reviews: sampleReviews,
-              onViewAll: () => SnackBarHelper.showSnackBar(
+              onViewAll: () => PageNavigator().goToAndKeepWithTransition(
                 context,
-                icon: Icons.rate_review,
-                message: 'View all reviews feature coming soon!',
+                AllReviewsPage(
+                  reviews: sampleReviews,
+                  product: widget.product,
+                ),
+                PageTransitionType.slideFromRight,
               ),
             ),
             RecommendedProductsSection(products: recommendedProducts),
