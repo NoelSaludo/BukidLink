@@ -71,25 +71,6 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
     );
   }
 
-  void _handleCheckout() {
-    _cartService.addItem(widget.product, _quantity);
-
-    PageNavigator().goToAndKeepWithTransition(
-      context,
-      const CartPage(),
-      PageTransitionType.slideFromRight,
-    );
-
-    SnackBarHelper.showInfo(
-      context,
-      'Item added to cart. Proceed to checkout',
-    );
-
-    debugPrint(
-      'Checkout: ${widget.product.name} x $_quantity = PHP $_totalPrice',
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final recommendedProducts =
@@ -142,7 +123,6 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
         totalPrice: _totalPrice,
         quantity: _quantity,
         onAddToBasket: _handleAddToBasket,
-        onCheckout: _handleCheckout,
       ),
     );
   }
