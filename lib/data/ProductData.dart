@@ -16,6 +16,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 24,
       availability: 'In Stock',
+      stockCount: 150,
     ),
     Product(
       id: '2',
@@ -30,6 +31,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 42,
       availability: 'In Stock',
+      stockCount: 200,
     ),
     Product(
       id: '3',
@@ -44,6 +46,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 18,
       availability: 'Limited',
+      stockCount: 25,
     ),
     Product(
       id: '4',
@@ -56,6 +59,8 @@ class ProductData {
           'Sweet and seedless grapes, carefully grown and harvested. Great for healthy snacking.',
       rating: 4.6,
       unit: 'kg',
+      availability: 'In Stock',
+      stockCount: 120,
     ),
     Product(
       id: '5',
@@ -68,6 +73,8 @@ class ProductData {
           'Fresh tropical pineapples with a perfect balance of sweetness and tang. Excellent for fresh juice.',
       rating: 4.4,
       unit: 'kg',
+      availability: 'In Stock',
+      stockCount: 80,
     ),
     Product(
       id: '6',
@@ -80,6 +87,8 @@ class ProductData {
           'Locally grown bananas, rich in nutrients and perfect for energy. Ideal for smoothies or snacking.',
       rating: 4.3,
       unit: 'kg',
+      availability: 'In Stock',
+      stockCount: 250,
     ),
 
     // Vegetables
@@ -96,6 +105,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 31,
       availability: 'In Stock',
+      stockCount: 180,
     ),
     Product(
       id: '8',
@@ -110,6 +120,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 27,
       availability: 'In Stock',
+      stockCount: 160,
     ),
     Product(
       id: '9',
@@ -124,6 +135,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 15,
       availability: 'Limited',
+      stockCount: 30,
     ),
     Product(
       id: '10',
@@ -138,6 +150,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 38,
       availability: 'In Stock',
+      stockCount: 300,
     ),
     Product(
       id: '11',
@@ -152,6 +165,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 22,
       availability: 'In Stock',
+      stockCount: 140,
     ),
     Product(
       id: '12',
@@ -166,6 +180,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 29,
       availability: 'In Stock',
+      stockCount: 220,
     ),
 
     // Grains
@@ -182,6 +197,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 56,
       availability: 'In Stock',
+      stockCount: 500,
     ),
     Product(
       id: '14',
@@ -196,6 +212,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 44,
       availability: 'In Stock',
+      stockCount: 450,
     ),
     Product(
       id: '15',
@@ -210,6 +227,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 33,
       availability: 'In Stock',
+      stockCount: 180,
     ),
     Product(
       id: '16',
@@ -224,6 +242,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 62,
       availability: 'In Stock',
+      stockCount: 350,
     ),
     Product(
       id: '17',
@@ -238,6 +257,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 19,
       availability: 'In Stock',
+      stockCount: 95,
     ),
     Product(
       id: '18',
@@ -252,6 +272,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 37,
       availability: 'In Stock',
+      stockCount: 280,
     ),
 
     // Livestock
@@ -268,6 +289,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 41,
       availability: 'In Stock',
+      stockCount: 110,
     ),
     Product(
       id: '20',
@@ -282,6 +304,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 52,
       availability: 'In Stock',
+      stockCount: 150,
     ),
     Product(
       id: '21',
@@ -296,6 +319,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 48,
       availability: 'In Stock',
+      stockCount: 90,
     ),
     Product(
       id: '22',
@@ -310,6 +334,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 67,
       availability: 'In Stock',
+      stockCount: 400,
     ),
     Product(
       id: '23',
@@ -324,6 +349,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 14,
       availability: 'Limited',
+      stockCount: 18,
     ),
     Product(
       id: '24',
@@ -338,6 +364,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 25,
       availability: 'In Stock',
+      stockCount: 75,
     ),
 
     // Dairy
@@ -354,6 +381,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 35,
       availability: 'In Stock',
+      stockCount: 60,
     ),
     Product(
       id: '26',
@@ -368,6 +396,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 58,
       availability: 'In Stock',
+      stockCount: 180,
     ),
     Product(
       id: '27',
@@ -382,6 +411,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 21,
       availability: 'In Stock',
+      stockCount: 45,
     ),
     Product(
       id: '28',
@@ -396,6 +426,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 73,
       availability: 'In Stock',
+      stockCount: 250,
     ),
     Product(
       id: '29',
@@ -410,6 +441,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 28,
       availability: 'In Stock',
+      stockCount: 70,
     ),
     Product(
       id: '30',
@@ -424,6 +456,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 46,
       availability: 'In Stock',
+      stockCount: 130,
     ),
 
     // Others
@@ -440,6 +473,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 23,
       availability: 'In Stock',
+      stockCount: 55,
     ),
     Product(
       id: '32',
@@ -454,6 +488,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 39,
       availability: 'In Stock',
+      stockCount: 100,
     ),
     Product(
       id: '33',
@@ -468,6 +503,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 17,
       availability: 'In Stock',
+      stockCount: 40,
     ),
     Product(
       id: '34',
@@ -482,6 +518,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 12,
       availability: 'Limited',
+      stockCount: 15,
     ),
     Product(
       id: '35',
@@ -496,6 +533,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 8,
       availability: 'Limited',
+      stockCount: 12,
     ),
     Product(
       id: '36',
@@ -510,6 +548,7 @@ class ProductData {
       unit: 'kg',
       reviewCount: 34,
       availability: 'In Stock',
+      stockCount: 85,
     ),
   ];
 
@@ -548,5 +587,19 @@ class ProductData {
     } catch (e) {
       return null;
     }
+  }
+
+  // Get products by farm name
+  static List<Product> getProductsByFarm(String farmName) {
+    return _allProducts.where((p) => p.farmName == farmName).toList();
+  }
+
+  // Get all unique farm names
+  static List<String> getAllFarmNames() {
+    final farmNames = <String>{};
+    for (var product in _allProducts) {
+      farmNames.add(product.farmName);
+    }
+    return farmNames.toList()..sort();
   }
 }
