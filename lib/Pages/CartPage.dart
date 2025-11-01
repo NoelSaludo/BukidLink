@@ -7,6 +7,7 @@ import 'package:bukidlink/widgets/cart/CartAppBar.dart';
 import 'package:bukidlink/widgets/cart/CartItemCard.dart';
 import 'package:bukidlink/widgets/cart/CartSummaryCard.dart';
 import 'package:bukidlink/widgets/cart/EmptyCartWidget.dart';
+import 'package:bukidlink/pages/CheckoutPage.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -32,31 +33,21 @@ class _CartPageState extends State<CartPage> {
   }
 
   void _onCartChanged() {
-    if (mounted) {
-      setState(() {});
-    }
+    if (mounted) setState(() {});
   }
 
   void _handleQuantityChanged(String cartItemId, int newQuantity) {
     _cartService.updateQuantity(cartItemId, newQuantity);
-
     if (newQuantity == 0) {
-      SnackBarHelper.showInfo(
-        context,
-        'Item removed from cart',
-      );
+      SnackBarHelper.showInfo(context, 'Item removed from cart');
     }
   }
 
   void _handleRemoveItem(String cartItemId) {
     final item = _cartService.getItem(cartItemId);
     _cartService.removeItem(cartItemId);
-
     if (item != null) {
-      SnackBarHelper.showInfo(
-        context,
-        '${item.product.name} removed from cart',
-      );
+      SnackBarHelper.showInfo(context, '${item.product.name} removed from cart');
     }
   }
 
@@ -66,25 +57,27 @@ class _CartPageState extends State<CartPage> {
       return;
     }
 
-    setState(() => _isProcessing = true);
-
-    // Simulate checkout processing
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (!mounted) return;
-
-    setState(() => _isProcessing = false);
-
-    final totalAmount = _cartService.total.toStringAsFixed(2);
-    SnackBarHelper.showSuccess(
+    final result = await Navigator.push(
       context,
-      'Order placed successfully! Total: ₱$totalAmount',
+      MaterialPageRoute(
+        builder: (_) => CheckoutPage(
+          cartItems: _cartService.items,
+          recipientName: 'Juan Dela Cruz',
+          contactNumber: '09123456789',
+          shippingAddress: 'Purok 5, Barangay Maligaya, Bukidnon',
+        ),
+      ),
     );
 
-    // TODO: Navigate to order confirmation page
-    // For now, clear the cart
-    _cartService.clear();
+    if (result == true) {
+      _cartService.clear();
+      if (mounted) {
+        setState(() {});
+        SnackBarHelper.showSuccess(context, 'Order placed successfully!');
+      }
+    }
   }
+
 
   void _handleStartShopping() {
     PageNavigator().goBack(context);
@@ -102,12 +95,12 @@ class _CartPageState extends State<CartPage> {
       bottomNavigationBar: _cartService.isEmpty
           ? null
           : CartSummaryCard(
-              subtotal: _cartService.subtotal,
-              deliveryFee: _cartService.deliveryFee,
-              total: _cartService.total,
-              onCheckout: _handleCheckout,
-              isProcessing: _isProcessing,
-            ),
+        subtotal: _cartService.subtotal,
+        deliveryFee: _cartService.deliveryFee,
+        total: _cartService.total,
+        onCheckout: _handleCheckout,
+        isProcessing: _isProcessing,
+      ),
     );
   }
 
