@@ -14,6 +14,8 @@ class Product {
   final String availability; // e.g., "In Stock", "Limited", "Out of Stock"
   final int stockCount; // Remaining stock quantity
   final List<ProductReview>? reviews; // Product reviews
+  double tempRating = 0.0;
+
 
   Product({
     required this.id,
