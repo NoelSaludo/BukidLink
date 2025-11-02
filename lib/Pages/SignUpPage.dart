@@ -64,7 +64,14 @@ class _SignUpPageState extends State<SignUpPage> {
     //     });
     //   }
     // }
-    PageNavigator().goToAndKeep(context, SignUpContinuedPage());
+    PageNavigator().goToAndKeep(
+      context, 
+      SignUpContinuedPage(
+        firstName: firstNameController.text, 
+        lastName: lastNameController.text,
+        emailAddress: emailAddressController.text, 
+        address: addressController.text, 
+        contactNumber: contactNumberController.text,));
   }
 
   @override
