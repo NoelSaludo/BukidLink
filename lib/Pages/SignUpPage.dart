@@ -172,7 +172,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         onChanged: onChanged,
                       ),
                       ContactNumberField(controller: contactNumberController),
-                      const SizedBox(height: 20.0),
+                      const SizedBox(height: 5.0),
                       Text(
                         'Account Type',
                         style: TextStyle(fontWeight: FontWeight.bold),

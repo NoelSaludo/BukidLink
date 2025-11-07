@@ -25,65 +25,154 @@ class ProfileInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final User profile = UserData.getUserInfoById(profileID);
-
-    final String coverImage = 'assets/images/default_cover_photo.png';
+    final String coverImage = 'assets/images/profileCover1.png';
     final String profileImage = 'assets/images/${profile.profilePic}';
     final String username = profile.username;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // --- Cover Section ---
         Stack(
           clipBehavior: Clip.none,
           children: [
-            // --- Cover photo with back button overlay ---
-            SizedBox(
-              width: double.infinity,
+            // Cover photo
+            Container(
               height: 180,
-              child: Stack(
+              decoration: const BoxDecoration(
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ProfileCoverPicture(imageUrl: coverImage),
+                    Container(
+                      color: Colors.black.withOpacity(0.2),
+                    ),
+                    Positioned(
+                      top: 30,
+                      left: 10,
+                      child: CustomBackButton(
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Profile picture (left-aligned, overlapping)
+            Positioned(
+              bottom: -40,
+              left: 20,
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 4),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: ProfileIcon(
+                  imageUrl: profileImage,
+                  size: 85,
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 55),
+
+        // --- Name and Info aligned with profile ---
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ProfileUsername(username: username),
+              const SizedBox(height: 4),
+              Text(
+                "Farmer • Local Producer",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // --- Buttons Row ---
+              Row(
                 children: [
-                  ProfileCoverPicture(imageUrl: coverImage),
-                  Positioned(
-                    top: 30,
-                    left: 10,
-                    child: CustomBackButton(
-                      onPressed: () => Navigator.pop(context),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey[300],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8), // less rounded
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        "Follow",
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => onMessagePress(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFD5FF6B), // your green theme
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        "Message",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-
-            // --- Profile picture (overlapping cover) ---
-            // Positioned(
-            //   bottom: -50,
-            //   left: 0,
-            //   right: 0,
-            //   child: Center(
-            //     child: ProfileIcon(imageUrl: profileImage),
-            //   ),
-            // ),
-          ],
+            ],
+          ),
         ),
 
-        const SizedBox(height: 20), // space for profile overlap
+        const SizedBox(height: 20),
 
-        // --- Username ---
-        ProfileUsername(username: username),
-
-        const SizedBox(height: 10),
-
-        // --- Action buttons (Follow + Message) ---
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            FollowButton(),
-            const SizedBox(width: 12),
-            MessageButton(onPressed: () => onMessagePress(context)),
-          ],
+        // --- Divider ---
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Divider(
+            color: Colors.grey[300],
+            thickness: 1,
+          ),
         ),
-
-        const SizedBox(height: 15),
-        //const Divider(thickness: 1, color: Colors.grey, indent: 30, endIndent: 30),
       ],
     );
   }

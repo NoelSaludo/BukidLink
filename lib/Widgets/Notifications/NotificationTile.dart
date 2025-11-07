@@ -62,65 +62,100 @@ class NotificationTile extends StatelessWidget {
     String imageUrl = 'assets/images/';
     switch (notification.type) {
       case 'post':
-        imageUrl += poster?.profilePic ?? 'assets/images/default_profile.png';
+        imageUrl += poster?.profilePic ?? 'default_profile.png';
       break;
       case 'shipping':
-        imageUrl = 'assets/images/shipping.png';
+        imageUrl = 'shipping.png';
       break;
       case 'message':
-        imageUrl += messenger?.profilePic ?? 'assets/images/default_profile.png';
+        imageUrl += messenger?.profilePic ?? 'default_profile.png';
       break;
       case 'system':
-        imageUrl = 'assets/images/systemNotif.png';
+        imageUrl = 'systemNotif.png';
       break;
       default:
-        imageUrl = 'assets/images/systemNotif.png';
+        imageUrl = 'systemNotif.png';
 }
     return InkWell(
       onTap: () { onTapped(context, notification.type);},
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-        padding: const EdgeInsets.all(10),
+  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+  padding: const EdgeInsets.all(12),
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(16),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.05),
+        blurRadius: 6,
+        offset: const Offset(0, 3),
+      ),
+    ],
+  ),
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // Profile / Notification Icon with border
+      Container(
+        padding: const EdgeInsets.all(2),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.green.shade200, width: 2),
         ),
-        child: Row(
+        child: ClipOval(
+          child: NotificationIcon(imageUrl: imageUrl),
+        ),
+      ),
+
+      const SizedBox(width: 12),
+
+      // Text section
+      Expanded(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Left: Notification icon
-            NotificationIcon(imageUrl: imageUrl),
-
-            const SizedBox(width: 10),
-
-            // Right: Text details
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  NotificationTitle(title: notification.title),
-                  const SizedBox(height: 4),
-                  NotificationBody(body: notification.body),
-                  const SizedBox(height: 6),
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: NotificationTimestamp(
-                      timestamp: formatter.format(notification.timestamp),
-                    ),
+            // Title row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: NotificationTitle(
+                    title: notification.title,
                   ),
-                ],
+                ),
+                NotificationTimestamp(
+                  timestamp: formatter.format(notification.timestamp),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 6),
+
+            // Body text
+            NotificationBody(
+              body: notification.body,
+
+            ),
+
+            const SizedBox(height: 6),
+
+            // Optional divider accent line
+            Container(
+              height: 2,
+              width: 40,
+              margin: const EdgeInsets.only(top: 4),
+              decoration: BoxDecoration(
+                color: Colors.green.shade100,
+                borderRadius: BorderRadius.circular(1),
               ),
             ),
           ],
         ),
       ),
+    ],
+  ),
+)
+
     );
   }
 }

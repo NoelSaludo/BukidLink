@@ -20,6 +20,8 @@ class NotificationTitle extends StatelessWidget {
         title,
         style: TextStyle(
           fontWeight: FontWeight.bold,
+          fontSize: 16,
+          color: Color(0xFF2E7D32),
         )),
     );
   }

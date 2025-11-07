@@ -20,7 +20,7 @@ class App extends StatelessWidget {
     // '/message': (context) => const MessagePage(),
   },
 
-  // ✅ Dynamic route handler
+  // Dynamic route handler
   onGenerateRoute: (settings) {
     if (settings.name == '/profile') {
       final args = settings.arguments;

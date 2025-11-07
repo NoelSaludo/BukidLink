@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 class PostData {
   static final List<Post> _allPosts = [
-    // Fruits
+    // Posts
     Post(
       id: '1',
       textContent: 'Bili na kayo mga suki!',
@@ -13,14 +13,14 @@ class PostData {
     ),
     Post(
       id: '2',
-      textContent:'Check out this sample post, it uses a sample image that is not quite on theme yet but this is just to see if it works',
+      textContent:'Fresh fruits available at our store!',
       imageContent: 'post2.png',
       timestamp: DateTime(2025, 10, 10, 10, 30),
-      posterID: '1',
+      posterID: '2',
     ),
   ];
 
-  // Get all Consumers
+  // Get all Posts
   static List<Post> getAllPosts() {
     return _allPosts;
   }

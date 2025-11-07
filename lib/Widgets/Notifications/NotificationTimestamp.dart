@@ -16,7 +16,12 @@ class NotificationTimestamp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: Text(timestamp),
+      child: Text(
+        timestamp,
+        style: TextStyle(
+        fontSize: 12,
+        color: Colors.grey.shade600,
+      ),),
     );
   }
 }

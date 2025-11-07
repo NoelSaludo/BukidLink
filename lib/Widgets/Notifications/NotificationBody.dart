@@ -17,7 +17,13 @@ class NotificationBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: Text(body),
+      child: Text(
+        body,
+        style: const TextStyle(
+          fontSize: 14,
+          color: Colors.black87,
+          height: 1.4,
+        ),),
     );
   }
 }

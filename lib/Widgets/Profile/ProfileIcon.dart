@@ -1,22 +1,27 @@
 import 'package:flutter/material.dart';
-// import 'package:bukidlink/Widgets/Notifications/NotificationIcon.dart';
-// import 'package:bukidlink/Widgets/Notifications/NotificationTitle.dart';
-// import 'package:bukidlink/Widgets/Notifications/NotificationBody.dart';
-// import 'package:bukidlink/Widgets/Notifications/NotificationTimestamp.dart';
-// import 'package:bukidlink/data/NotificationData.dart';
-// import 'package:bukidlink/Utils/PageNavigator.dart';
 
 class ProfileIcon extends StatelessWidget {
   final String imageUrl;
+  final double size;
+
   const ProfileIcon({
     super.key,
     required this.imageUrl,
+    this.size = 80, // default size if not provided
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: Image.asset(imageUrl),
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        image: DecorationImage(
+          image: AssetImage(imageUrl),
+          fit: BoxFit.cover,
+        ),
+      ),
     );
   }
 }
