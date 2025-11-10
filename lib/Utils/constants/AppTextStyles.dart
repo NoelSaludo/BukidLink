@@ -343,4 +343,82 @@ class AppTextStyles {
     fontFamily: PESO_FONT_FAMILY,
     fontWeight: FontWeight.w400,
   );
+
+  // ----------------------------
+// Checkout Page Text Styles
+// ----------------------------
+  static const TextStyle CHECKOUT_SECTION_TITLE = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontWeight: FontWeight.w700,
+    fontSize: 16,
+    color: Colors.white,
+  );
+
+  static const TextStyle CHECKOUT_LABEL = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontWeight: FontWeight.w600,
+    fontSize: 14,
+    color: AppColors.DARK_TEXT,
+  );
+
+  static const TextStyle CHECKOUT_VALUE = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontWeight: FontWeight.w400,
+    fontSize: 14,
+    color: AppColors.DARK_TEXT,
+  );
+
+  static const TextStyle CHECKOUT_PRODUCT_NAME = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontWeight: FontWeight.w600,
+    fontSize: 15,
+    color: AppColors.DARK_TEXT,
+  );
+
+  static const TextStyle CHECKOUT_PRODUCT_DETAILS = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontWeight: FontWeight.w400,
+    fontSize: 14,
+    color: AppColors.TEXT_SECONDARY,
+  );
+
+  static const TextStyle CHECKOUT_PRICE = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontWeight: FontWeight.w600,
+    fontSize: 15,
+    color: AppColors.primaryGreen,
+  );
+
+  static const TextStyle CHECKOUT_SHOP_NAME = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontWeight: FontWeight.w600,
+    fontSize: 16,
+    color: AppColors.primaryGreen,
+  );
+
+  static const TextStyle CHECKOUT_TOTAL_LABEL = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontWeight: FontWeight.w600,
+    fontSize: 14,
+    color: AppColors.DARK_TEXT,
+  );
+
+  static const TextStyle CHECKOUT_TOTAL_VALUE = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontWeight: FontWeight.w700,
+    fontSize: 14,
+    color: AppColors.DARK_TEXT,
+  );
+
+  static const TextStyle CHECKOUT_BUTTON_TEXT = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontWeight: FontWeight.w700,
+    fontSize: 16,
+    color: Colors.white,
+  );
+
 }
+
+
+
+

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/common/CartIconWithBadge.dart';
+import 'package:bukidlink/Pages/InboxPage.dart';
 
 class HomeAppBar extends StatelessWidget {
   final VoidCallback? onCartPressed;
@@ -42,7 +43,12 @@ class HomeAppBar extends StatelessWidget {
                     ),
                     onPressed: () {
                       HapticFeedback.lightImpact();
-                      print("Chat tapped");
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => InboxPage(),
+                          ),
+                      );
                     },
                   ),
                   const Text('BukidLink', style: AppTextStyles.BUKIDLINK_LOGO),
