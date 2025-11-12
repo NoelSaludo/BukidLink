@@ -64,7 +64,14 @@ class _SignUpPageState extends State<SignUpPage> {
     //     });
     //   }
     // }
-    PageNavigator().goToAndKeep(context, SignUpContinuedPage());
+    PageNavigator().goToAndKeep(
+      context, 
+      SignUpContinuedPage(
+        firstName: firstNameController.text, 
+        lastName: lastNameController.text,
+        emailAddress: emailAddressController.text, 
+        address: addressController.text, 
+        contactNumber: contactNumberController.text,));
   }
 
   @override
@@ -165,7 +172,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         onChanged: onChanged,
                       ),
                       ContactNumberField(controller: contactNumberController),
-                      const SizedBox(height: 20.0),
+                      const SizedBox(height: 5.0),
                       Text(
                         'Account Type',
                         style: TextStyle(fontWeight: FontWeight.bold),

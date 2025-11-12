@@ -4,10 +4,14 @@ import 'package:bukidlink/Utils/FormValidator.dart';
 class PasswordField extends StatelessWidget {
   final TextEditingController controller;
   final String mode;
+  final String? forceErrorText;
+  final ValueChanged<String> onChanged;
   const PasswordField({
     super.key,
     required this.controller,
     required this.mode,
+    required this.forceErrorText,
+    required this.onChanged,
   });
 
   @override
@@ -33,7 +37,9 @@ class PasswordField extends StatelessWidget {
           ),
           style: TextStyle(fontSize: 20.0),
           obscureText: true,
+          forceErrorText: forceErrorText,
           controller: controller,
+          onChanged: onChanged,
           validator: FormValidator().loginPasswordValidator,
         ),
       );
@@ -71,6 +77,8 @@ class PasswordField extends StatelessWidget {
                 style: TextStyle(fontSize: 14.0),
                 controller: controller,
                 validator: validator.tempAddressValidator,
+                onChanged: onChanged,
+                forceErrorText: forceErrorText,
               ),
             ),
           ),
@@ -99,6 +107,8 @@ class PasswordField extends StatelessWidget {
           obscureText: true,
           controller: controller,
           validator: FormValidator().signupPasswordValidator,
+          onChanged: onChanged,
+          forceErrorText: forceErrorText,
         ),
       );
     }
