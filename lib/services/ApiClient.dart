@@ -23,13 +23,10 @@ class ApiClient {
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
       sendTimeout: const Duration(seconds: 15),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
       validateStatus: (status) {
-        // Accept all status codes to handle errors manually
-        return status != null && status < 500;
+        // Only accept 2xx status codes as successful
+        // This will throw DioException for 4xx and 5xx errors
+        return status != null && status >= 200 && status < 300;
       },
     ));
 
@@ -99,10 +96,21 @@ class ApiClient {
     ProgressCallback? onReceiveProgress,
   }) async {
     try {
+      // Create options without Content-Type to avoid CORS preflight
+      final getOptions = (options ?? Options()).copyWith(
+        headers: {
+          ...?options?.headers,
+          'Accept': 'application/json',
+        },
+      );
+      // Explicitly remove Content-Type header for GET requests
+      getOptions.headers?.remove('Content-Type');
+
+      debugPrint('Options Headers: ${getOptions.headers}');
       return await _dio.get<T>(
         path,
         queryParameters: queryParameters,
-        options: options,
+        options: getOptions,
         cancelToken: cancelToken,
         onReceiveProgress: onReceiveProgress,
       );
@@ -122,11 +130,19 @@ class ApiClient {
     ProgressCallback? onReceiveProgress,
   }) async {
     try {
+      // Add Content-Type for POST requests
+      final postOptions = (options ?? Options()).copyWith(
+        headers: {
+          'Content-Type': 'application/json',
+          ...?options?.headers,
+        },
+      );
+
       return await _dio.post<T>(
         path,
         data: data,
         queryParameters: queryParameters,
-        options: options,
+        options: postOptions,
         cancelToken: cancelToken,
         onSendProgress: onSendProgress,
         onReceiveProgress: onReceiveProgress,
@@ -147,11 +163,19 @@ class ApiClient {
     ProgressCallback? onReceiveProgress,
   }) async {
     try {
+      // Add Content-Type for PUT requests
+      final putOptions = (options ?? Options()).copyWith(
+        headers: {
+          'Content-Type': 'application/json',
+          ...?options?.headers,
+        },
+      );
+
       return await _dio.put<T>(
         path,
         data: data,
         queryParameters: queryParameters,
-        options: options,
+        options: putOptions,
         cancelToken: cancelToken,
         onSendProgress: onSendProgress,
         onReceiveProgress: onReceiveProgress,
@@ -193,11 +217,19 @@ class ApiClient {
     ProgressCallback? onReceiveProgress,
   }) async {
     try {
+      // Add Content-Type for PATCH requests
+      final patchOptions = (options ?? Options()).copyWith(
+        headers: {
+          'Content-Type': 'application/json',
+          ...?options?.headers,
+        },
+      );
+
       return await _dio.patch<T>(
         path,
         data: data,
         queryParameters: queryParameters,
-        options: options,
+        options: patchOptions,
         cancelToken: cancelToken,
         onSendProgress: onSendProgress,
         onReceiveProgress: onReceiveProgress,
