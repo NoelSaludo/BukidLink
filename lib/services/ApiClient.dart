@@ -15,7 +15,7 @@ class ApiClient {
   late final Dio _dio;
 
   // Default base URL - can be overridden via configure()
-  static const String _defaultBaseUrl = 'http:/192.168.68.144:8080/';
+  static const String _defaultBaseUrl = 'http://localhost:8080/';
 
   ApiClient._internal() {
     _dio = Dio(BaseOptions(
