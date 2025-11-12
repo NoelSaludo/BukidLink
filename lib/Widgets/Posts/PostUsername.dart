@@ -19,12 +19,13 @@ class PostUsername extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: Column(children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
         SizedBox(
-          
           child: Text(
           username,
-          style: AppTextStyles.PRODUCT_NAME_LARGE,
+          style: AppTextStyles.PRODUCT_NAME_HEADER,
           ),
         ),
         Text(
