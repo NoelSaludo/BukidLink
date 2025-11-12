@@ -39,6 +39,7 @@ dependencies:
 
   # Timeago package for formatting relative timestamps
   timeago: ^3.7.0
+  dio: ^5.9.0
 
 dev_dependencies:
   flutter_test:
