@@ -1,5 +1,10 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:uuid/uuid.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
 import '../models/User.dart';
+import '../models/UserWithProfile.dart';
 import 'ApiClient.dart';
 
 /// Service for managing user-related operations
@@ -9,12 +14,72 @@ class UserService {
   final Uuid _uuid = const Uuid();
 
   // API endpoints
-  static const String _usersEndpoint = '/users';
+  static const String _usersEndpoint = '/user';
 
   /// Generate a unique user ID
   /// Uses UUID v4 for guaranteed uniqueness
   String generateUserId() {
     return _uuid.v4();
+  }
+
+  /// Hash a password using SHA-256
+  String _hashPassword(String password) {
+    final bytes = utf8.encode(password);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
+  /// Verify password against hash
+  bool _verifyPassword(String password, String passwordHash) {
+    final hashedInput = _hashPassword(password);
+    return hashedInput == passwordHash;
+  }
+
+  /// Login user with username and password
+  /// Returns the UserWithProfile object if credentials are valid
+  /// Throws Exception if login fails
+  Future<UserWithProfile> login(String username, String password) async {
+    try {
+      // Get user by username
+      final response = await _apiClient.get(
+        '$_usersEndpoint/$username',
+      );
+
+      debugPrint('Login response data: ${response.data}');
+
+      final userWithProfile = UserWithProfile.fromJson(response.data);
+
+      // Verify password
+      if (userWithProfile.user.passwordHash == null) {
+        throw Exception('User account is not properly configured');
+      }
+
+      if (!_verifyPassword(password, userWithProfile.user.passwordHash!)) {
+        throw Exception('Invalid username or password');
+      }
+
+      return userWithProfile;
+    } on ApiException catch (e) {
+      if (e.isNotFound) {
+        throw Exception('Invalid username or password');
+      }
+      throw Exception('Login failed: ${e.message}');
+    }
+  }
+
+  /// Get a user by username with profile picture
+  Future<UserWithProfile?> getUserByUsername(String username) async {
+    try {
+      final response = await _apiClient.get(
+        '$_usersEndpoint/$username',
+      );
+      return UserWithProfile.fromJson(response.data);
+    } on ApiException catch (e) {
+      if (e.isNotFound) {
+        return null;
+      }
+      throw Exception('Failed to get user: ${e.message}');
+    }
   }
 
   /// Create a new user
@@ -214,4 +279,3 @@ class UserService {
     }
   }
 }
-
