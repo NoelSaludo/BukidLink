@@ -42,16 +42,6 @@ class FormValidator {
     if (value == null || value.isEmpty) {
       return 'This field is required';
     }
-    if (value.length != value.replaceAll(' ', '').length) {
-      return 'Username must not contain spaces';
-    }
-    if (int.tryParse(value[0]) != null) {
-      return 'Username must not start with a number';
-    }
-    if (value.length <= 2) {
-      return 'Username should be at least 3 characters long';
-    }
-    return null;
   }
 
   String? nameValidator(String? value) {
