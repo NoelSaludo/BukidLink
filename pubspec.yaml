@@ -44,6 +44,9 @@ dependencies:
   # UUID generation for unique user IDs
   uuid: ^4.5.1
 
+  # Crypto for password hashing
+  crypto: ^3.0.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

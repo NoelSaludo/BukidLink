@@ -11,6 +11,8 @@ import 'package:bukidlink/Pages/SignUpPage.dart';
 import 'package:bukidlink/Widgets/ForgotPassword.dart';
 import 'package:bukidlink/Widgets/SignUpAndLogin/LoginLogo.dart';
 import 'package:bukidlink/Widgets/SignUpAndLogin/GoToSignUp.dart';
+import 'package:bukidlink/services/UserService.dart';
+import 'package:bukidlink/Pages/HomePage.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -23,6 +25,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  final UserService _userService = UserService();
   String? forceErrorText;
   bool isLoading = false;
 
@@ -40,7 +43,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void handleLogin(BuildContext context) {
+  Future<void> handleLogin(BuildContext context) async {
     final bool isValid = formKey.currentState?.validate() ?? false;
 
     if (!isValid) {
@@ -48,18 +51,36 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     setState(() => isLoading = true);
-    // final String? errorText = await validateInputFromDatabase({
-    // });
 
-    // if(context.mounted) {
-    //   setState(() => isLoading = false);
-    //   if(errorText != null) {
-    //     setState(() {
-    //       forceErrorText = errorText;
-    //     });
-    //   }
-    // }
-    PageNavigator().goTo(context, LoadingPage());
+    try {
+      // Use UserService to login - returns UserWithProfile
+      final userWithProfile = await _userService.login(
+        usernameController.text.trim(),
+        passwordController.text,
+      );
+
+      if (context.mounted) {
+        setState(() => isLoading = false);
+
+        // Navigate to HomePage on successful login
+        // You can access user data: userWithProfile.user
+        // You can access profile pic: userWithProfile.profilePic
+        PageNavigator().goTo(context, const HomePage());
+      }
+    } catch (e) {
+      if (context.mounted) {
+        setState(() => isLoading = false);
+
+        // Show error message to user
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   @override
