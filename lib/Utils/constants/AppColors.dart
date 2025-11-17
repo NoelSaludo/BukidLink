@@ -35,4 +35,7 @@ class AppColors {
   static const Color ERROR_RED = Color(0xFFF44336);
   static const Color CARD_BACKGROUND = Color(0xFFFFFFFF);
   static const Color APP_BACKGROUND = Color(0xFFF8F8F8);
+
+  static const Color containerWhite = Color(0xFFFFFFFF);
+
 }
