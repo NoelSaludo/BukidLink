@@ -4,10 +4,14 @@ import 'package:bukidlink/Utils/FormValidator.dart';
 class UsernameField extends StatelessWidget {
   final TextEditingController controller;
   final String mode;
+  final String? forceErrorText;
+  final ValueChanged<String> onChanged;
   const UsernameField({
     super.key,
     required this.controller,
     required this.mode,
+    required this.forceErrorText,
+    required this.onChanged,
   });
 
   @override
@@ -34,6 +38,8 @@ class UsernameField extends StatelessWidget {
           style: TextStyle(fontSize: 20.0),
           controller: controller,
           validator: FormValidator().loginUsernameValidator,
+          onChanged: onChanged,
+          forceErrorText: forceErrorText,
         ),
       );
     } else if (mode == 'SignUp') {
@@ -70,6 +76,8 @@ class UsernameField extends StatelessWidget {
                 style: TextStyle(fontSize: 16.0),
                 controller: controller,
                 validator: validator.tempAddressValidator,
+                onChanged: onChanged,
+                forceErrorText: forceErrorText,
               ),
             ),
           ),
@@ -98,6 +106,8 @@ class UsernameField extends StatelessWidget {
           obscureText: true,
           controller: controller,
           validator: FormValidator().signupUsernameValidator,
+          onChanged: onChanged,
+          forceErrorText: forceErrorText,
         ),
       );
     }

@@ -7,9 +7,26 @@ import 'package:bukidlink/Widgets/SignupandLogin/ConfirmPasswordField.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
 import 'package:bukidlink/Widgets/CustomBackButton.dart';
 import 'package:bukidlink/Pages/LoadingPage.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
+import 'package:bukidlink/models/User.dart';
+import 'package:bukidlink/data/UserData.dart';
+
 
 class SignUpContinuedPage extends StatefulWidget {
-  const SignUpContinuedPage({super.key});
+  final String firstName;
+  final String lastName;
+  final String emailAddress;
+  final String address;
+  final String contactNumber;
+  const SignUpContinuedPage({
+    super.key,
+    required this.firstName,
+    required this.lastName,
+    required this.emailAddress,
+    required this.address,
+    required this.contactNumber,
+    });
 
   @override
   State<SignUpContinuedPage> createState() => _SignUpContinuedPageState();
@@ -21,6 +38,7 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
   final TextEditingController confirmPasswordController =
       TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  final ValueNotifier<String> accountType = ValueNotifier<String>('Sign Up');
   String? forceErrorText;
   bool isLoading = false;
 
@@ -39,7 +57,7 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
     }
   }
 
-  void handleSignUp(BuildContext context) {
+  void handleSignUp(BuildContext context) async{
     final bool isValid = formKey.currentState?.validate() ?? false;
 
     if (!isValid) {
@@ -47,17 +65,25 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
     }
 
     setState(() => isLoading = true);
-    // final String? errorText = await validateInputFromDatabase({
-    // });
+    final String? errorText = await validateInputFromServer(usernameController.text);
 
-    // if(context.mounted) {
-    //   setState(() => isLoading = false);
-    //   if(errorText != null) {
-    //     setState(() {
-    //       forceErrorText = errorText;
-    //     });
-    //   }
-    // }
+    if(context.mounted) {
+      setState(() => isLoading = false);
+      if(errorText != null) {
+        setState(() {
+          forceErrorText = errorText;
+        });
+      }
+    }
+    insertNewUser(
+      usernameController.text, 
+      passwordController.text, 
+      widget.firstName, 
+      widget.lastName, 
+      widget.emailAddress, 
+      widget.address, 
+      widget.contactNumber,
+      'input not set yet');
     PageNavigator().goTo(context, LoadingPage());
   }
 
@@ -73,9 +99,7 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
   Widget _buildContent(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
-
-    final ValueNotifier<String> activeTab = ValueNotifier<String>('Sign Up');
-    activeTab.value = 'Consumer';
+    accountType.value = 'Consumer';
 
     return Stack(
       children: [
@@ -130,7 +154,7 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
             child: Form(
               key: formKey,
               child: ValueListenableBuilder<String>(
-                valueListenable: activeTab,
+                valueListenable: accountType,
                 builder: (context, tab, _) {
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.start,
@@ -141,13 +165,18 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
                       UsernameField(
                         controller: usernameController,
                         mode: 'SignUp',
+                        forceErrorText: forceErrorText,
+                        onChanged: onChanged,
                       ),
                       PasswordField(
                         controller: passwordController,
                         mode: 'SignUp',
+                        forceErrorText: null,
+                        onChanged: onChanged,
                       ),
                       ConfirmPasswordField(
                         controller: confirmPasswordController,
+
                       ),
                       const SizedBox(height: 16.0),
                       Text(
@@ -166,7 +195,7 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
                           children: [
                             Expanded(
                               child: GestureDetector(
-                                onTap: () => activeTab.value = 'Consumer',
+                                onTap: () => accountType.value = 'Consumer',
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
                                   decoration: BoxDecoration(
@@ -195,7 +224,7 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
                             ),
                             Expanded(
                               child: GestureDetector(
-                                onTap: () => activeTab.value = 'Farmer',
+                                onTap: () => accountType.value = 'Farmer',
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
                                   decoration: BoxDecoration(
@@ -270,9 +299,72 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
     PageNavigator().goBack(context);
   }
 
-  Future<String?> validateInputFromServer(
-    String emailAddress,
-    String address,
+  String hashPassword(String password){
+    final bytes = utf8.encode(password);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+  
+  Future<void> insertNewUser(
+    String username, 
+    String password, 
+    String firstName, 
+    String lastName, 
+    String emailAddress, 
+    String address, 
     String contactNumber,
-  ) async {}
+    String farm,) async{
+      // final db = await;//access database
+      // if(accountType.value == 'Consumer'){
+      //   await db.insert(
+      //     'Consumer',
+      //     {
+      //       'username': username,
+      //       'password': hashedPassword,
+      //       'firstName': firstName,
+      //       'lastName': lastName,
+      //       'emailAddress': emailAddress,
+      //       'address': address,
+      //       'contactNumber': contactNumber
+      //     }
+      //   );
+      // }
+      
+      //adds consumer object to consumerData
+      switch(accountType){
+        case 'consumer': UserData.addConsumer(
+        username, 
+        hashPassword(password), 
+        firstName, 
+        lastName, 
+        emailAddress, 
+        address, 
+        contactNumber,);
+        break;
+        case 'farmer': UserData.addFarmer(
+        username, 
+        hashPassword(password), 
+        firstName, 
+        lastName, 
+        emailAddress, 
+        address, 
+        contactNumber,
+        farm,);
+        break;
+      }
+      
+  }
+
+  Future<String?> validateInputFromServer(
+    String username,
+  ) async {
+    List<User> takenUsernames = [];
+    takenUsernames = UserData.getAllUsers();
+    for(var i = 0; i < takenUsernames.length; i++){
+      if((takenUsernames[i].username).contains(username)){
+        return 'Username \'$username\' is already taken';
+      }
+    }
+    return null;
+  }
 }

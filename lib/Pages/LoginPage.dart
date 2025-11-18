@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:email_validator/email_validator.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/WelcomeText.dart';
 import 'package:bukidlink/Widgets/SignupandLogin/LoginorSigninButton.dart';
 import 'package:bukidlink/Widgets/SignupandLogin/UsernameField.dart';
 import 'package:bukidlink/Widgets/SignupandLogin/PasswordField.dart';
-import 'package:bukidlink/Utils/FormValidator.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
 import 'package:bukidlink/Pages/LoadingPage.dart';
 import 'package:bukidlink/Pages/SignUpPage.dart';
 import 'package:bukidlink/Widgets/ForgotPassword.dart';
 import 'package:bukidlink/Widgets/SignUpAndLogin/LoginLogo.dart';
 import 'package:bukidlink/Widgets/SignUpAndLogin/GoToSignUp.dart';
+import 'package:bukidlink/data/UserData.dart';
+import 'package:bukidlink/models/User.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -40,7 +41,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void handleLogin(BuildContext context) {
+  void handleLogin(BuildContext context) async{
     final bool isValid = formKey.currentState?.validate() ?? false;
 
     if (!isValid) {
@@ -48,18 +49,21 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     setState(() => isLoading = true);
-    // final String? errorText = await validateInputFromDatabase({
-    // });
+    final String? errorText = await validateInputFromServer(
+    usernameController.text,
+    passwordController.text);
 
-    // if(context.mounted) {
-    //   setState(() => isLoading = false);
-    //   if(errorText != null) {
-    //     setState(() {
-    //       forceErrorText = errorText;
-    //     });
-    //   }
-    // }
-    PageNavigator().goTo(context, LoadingPage());
+    if(context.mounted) {
+      setState(() => isLoading = false);
+      if(errorText != null) {
+        setState(() {
+          forceErrorText = errorText;
+        });
+      }
+      else{
+      PageNavigator().goTo(context, LoadingPage());
+    }
+    }
   }
 
   @override
@@ -97,8 +101,16 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const SizedBox(height: 20.0),
-                  UsernameField(controller: usernameController, mode: 'Login'),
-                  PasswordField(controller: passwordController, mode: 'Login'),
+                  UsernameField(
+                    controller: usernameController, 
+                    mode: 'Login',
+                    forceErrorText: forceErrorText,
+                    onChanged: onChanged,),
+                  PasswordField(
+                    controller: passwordController, 
+                    mode: 'Login', 
+                    forceErrorText: forceErrorText,
+                    onChanged: onChanged,),
                   ForgotPassword(onPressed: () => handleLogin(context)),
                   const Spacer(),
                   LoginorSigninButton(
@@ -120,26 +132,33 @@ class _LoginPageState extends State<LoginPage> {
     PageNavigator().goToAndKeep(context, SignUpPage());
   }
 
-  Widget _buildTabButton(String label, bool isActive, VoidCallback onPressed) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isActive ? Colors.green : Colors.white,
-        foregroundColor: isActive ? Colors.white : Colors.green[800],
-        minimumSize: const Size(100, 35),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      onPressed: onPressed,
-      child: Text(label),
-    );
-  }
-
   void goBack(BuildContext context) {
     PageNavigator().goBack(context);
   }
 
+String hashPassword(String password){
+    final bytes = utf8.encode(password);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+  
   Future<String?> validateInputFromServer(
-    String emailAddress,
-    String address,
-    String contactNumber,
-  ) async {}
+    String username,
+    String password
+  ) async {
+    final String hashedPassword = hashPassword(password);
+    List<User> existingUser = [];
+    existingUser = UserData.getAllUsers();
+    for(var i = 0; i < existingUser.length; i++){
+      if((existingUser[i].username).contains(username)){
+        if((existingUser[i].password).contains(hashedPassword)){
+          return null;
+        }
+        else{
+          return 'Incorrect Username or Password';
+        }
+      }
+    }
+    return 'Username does not exist!';
+  }
 }
