@@ -6,8 +6,11 @@ import 'package:bukidlink/widgets/farmer/FarmerAppBar.dart';
 import 'package:bukidlink/widgets/farmer/FarmerBottomNavBar.dart';
 import 'package:bukidlink/widgets/farmer/StoreProductCard.dart';
 import 'package:bukidlink/widgets/farmer/SoldOutProductCard.dart';
+import 'package:bukidlink/widgets/farmer/TradeOfferCard.dart';
 import 'package:bukidlink/data/ProductData.dart';
+import 'package:bukidlink/data/TradeOfferData.dart';
 import 'package:bukidlink/models/Product.dart';
+import 'package:bukidlink/models/TradeOffer.dart';
 
 class FarmerStorePage extends StatefulWidget {
   const FarmerStorePage({super.key});
@@ -29,7 +32,7 @@ class _FarmerStorePageState extends State<FarmerStorePage>
       .where((p) => p.availability == 'Out of Stock')
       .toList();
 
-  List<Product> get _tradesProducts => []; // TODO: Implement trades feature
+  List<TradeOffer> get _tradeOffers => TradeOfferData.getPendingTradeOffers();
 
   // ON SALE
   // Calculate sold count based on stock difference (mock calculation)
@@ -175,7 +178,7 @@ class _FarmerStorePageState extends State<FarmerStorePage>
                           children: [
                             const Text('Trades'),
                             const SizedBox(width: 4),
-                            Text('(${_tradesProducts.length})'),
+                            Text('(${_tradeOffers.length})'),
                           ],
                         ),
                       ),
@@ -298,24 +301,45 @@ class _FarmerStorePageState extends State<FarmerStorePage>
   }
 
   Widget _buildTradesList() {
-    if (_tradesProducts.isEmpty) {
+    if (_tradeOffers.isEmpty) {
       return _buildEmptyState('No trades yet');
     }
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _tradesProducts.length,
+      itemCount: _tradeOffers.length,
       itemBuilder: (context, index) {
-        final product = _tradesProducts[index];
-        final soldCount = _getSoldCount(product);
+        final offer = _tradeOffers[index];
 
-        return StoreProductCard(
-          product: product,
-          stockSold: soldCount,
-          onEdit: () => _handleEditProduct(product),
-          onRemove: () => _handleRemoveProduct(product),
+        return TradeOfferCard(
+          myProduct: offer.myProduct,
+          offerProduct: offer.offerProduct,
+          myQuantity: offer.myQuantity,
+          offerQuantity: offer.offerQuantity,
+          onAccept: () => _handleAcceptTrade(offer),
+          onDecline: () => _handleDeclineTrade(offer),
         );
       },
+    );
+  }
+
+  void _handleAcceptTrade(TradeOffer offer) {
+    // TODO: Implement accept trade logic
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Accepted trade: ${offer.myProduct.name} for ${offer.offerProduct.name}'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _handleDeclineTrade(TradeOffer offer) {
+    // TODO: Implement decline trade logic
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Declined trade: ${offer.myProduct.name} for ${offer.offerProduct.name}'),
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 
