@@ -43,6 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
 BOTTOM_NAV_UPDATE.md
 HOMEPAGE_IMPLEMENTATION.md
 CATEGORY_NAVIGATOR_GUIDE.md

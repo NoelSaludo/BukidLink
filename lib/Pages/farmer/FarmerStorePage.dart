@@ -5,6 +5,7 @@ import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/farmer/FarmerAppBar.dart';
 import 'package:bukidlink/widgets/farmer/FarmerBottomNavBar.dart';
 import 'package:bukidlink/widgets/farmer/StoreProductCard.dart';
+import 'package:bukidlink/widgets/farmer/SoldOutProductCard.dart';
 import 'package:bukidlink/data/ProductData.dart';
 import 'package:bukidlink/models/Product.dart';
 
@@ -30,16 +31,39 @@ class _FarmerStorePageState extends State<FarmerStorePage>
 
   List<Product> get _tradesProducts => []; // TODO: Implement trades feature
 
+  // ON SALE
   // Calculate sold count based on stock difference (mock calculation)
   int _getSoldCount(Product product) {
     // return a mock value based on product ID
     final mockSales = {
+      '3': 30,  // Strawberry - sold out
       '7': 15,  // Carrots
       '8': 10,  // Eggplant
-      '9': 25,  // Broccoli
+      '9': 50,  // Broccoli - sold out
       '10': 8,  // Potato
+      '23': 15, // Rabbit Meat - sold out
     };
     return mockSales[product.id] ?? 0;
+  }
+
+  // SOLD OUT
+  // Calculate total earnings for a sold out product
+  double _getTotalEarnings(Product product) {
+    final soldCount = _getSoldCount(product);
+    return product.price * soldCount;
+  }
+
+  // Get rating for sold out products (mock data)
+  double _getProductRating(Product product) {
+    final mockRatings = {
+      '3': 4.5,    // Strawberry
+      '7': 4.0,    // Carrots
+      '8': 5.0,    // Eggplant
+      '9': 4.5,    // Broccoli
+      '10': 4.5,   // Potato
+      '23': 4.0,   // Rabbit Meat
+    };
+    return mockRatings[product.id] ?? product.rating ?? 0.0;
   }
 
   @override
@@ -211,11 +235,11 @@ class _FarmerStorePageState extends State<FarmerStorePage>
               controller: _tabController,
               children: [
                 // On Sale Tab
-                _buildProductList(_onSaleProducts),
+                _buildOnSaleList(),
                 // Sold Out Tab
-                _buildProductList(_soldOutProducts),
+                _buildSoldOutList(),
                 // Trades Tab
-                _buildProductList(_tradesProducts),
+                _buildTradesList(),
               ],
             ),
           ),
@@ -227,34 +251,16 @@ class _FarmerStorePageState extends State<FarmerStorePage>
     );
   }
 
-  Widget _buildProductList(List<Product> products) {
-    if (products.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.inventory_2_outlined,
-              size: 64,
-              color: AppColors.TEXT_SECONDARY.withOpacity(0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No products yet',
-              style: AppTextStyles.FARMER_EMPTY_STATE.copyWith(
-                color: AppColors.TEXT_SECONDARY.withOpacity(0.7),
-              ),
-            ),
-          ],
-        ),
-      );
+  Widget _buildOnSaleList() {
+    if (_onSaleProducts.isEmpty) {
+      return _buildEmptyState('No products on sale');
     }
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: products.length,
+      itemCount: _onSaleProducts.length,
       itemBuilder: (context, index) {
-        final product = products[index];
+        final product = _onSaleProducts[index];
         final soldCount = _getSoldCount(product);
 
         return StoreProductCard(
@@ -264,6 +270,74 @@ class _FarmerStorePageState extends State<FarmerStorePage>
           onRemove: () => _handleRemoveProduct(product),
         );
       },
+    );
+  }
+
+  Widget _buildSoldOutList() {
+    if (_soldOutProducts.isEmpty) {
+      return _buildEmptyState('No sold out products');
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _soldOutProducts.length,
+      itemBuilder: (context, index) {
+        final product = _soldOutProducts[index];
+        final soldCount = _getSoldCount(product);
+        final rating = _getProductRating(product);
+        final totalEarnings = _getTotalEarnings(product);
+
+        return SoldOutProductCard(
+          product: product,
+          soldCount: soldCount,
+          rating: rating,
+          totalEarnings: totalEarnings,
+        );
+      },
+    );
+  }
+
+  Widget _buildTradesList() {
+    if (_tradesProducts.isEmpty) {
+      return _buildEmptyState('No trades yet');
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _tradesProducts.length,
+      itemBuilder: (context, index) {
+        final product = _tradesProducts[index];
+        final soldCount = _getSoldCount(product);
+
+        return StoreProductCard(
+          product: product,
+          stockSold: soldCount,
+          onEdit: () => _handleEditProduct(product),
+          onRemove: () => _handleRemoveProduct(product),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.inventory_2_outlined,
+            size: 64,
+            color: AppColors.TEXT_SECONDARY.withOpacity(0.5),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: AppTextStyles.FARMER_EMPTY_STATE.copyWith(
+              color: AppColors.TEXT_SECONDARY.withOpacity(0.7),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
