@@ -5,6 +5,8 @@ import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
 import 'package:bukidlink/widgets/common/CartIconWithBadge.dart';
 import 'package:bukidlink/pages/CartPage.dart';
+import 'package:bukidlink/pages/AccountPage.dart';
+import 'package:bukidlink/data/UserData.dart';
 
 class CategoryAppBar extends StatelessWidget {
   final String categoryName;
@@ -81,23 +83,25 @@ class CategoryAppBar extends StatelessWidget {
               const SizedBox(width: 8),
 
               // Profile Icon
-              GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  // Navigate to profile
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.person_outline,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+              IconButton(
+                icon: const Icon(
+                  Icons.person_outline,
+                  color: Colors.white,
+                  size: 24,
                 ),
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AccountPage(
+                        currentUser: UserData.getAllUsers().isNotEmpty
+                            ? UserData.getAllUsers()[0]
+                            : null,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),

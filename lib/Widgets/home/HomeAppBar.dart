@@ -4,6 +4,8 @@ import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/common/CartIconWithBadge.dart';
 import 'package:bukidlink/Pages/InboxPage.dart';
+import 'package:bukidlink/Pages/AccountPage.dart';
+import 'package:bukidlink/data/UserData.dart';
 
 class HomeAppBar extends StatelessWidget {
   final VoidCallback? onCartPressed;
@@ -75,7 +77,16 @@ class HomeAppBar extends StatelessWidget {
                     ),
                     onPressed: () {
                       HapticFeedback.lightImpact();
-                      print("Profile tapped");
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AccountPage(
+                            currentUser: UserData.getAllUsers().isNotEmpty 
+                                ? UserData.getAllUsers()[0] 
+                                : null,
+                          ),
+                        ),
+                      );
                     },
                   ),
                 ],
