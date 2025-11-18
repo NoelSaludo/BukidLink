@@ -417,8 +417,93 @@ class AppTextStyles {
     color: Colors.white,
   );
 
-}
+  // ----------------------------
+  // Farmer Store Page Text Styles
+  // ----------------------------
+  
+  // Bottom Navigation
+  static const TextStyle FARMER_NAV_SELECTED = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    color: Colors.white,
+  );
 
+  static const TextStyle FARMER_NAV_UNSELECTED = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontSize: 10,
+    fontWeight: FontWeight.w500,
+    color: Colors.white,
+  );
+
+  // Tab Labels
+  static const TextStyle FARMER_TAB_LABEL = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: Colors.white,
+  );
+
+  static const TextStyle FARMER_TAB_LABEL_UNSELECTED = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: Colors.white,
+  );
+
+  // Sell Product Button
+  static const TextStyle SELL_PRODUCT_BUTTON = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: Colors.white,
+  );
+
+  // Product Card
+  static const TextStyle STORE_PRODUCT_NAME = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    color: AppColors.DARK_TEXT,
+  );
+
+  static const TextStyle STORE_PRODUCT_PRICE = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: AppColors.DARK_TEXT,
+  );
+
+  static const TextStyle STORE_PRODUCT_INFO_LABEL = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    color: AppColors.TEXT_SECONDARY,
+  );
+
+  static const TextStyle STORE_PRODUCT_RATING = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    color: AppColors.DARK_TEXT,
+  );
+
+  static const TextStyle STORE_ACTION_BUTTON = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.DARK_TEXT,
+  );
+
+  // Empty State
+  static const TextStyle FARMER_EMPTY_STATE = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    color: AppColors.TEXT_SECONDARY,
+  );
+
+}
 
 
 

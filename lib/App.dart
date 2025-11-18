@@ -3,6 +3,7 @@ import 'package:bukidlink/Pages/LoginPage.dart';
 import 'package:bukidlink/Pages/HomePage.dart';
 import 'package:bukidlink/Pages/ProfilePage.dart';
 import 'package:bukidlink/Pages/MessagePage.dart';
+import 'package:bukidlink/pages/farmer/FarmerStorePage.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -14,7 +15,8 @@ class App extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
       ),
-      home: LoginPage(),
+      //home const LoginPage(),
+      home: const FarmerStorePage(), // comment this line to test other consumer pages
       routes: {
     // Add any simple, argument-free routes here
     // '/message': (context) => const MessagePage(),
