@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
-import 'package:bukidlink/widgets/account/EditableTextField.dart';
-import 'package:bukidlink/utils/FormValidator.dart';
+import 'package:bukidlink/widgets/common/ProfileImageWidget.dart';
 import 'package:bukidlink/models/User.dart';
-import 'package:bukidlink/widgets/CustomBackButton.dart';
+import 'package:bukidlink/services/ImagePickerService.dart';
+import 'package:bukidlink/pages/MyAddressPage.dart';
+import 'package:bukidlink/pages/AccountSecurityPage.dart';
+import 'package:bukidlink/pages/EditProfilePage.dart';
 
 class AccountPage extends StatefulWidget {
   final User? currentUser;
@@ -21,6 +23,7 @@ class AccountPage extends StatefulWidget {
 
 class _AccountPageState extends State<AccountPage> {
   final _formKey = GlobalKey<FormState>();
+  final ImagePickerService _imagePickerService = ImagePickerService();
   
   // Controllers for editable fields
   late TextEditingController _usernameController;
@@ -31,6 +34,7 @@ class _AccountPageState extends State<AccountPage> {
   late TextEditingController _contactNumberController;
   
   String? _profilePicUrl;
+  bool _isImageUpdated = false;
 
   @override
   void initState() {
@@ -60,32 +64,58 @@ class _AccountPageState extends State<AccountPage> {
     super.dispose();
   }
 
-  void _handleImagePicker() {
-    // TODO: Implement image picker functionality
+  Future<void> _handleImagePicker() async {
     HapticFeedback.lightImpact();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Change Profile Picture'),
-        content: const Text('Image picker will be implemented here.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'OK',
-              style: TextStyle(color: AppColors.primaryGreen),
+    
+    final String? imagePath = await _imagePickerService.showImageSourceBottomSheet(context);
+    
+    if (imagePath != null) {
+      // Save the image to app directory
+      final String? savedPath = await _imagePickerService.saveImageToAppDirectory(imagePath);
+      
+      if (savedPath != null) {
+        setState(() {
+          _profilePicUrl = savedPath;
+          _isImageUpdated = true;
+        });
+        
+        HapticFeedback.mediumImpact();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Profile picture updated successfully!'),
+              backgroundColor: AppColors.primaryGreen,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
             ),
-          ),
-        ],
-      ),
-    );
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to save image. Please try again.'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    }
   }
 
   void _saveChanges() {
     if (_formKey.currentState?.validate() ?? false) {
       HapticFeedback.mediumImpact();
       // TODO: Save changes to backend/database
+      // This would include saving the new profile picture path
+      
+      if (_isImageUpdated) {
+        // Profile picture was updated
+        debugPrint('New profile picture path: $_profilePicUrl');
+      }
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -170,7 +200,8 @@ class _AccountPageState extends State<AccountPage> {
             Positioned(
               top: 40,
               left: 8,
-              child: CustomBackButton(
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () {
                   HapticFeedback.lightImpact();
                   Navigator.pop(context);
@@ -185,59 +216,15 @@ class _AccountPageState extends State<AccountPage> {
               right: 0,
               child: Column(
                 children: [
-                  // Profile Image
-                  GestureDetector(
+                  // Profile Image with new ProfileImageWidget
+                  ProfileImageWidget(
+                    imageUrl: _isImageUpdated ? _profilePicUrl : profileImage,
+                    size: 100,
+                    showBorder: true,
+                    borderColor: Colors.white,
+                    borderWidth: 4,
+                    showEditBadge: true,
                     onTap: _handleImagePicker,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 4),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        children: [
-                          ClipOval(
-                            child: Container(
-                              width: 100,
-                              height: 100,
-                              color: Colors.white,
-                              child: profileImage.isNotEmpty
-                                  ? Image.asset(
-                                      profileImage,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return _buildDefaultAvatar();
-                                      },
-                                    )
-                                  : _buildDefaultAvatar(),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: AppColors.ACCENT_LIME,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
-                              ),
-                              child: const Icon(
-                                Icons.camera_alt,
-                                size: 16,
-                                color: AppColors.DARK_TEXT,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                   const SizedBox(height: 16),
                   
@@ -272,19 +259,6 @@ class _AccountPageState extends State<AccountPage> {
     );
   }
 
-  Widget _buildDefaultAvatar() {
-    return Container(
-      color: AppColors.ACCENT_LIME.withOpacity(0.3),
-      child: const Center(
-        child: Icon(
-          Icons.person,
-          size: 50,
-          color: AppColors.primaryGreen,
-        ),
-      ),
-    );
-  }
-
   Widget _buildAccountContent() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -302,14 +276,34 @@ class _AccountPageState extends State<AccountPage> {
               _buildMenuItem(
                 icon: Icons.location_on_outlined,
                 title: 'My Address',
-                subtitle: widget.currentUser?.address ?? 'Not set',
-                onTap: () => _showInfoDialog('My Address', 'Address management coming soon'),
+                subtitle: widget.currentUser?.address,
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MyAddressPage(
+                        currentAddress: _addressController.text,
+                      ),
+                    ),
+                  );
+                },
               ),
               _buildDivider(),
               _buildMenuItem(
-                icon: Icons.security_outlined,
+                icon: Icons.security,
                 title: 'Account Security',
-                onTap: () => _showInfoDialog('Account Security', 'Security settings coming soon'),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AccountSecurityPage(
+                        currentPassword: _passwordController.text,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -352,6 +346,13 @@ class _AccountPageState extends State<AccountPage> {
                 icon: Icons.info_outline,
                 title: 'About',
                 onTap: () => _showAboutDialog(),
+              ),
+              _buildDivider(),
+              _buildMenuItem(
+                icon: Icons.delete_forever_outlined,
+                title: 'Delete Account',
+                titleColor: AppColors.ERROR_RED,
+                onTap: () => _showDeleteAccountDialog(),
               ),
               _buildDivider(),
               _buildMenuItem(
@@ -488,12 +489,10 @@ class _AccountPageState extends State<AccountPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => _EditProfilePage(
+        builder: (context) => EditProfilePage(
           usernameController: _usernameController,
           firstNameController: _firstNameController,
           lastNameController: _lastNameController,
-          passwordController: _passwordController,
-          addressController: _addressController,
           contactNumberController: _contactNumberController,
           profilePicUrl: _profilePicUrl,
           onImagePick: _handleImagePicker,
@@ -655,389 +654,134 @@ class _AccountPageState extends State<AccountPage> {
       ),
     );
   }
-}
 
-// Edit Profile Page as a separate widget
-class _EditProfilePage extends StatefulWidget {
-  final TextEditingController usernameController;
-  final TextEditingController firstNameController;
-  final TextEditingController lastNameController;
-  final TextEditingController passwordController;
-  final TextEditingController addressController;
-  final TextEditingController contactNumberController;
-  final String? profilePicUrl;
-  final VoidCallback onImagePick;
-  final VoidCallback onSave;
-
-  const _EditProfilePage({
-    required this.usernameController,
-    required this.firstNameController,
-    required this.lastNameController,
-    required this.passwordController,
-    required this.addressController,
-    required this.contactNumberController,
-    this.profilePicUrl,
-    required this.onImagePick,
-    required this.onSave,
-  });
-
-  @override
-  State<_EditProfilePage> createState() => _EditProfilePageState();
-}
-
-class _EditProfilePageState extends State<_EditProfilePage> {
-  final _formKey = GlobalKey<FormState>();
-  bool _isPasswordVisible = false;
-
-  String? _validateUsername(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Username is required';
-    }
-    if (value.contains(' ')) {
-      return 'Username cannot contain spaces';
-    }
-    if (value.length < 3) {
-      return 'Username must be at least 3 characters';
-    }
-    return null;
-  }
-
-  String? _validateContactNumber(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Contact number is required';
-    }
-    if (value.length < 10) {
-      return 'Please enter a valid contact number';
-    }
-    return null;
-  }
-
-  void _handleSave() {
-    if (_formKey.currentState?.validate() ?? false) {
-      HapticFeedback.mediumImpact();
-      widget.onSave();
-      Navigator.pop(context);
-    } else {
-      HapticFeedback.heavyImpact();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final String profileImage = widget.profilePicUrl != null 
-        ? 'assets/images/${widget.profilePicUrl}'
-        : '';
-        
-    return Scaffold(
-      backgroundColor: AppColors.backgroundYellow,
-      body: Form(
-        key: _formKey,
-        child: CustomScrollView(
-          slivers: [
-            // Profile Picture Header
-            SliverToBoxAdapter(
-              child: Container(
-                height: 240,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      AppColors.HEADER_GRADIENT_START,
-                      AppColors.HEADER_GRADIENT_END,
-                    ],
-                  ),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(24),
-                    bottomRight: Radius.circular(24),
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      top: 40,
-                      left: 8,
-                      child: CustomBackButton(
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ),
-                    Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 40),
-                          const Text(
-                            'Edit Profile',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              fontFamily: 'Outfit',
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          GestureDetector(
-                            onTap: widget.onImagePick,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 4),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Stack(
-                                children: [
-                                  ClipOval(
-                                    child: Container(
-                                      width: 100,
-                                      height: 100,
-                                      color: Colors.white,
-                                      child: profileImage.isNotEmpty
-                                          ? Image.asset(
-                                              profileImage,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (context, error, stackTrace) {
-                                                return _buildDefaultAvatar();
-                                              },
-                                            )
-                                          : _buildDefaultAvatar(),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    bottom: 0,
-                                    right: 0,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.ACCENT_LIME,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: Colors.white, width: 2),
-                                      ),
-                                      child: const Icon(
-                                        Icons.camera_alt,
-                                        size: 18,
-                                        color: AppColors.DARK_TEXT,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Tap to change photo',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
-                              fontSize: 13,
-                              fontFamily: 'Outfit',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+  void _showDeleteAccountDialog() {
+    HapticFeedback.heavyImpact();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.warning_rounded, color: AppColors.ERROR_RED),
+            const SizedBox(width: 8),
+            const Text('Delete Account'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Are you sure you want to delete your account?',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            
-            // Form Fields
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildFormSection(
-                      title: 'Account Information',
-                      children: [
-                        EditableTextField(
-                          label: 'Username (no spaces allowed)',
-                          controller: widget.usernameController,
-                          validator: _validateUsername,
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: EditableTextField(
-                                label: 'First Name',
-                                controller: widget.firstNameController,
-                                validator: FormValidator().nameValidator,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: EditableTextField(
-                                label: 'Last Name',
-                                controller: widget.lastNameController,
-                                validator: FormValidator().nameValidator,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    _buildFormSection(
-                      title: 'Security',
-                      children: [
-                        EditableTextField(
-                          label: 'Password',
-                          controller: widget.passwordController,
-                          obscureText: !_isPasswordVisible,
-                          validator: FormValidator().signupPasswordValidator,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _isPasswordVisible
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              color: AppColors.TEXT_SECONDARY,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _isPasswordVisible = !_isPasswordVisible;
-                              });
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    _buildFormSection(
-                      title: 'Contact Information',
-                      children: [
-                        EditableTextField(
-                          label: 'Address',
-                          controller: widget.addressController,
-                          validator: FormValidator().nameValidator,
-                          maxLines: 3,
-                        ),
-                        const SizedBox(height: 16),
-                        EditableTextField(
-                          label: 'Contact Number',
-                          controller: widget.contactNumberController,
-                          validator: _validateContactNumber,
-                          keyboardType: TextInputType.phone,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    
-                    // Save Button
-                    ElevatedButton(
-                      onPressed: _handleSave,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryGreen,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 2,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.check_circle_outline, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Save Changes',
-                            style: AppTextStyles.BUTTON_TEXT.copyWith(fontSize: 16),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    
-                    // Cancel Button
-                    OutlinedButton(
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.pop(context);
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.DARK_TEXT,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        side: BorderSide(
-                          color: AppColors.BORDER_GREY.withOpacity(0.3),
-                          width: 1.5,
-                        ),
-                      ),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.ERROR_RED.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.ERROR_RED.withOpacity(0.3),
+                  width: 1,
                 ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'This action cannot be undone:',
+                    style: TextStyle(
+                      color: AppColors.ERROR_RED,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildWarningItem('All your personal data will be deleted'),
+                  _buildWarningItem('Your order history will be lost'),
+                  _buildWarningItem('You will lose access to all saved addresses'),
+                  _buildWarningItem('Your account cannot be recovered'),
+                ],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildDefaultAvatar() {
-    return Container(
-      color: AppColors.ACCENT_LIME.withOpacity(0.3),
-      child: const Center(
-        child: Icon(
-          Icons.person,
-          size: 50,
-          color: AppColors.primaryGreen,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFormSection({
-    required String title,
-    required List<Widget> children,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: AppColors.primaryGreen,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Implement account deletion logic
+              HapticFeedback.heavyImpact();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: const [
+                      Icon(Icons.info_outline, color: Colors.white),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Account deletion request submitted'),
+                      ),
+                    ],
+                  ),
+                  backgroundColor: AppColors.ERROR_RED,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  margin: const EdgeInsets.all(16),
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            },
+            child: Text(
+              'Delete Account',
+              style: TextStyle(
+                color: AppColors.ERROR_RED,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),
-      child: Column(
+    );
+  }
+
+  Widget _buildWarningItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6.0),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: AppTextStyles.SECTION_TITLE.copyWith(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
+          Icon(
+            Icons.close,
+            size: 16,
+            color: AppColors.ERROR_RED,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 12,
+                height: 1.3,
+              ),
             ),
           ),
-          const SizedBox(height: 16),
-          ...children,
         ],
       ),
     );
