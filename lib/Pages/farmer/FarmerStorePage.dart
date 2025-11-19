@@ -12,6 +12,7 @@ import 'package:bukidlink/data/TradeOfferData.dart';
 import 'package:bukidlink/models/Product.dart';
 import 'package:bukidlink/models/TradeOffer.dart';
 import 'package:bukidlink/pages/farmer/SellPage.dart';
+import 'package:bukidlink/pages/farmer/EditPage.dart';
 
 class FarmerStorePage extends StatefulWidget {
   const FarmerStorePage({super.key});
@@ -83,11 +84,10 @@ class _FarmerStorePageState extends State<FarmerStorePage>
   }
 
   void _handleEditProduct(Product product) {
-    // TODO: Navigate to edit product page
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Edit ${product.name}'),
-        duration: const Duration(seconds: 1),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditPage(product: product),
       ),
     );
   }
