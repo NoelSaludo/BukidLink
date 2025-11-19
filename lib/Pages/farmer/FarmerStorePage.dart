@@ -11,6 +11,7 @@ import 'package:bukidlink/data/ProductData.dart';
 import 'package:bukidlink/data/TradeOfferData.dart';
 import 'package:bukidlink/models/Product.dart';
 import 'package:bukidlink/models/TradeOffer.dart';
+import 'package:bukidlink/pages/farmer/SellPage.dart';
 
 class FarmerStorePage extends StatefulWidget {
   const FarmerStorePage({super.key});
@@ -102,11 +103,11 @@ class _FarmerStorePageState extends State<FarmerStorePage>
   }
 
   void _handleSellProduct() {
-    // TODO: Navigate to add product page
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Add new product'),
-        duration: Duration(seconds: 1),
+    // Navigate to Sell Page
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SellPage(),
       ),
     );
   }
