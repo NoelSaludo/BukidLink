@@ -45,8 +45,8 @@ class ProductData {
       rating: 4.7,
       unit: 'kg',
       reviewCount: 18,
-      availability: 'Limited',
-      stockCount: 25,
+      availability: 'Out of Stock',
+      stockCount: 0,
     ),
     Product(
       id: '4',
@@ -134,8 +134,8 @@ class ProductData {
       rating: 4.6,
       unit: 'kg',
       reviewCount: 15,
-      availability: 'Limited',
-      stockCount: 30,
+      availability: 'Out of Stock',
+      stockCount: 0,
     ),
     Product(
       id: '10',
@@ -348,8 +348,8 @@ class ProductData {
       rating: 4.3,
       unit: 'kg',
       reviewCount: 14,
-      availability: 'Limited',
-      stockCount: 18,
+      availability: 'Out of Stock',
+      stockCount: 0,
     ),
     Product(
       id: '24',
