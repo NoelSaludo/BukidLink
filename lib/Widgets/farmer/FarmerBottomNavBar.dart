@@ -4,6 +4,9 @@ import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
 import 'package:bukidlink/pages/farmer/FarmerStorePage.dart';
+import 'package:bukidlink/pages/farmer/TradePage.dart';
+import 'package:bukidlink/pages/farmer/NewsfeedPage.dart';
+import 'package:bukidlink/pages/farmer/OrderManagementPage.dart';
 
 class FarmerBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -23,16 +26,13 @@ class FarmerBottomNavBar extends StatelessWidget {
         page = const FarmerStorePage();
         break;
       case 1:
-        // TODO: Implement Trade Page
-        page = const FarmerStorePage(); // Placeholder
+        page = TradePage();
         break;
       case 2:
-        // TODO: Implement News Feed Page
-        page = const FarmerStorePage(); // Placeholder
+        page = NewsfeedPage();
         break;
       case 3:
-        // TODO: Implement Order Management Page
-        page = const FarmerStorePage(); // Placeholder
+        page = OrderManagementPage();
         break;
       default:
         page = const FarmerStorePage();
