@@ -15,40 +15,38 @@ class App extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
       ),
-      home: const LoginPage(),
-      //home: const FarmerStorePage(), // remove this line after testing or to access the farm store page directly
+      //home: const LoginPage(),
+      home:
+          const FarmerStorePage(), // remove this line after testing or to access the farm store page directly
       routes: {
-    // Add any simple, argument-free routes here
-    // '/message': (context) => const MessagePage(),
-  },
+        // Add any simple, argument-free routes here
+        // '/message': (context) => const MessagePage(),
+      },
 
-  // Dynamic route handler
-  onGenerateRoute: (settings) {
-    if (settings.name == '/profile') {
-      final args = settings.arguments;
-      if (args is String) {
-        return MaterialPageRoute(
-          builder: (context) => ProfilePage(profileID: args),
-        );
-      } else {
-        // Fallback for missing or invalid arguments
-        return MaterialPageRoute(
-          builder: (context) => const Scaffold(
-            body: Center(
-              child: Text('Invalid or missing profile ID'),
-            ),
-          ),
-        );
-      }
-    }
+      // Dynamic route handler
+      onGenerateRoute: (settings) {
+        if (settings.name == '/profile') {
+          final args = settings.arguments;
+          if (args is String) {
+            return MaterialPageRoute(
+              builder: (context) => ProfilePage(profileID: args),
+            );
+          } else {
+            // Fallback for missing or invalid arguments
+            return MaterialPageRoute(
+              builder: (context) => const Scaffold(
+                body: Center(child: Text('Invalid or missing profile ID')),
+              ),
+            );
+          }
+        }
 
-    // Fallback for unknown routes
-    return MaterialPageRoute(
-      builder: (context) => const Scaffold(
-        body: Center(child: Text('Page not found')),
-      ),
-    );
-  },
+        // Fallback for unknown routes
+        return MaterialPageRoute(
+          builder: (context) =>
+              const Scaffold(body: Center(child: Text('Page not found'))),
+        );
+      },
     );
   }
 }
