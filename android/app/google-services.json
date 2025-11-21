@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "774780104370",
+    "project_id": "bukidlink-e85f7",
+    "storage_bucket": "bukidlink-e85f7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:774780104370:android:cd7faa74fc3528e06063ab",
+        "android_client_info": {
+          "package_name": "com.example.bukidlink"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "774780104370-ud9fhqsni7gm0teanf8b6ncq0nido7lt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.bukidlink",
+            "certificate_hash": "9233c44372de16cf4dd7b347cc6afc35787ceaaa"
+          }
+        },
+        {
+          "client_id": "774780104370-puug8e1ltv5kfa64ig7oq04i5galnfgs.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBqSo2T0zWgCA-U7_IkLeSXS3T9DV6-vsY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "774780104370-jbaqhnufj01kf1n28pojgcekf2ni9g3g.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "774780104370-40ksqrid7mrp14cit3bsv90r7o12tpcc.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.bukidlink"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
