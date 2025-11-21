@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/Utils/FormValidator.dart';
 
-class UsernameField extends StatelessWidget {
+class EmailField extends StatelessWidget {
   final TextEditingController controller;
   final String mode;
   final String? forceErrorText;
   final ValueChanged<String> onChanged;
-  const UsernameField({
+  const EmailField({
     super.key,
     required this.controller,
     required this.mode,
@@ -24,7 +24,7 @@ class UsernameField extends StatelessWidget {
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.grey[50],
-            labelText: 'Username or Email',
+            labelText: 'Email',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20.0),
               borderSide: BorderSide(color: Colors.blue, width: 2.0),
@@ -37,7 +37,7 @@ class UsernameField extends StatelessWidget {
           ),
           style: TextStyle(fontSize: 20.0),
           controller: controller,
-          validator: FormValidator().loginUsernameValidator,
+          validator: FormValidator().loginEmailValildator,
           onChanged: onChanged,
           forceErrorText: forceErrorText,
         ),

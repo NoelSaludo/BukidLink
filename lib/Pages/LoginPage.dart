@@ -8,11 +8,8 @@ import 'package:bukidlink/Pages/SignUpPage.dart';
 import 'package:bukidlink/Widgets/ForgotPassword.dart';
 import 'package:bukidlink/Widgets/SignUpAndLogin/LoginLogo.dart';
 import 'package:bukidlink/Widgets/SignUpAndLogin/GoToSignUp.dart';
-import 'package:bukidlink/data/UserData.dart';
-import 'package:bukidlink/models/User.dart';
-import 'package:crypto/crypto.dart';
-import 'dart:convert';
 import 'package:bukidlink/services/google_auth.dart';
+import 'package:bukidlink/services/UserService.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -22,24 +19,16 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  String? forceErrorText;
   bool isLoading = false;
 
+  @override
   void dispose() {
-    usernameController.dispose();
+    emailController.dispose();
     passwordController.dispose();
     super.dispose();
-  }
-
-  void onChanged(String value) {
-    if (forceErrorText != null) {
-      setState(() {
-        forceErrorText = null;
-      });
-    }
   }
 
   // Handler for signing in with Google using the existing FirebaseService
@@ -68,7 +57,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void handleLogin(BuildContext context) async{
+  void handleLogin(BuildContext context) async {
     final bool isValid = formKey.currentState?.validate() ?? false;
 
     if (!isValid) {
@@ -76,20 +65,25 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     setState(() => isLoading = true);
-    final String? errorText = await validateInputFromServer(
-    usernameController.text,
-    passwordController.text);
 
-    if(context.mounted) {
-      setState(() => isLoading = false);
-      if(errorText != null) {
+    try {
+      // Use UserService to login with Firebase Auth
+      await UserService().loginUser(
+        emailController.text.trim(),
+        passwordController.text,
+      );
+
+      if (context.mounted) {
+        setState(() => isLoading = false);
+        PageNavigator().goTo(context, LoadingPage());
+      }
+    } catch (e) {
+      if (context.mounted) {
+        setState(() => isLoading = false);
         setState(() {
-          forceErrorText = errorText;
+          // forceErrorText = 'Incorrect Username or Password';
         });
       }
-      else{
-      PageNavigator().goTo(context, LoadingPage());
-    }
     }
   }
 
@@ -128,16 +122,18 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const SizedBox(height: 20.0),
-                  UsernameField(
-                    controller: usernameController,
+                  EmailField(
+                    controller: emailController,
                     mode: 'Login',
-                    forceErrorText: forceErrorText,
-                    onChanged: onChanged,),
+                    forceErrorText: null,
+                    onChanged: (_) {},
+                  ),
                   PasswordField(
                     controller: passwordController,
                     mode: 'Login',
-                    forceErrorText: forceErrorText,
-                    onChanged: onChanged,),
+                    forceErrorText: null,
+                    onChanged: (_) {},
+                  ),
                   ForgotPassword(onPressed: () => handleLogin(context)),
                   const Spacer(),
                   LoginorSigninButton(
@@ -176,31 +172,5 @@ class _LoginPageState extends State<LoginPage> {
 
   void goBack(BuildContext context) {
     PageNavigator().goBack(context);
-  }
-
-String hashPassword(String password){
-    final bytes = utf8.encode(password);
-    final digest = sha256.convert(bytes);
-    return digest.toString();
-  }
-  
-  Future<String?> validateInputFromServer(
-    String username,
-    String password
-  ) async {
-    final String hashedPassword = hashPassword(password);
-    List<User> existingUser = [];
-    existingUser = UserData.getAllUsers();
-    for(var i = 0; i < existingUser.length; i++){
-      if((existingUser[i].username).contains(username)){
-        if((existingUser[i].password).contains(hashedPassword)){
-          return null;
-        }
-        else{
-          return 'Incorrect Username or Password';
-        }
-      }
-    }
-    return 'Username does not exist!';
   }
 }

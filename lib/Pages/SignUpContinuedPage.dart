@@ -86,7 +86,7 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
       );
 
       // Use UserService to create account and sign in
-      final userCredential = await UserService().signInWithEmailAndPassword(
+      final userCredential = await UserService().register(
           user);
 
       if (context.mounted) {
@@ -193,7 +193,7 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
                     children: [
                       // --- Input fields ---
                       const SizedBox(height: 50.0),
-                      UsernameField(
+                      EmailField(
                         controller: usernameController,
                         mode: 'SignUp',
                         forceErrorText: forceErrorText,

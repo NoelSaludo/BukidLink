@@ -133,7 +133,7 @@ class _SignUpPageState extends State<SignUpPage> {
     setState(() => isLoading = true);
     try {
       final user = _buildUserFromForm(accountType);
-      final credential = await UserService().signInWithEmailAndPassword(user);
+      final credential = await UserService().register(user);
 
       if (context.mounted) {
         setState(() => isLoading = false);

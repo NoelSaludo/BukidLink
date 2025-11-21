@@ -18,7 +18,7 @@ class FormValidator {
     return null;
   }
 
-  String? loginUsernameValidator(String? value) {
+  String? loginEmailValildator(String? value) {
     if (value == null || value.isEmpty) {
       return 'This field is required';
     }
@@ -42,6 +42,7 @@ class FormValidator {
     if (value == null || value.isEmpty) {
       return 'This field is required';
     }
+    return null;
   }
 
   String? nameValidator(String? value) {

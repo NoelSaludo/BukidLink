@@ -4,16 +4,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:bukidlink/models/User.dart';
+import 'package:flutter/material.dart';
 
 class UserService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   static final UserService _instance = UserService._internal();
   factory UserService() {return _instance;}
   UserService._internal();
-  static User? currentUser = null;
+  static User? currentUser;
 
   // Sign in with email and password
-  Future<UserCredential?> signInWithEmailAndPassword(User user) async {
+  Future<UserCredential?> register(User user) async {
     try {
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: user.emailAddress,
@@ -73,8 +74,13 @@ class UserService {
         password: password,
       );
     } on FirebaseAuthException catch (e) {
-      // Optionally handle specific error codes here.
-      rethrow;
+      if (e.code == 'user-not-found') {
+        debugPrint('No user found for that email.');
+      } else if (e.code == 'wrong-password') {
+        debugPrint('Wrong password provided for that user.');
+      } else {
+        debugPrint('Error during login: ${e.message}');
+      }
     }
   }
   // Sign out
