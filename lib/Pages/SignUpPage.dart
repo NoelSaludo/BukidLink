@@ -6,11 +6,14 @@ import 'package:bukidlink/Widgets/SignupandLogin/LastNameField.dart';
 import 'package:bukidlink/Widgets/SignupandLogin/EmailAddressField.dart';
 import 'package:bukidlink/Widgets/SignupandLogin/AddressField.dart';
 import 'package:bukidlink/Widgets/SignupandLogin/ContactNumberField.dart';
+import 'package:bukidlink/Widgets/SignupandLogin/CustomUsernameField.dart';
+import 'package:bukidlink/Widgets/SignupandLogin/CustomPasswordField.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
 import 'package:bukidlink/Widgets/CustomBackButton.dart';
-import 'package:bukidlink/Pages/SignUpContinuedPage.dart';
 import 'package:bukidlink/services/google_auth.dart';
 import 'package:bukidlink/Pages/LoadingPage.dart';
+import 'package:bukidlink/services/UserService.dart';
+import 'package:bukidlink/models/User.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -20,21 +23,29 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
+  final TextEditingController usernameController = TextEditingController();
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
   final TextEditingController emailAddressController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
   final TextEditingController contactNumberController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   String? forceErrorText;
   bool isLoading = false;
+  bool obscurePassword = true;
+  bool obscureConfirmPassword = true;
 
   void dispose() {
+    usernameController.dispose();
     firstNameController.dispose();
     lastNameController.dispose();
     emailAddressController.dispose();
     addressController.dispose();
     contactNumberController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -44,6 +55,33 @@ class _SignUpPageState extends State<SignUpPage> {
         forceErrorText = null;
       });
     }
+  }
+
+  void onUsernameChanged(String value) {
+    // Handle username changes if needed
+    onChanged(value);
+  }
+
+  void onPasswordChanged(String value) {
+    // Handle password changes if needed
+    onChanged(value);
+  }
+
+  void onConfirmPasswordChanged(String value) {
+    // Handle confirm password changes if needed
+    onChanged(value);
+  }
+
+  void togglePasswordVisibility() {
+    setState(() {
+      obscurePassword = !obscurePassword;
+    });
+  }
+
+  void toggleConfirmPasswordVisibility() {
+    setState(() {
+      obscureConfirmPassword = !obscureConfirmPassword;
+    });
   }
 
   // Handler for Google Sign-In using existing FirebaseService
@@ -72,33 +110,49 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  void handleSignUp(BuildContext context) {
-    final bool isValid = formKey.currentState?.validate() ?? false;
+  User _buildUserFromForm(String accountType) {
+    return User(
+      id: '',
+      username: usernameController.text.trim(),
+      password: passwordController.text,
+      firstName: firstNameController.text.trim(),
+      lastName: lastNameController.text.trim(),
+      emailAddress: emailAddressController.text.trim(),
+      address: addressController.text.trim(),
+      contactNumber: contactNumberController.text.trim(),
+      profilePic: '',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
 
-    if (!isValid) {
-      return;
-    }
+  void handleSignUp(BuildContext context, String accountType) async {
+    final bool isValid = formKey.currentState?.validate() ?? false;
+    if (!isValid) return;
 
     setState(() => isLoading = true);
-    // final String? errorText = await validateInputFromDatabase({
-    // });
+    try {
+      final user = _buildUserFromForm(accountType);
+      final credential = await UserService().signInWithEmailAndPassword(user);
 
-    // if(context.mounted) {
-    //   setState(() => isLoading = false);
-    //   if(errorText != null) {
-    //     setState(() {
-    //       forceErrorText = errorText;
-    //     });
-    //   }
-    // }
-    PageNavigator().goToAndKeep(
-      context, 
-      SignUpContinuedPage(
-        firstName: firstNameController.text, 
-        lastName: lastNameController.text,
-        emailAddress: emailAddressController.text, 
-        address: addressController.text, 
-        contactNumber: contactNumberController.text,));
+      if (context.mounted) {
+        setState(() => isLoading = false);
+        if (credential != null) {
+          PageNavigator().goTo(context, LoadingPage());
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Sign-up failed. Please try again.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   @override
@@ -205,85 +259,27 @@ class _SignUpPageState extends State<SignUpPage> {
                               ),
                               const SizedBox(height: 8.0),
                               ContactNumberField(controller: contactNumberController),
-                              const SizedBox(height: 12.0),
-
-                              Text(
-                                'Account Type',
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                              const SizedBox(height: 8.0),
+                              CustomUsernameField(
+                                controller: usernameController,
+                                onChanged: onUsernameChanged,
                               ),
                               const SizedBox(height: 8.0),
-                              Container(
-                                width: 220,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade300,
-                                  borderRadius: BorderRadius.circular(50),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: () => activeTab.value = 'Consumer',
-                                        child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 200),
-                                          decoration: BoxDecoration(
-                                            color: tab == 'Consumer'
-                                                ? const Color.fromARGB(
-                                                    255,
-                                                    202,
-                                                    232,
-                                                    109,
-                                                  )
-                                                : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(50),
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: Text(
-                                            'Consumer',
-                                            style: TextStyle(
-                                              color: tab == 'Consumer'
-                                                  ? Colors.black
-                                                  : Colors.grey[700],
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: () => activeTab.value = 'Farmer',
-                                        child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 200),
-                                          decoration: BoxDecoration(
-                                            color: tab == 'Farmer'
-                                                ? const Color.fromARGB(
-                                                    255,
-                                                    202,
-                                                    232,
-                                                    109,
-                                                  )
-                                                : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(50),
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: Text(
-                                            'Farmer',
-                                            style: TextStyle(
-                                              color: tab == 'Farmer'
-                                                  ? Colors.black
-                                                  : Colors.grey[700],
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                              CustomPasswordField(
+                                controller: passwordController,
+                                obscureText: obscurePassword,
+                                onChanged: onPasswordChanged,
+                                toggleObscureText: togglePasswordVisibility,
+                                label: 'Password',
                               ),
-
+                              const SizedBox(height: 8.0),
+                              CustomPasswordField(
+                                controller: confirmPasswordController,
+                                obscureText: obscureConfirmPassword,
+                                onChanged: onConfirmPasswordChanged,
+                                toggleObscureText: toggleConfirmPasswordVisibility,
+                                label: 'Confirm Password',
+                              ),
                               const SizedBox(height: 20.0),
                               // Google Sign-In button
                               SizedBox(
@@ -302,11 +298,7 @@ class _SignUpPageState extends State<SignUpPage> {
                               // --- Action button ---
                               LoginorSigninButton(
                                 onPressed: () {
-                                  if (tab == 'Consumer') {
-                                    handleSignUp(context);
-                                  } else if (tab == 'Farmer') {
-                                    handleSignUp(context); // or go to LoginPage
-                                  }
+                                  handleSignUp(context, tab);
                                 },
                                 mode: 'SignUp',
                               ),

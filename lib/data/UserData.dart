@@ -15,6 +15,8 @@ class UserData {
       profilePic: 'farmer1.png',
       type: 'farmer',
       farm: 'Old Market, Batangas City',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
     User(
       id: '2',
@@ -28,6 +30,8 @@ class UserData {
       profilePic: 'farmer2.png',
       type: 'farmer',
       farm: 'New Market, Batangas City',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
     User(
       id: '3',
@@ -41,6 +45,8 @@ class UserData {
       profilePic: 'farmer3.png',
       type: 'farmer',
       farm: 'Old Market, Batangas City',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
   ];
 
@@ -83,7 +89,9 @@ class UserData {
       address: address,
       contactNumber: contactNumber,
       profilePic: 'default_profile',
-      type: 'consumer',);
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
     _allUsers.add(newConsumer);
   }
 //temp function to insert new farmer for signup
@@ -109,7 +117,10 @@ class UserData {
       contactNumber: contactNumber,
       profilePic: 'default_profile',
       type: 'farmer',
-      farm: farm);
+      farm: farm,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
     _allUsers.add(newFarmer);
   }
 }
