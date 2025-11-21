@@ -10,6 +10,8 @@ import 'package:bukidlink/Widgets/SignupandLogin/ContactNumberField.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
 import 'package:bukidlink/Widgets/CustomBackButton.dart';
 import 'package:bukidlink/Pages/SignUpContinuedPage.dart';
+import 'package:bukidlink/services/google_auth.dart';
+import 'package:bukidlink/Pages/LoadingPage.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -42,6 +44,32 @@ class _SignUpPageState extends State<SignUpPage> {
       setState(() {
         forceErrorText = null;
       });
+    }
+  }
+
+  // Handler for Google Sign-In using existing FirebaseService
+  void handleGoogleSignIn(BuildContext context) async {
+    setState(() => isLoading = true);
+    try {
+      final userCredential = await FirebaseService().signInWithGoogle();
+      if (context.mounted) {
+        setState(() => isLoading = false);
+        if (userCredential != null) {
+          // Navigate to loading/main flow on successful sign-in
+          PageNavigator().goTo(context, LoadingPage());
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Google sign-in failed')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Google sign-in error: $e')),
+        );
+      }
     }
   }
 
@@ -249,6 +277,19 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                       ),
                       const Spacer(),
+                      // Google Sign-In button
+                      SizedBox(
+                        width: 220,
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.login),
+                          label: const Text('Continue with Google'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black87,
+                          ),
+                          onPressed: () => handleGoogleSignIn(context),
+                        ),
+                      ),
                       // --- Action button ---
                       LoginorSigninButton(
                         onPressed: () {

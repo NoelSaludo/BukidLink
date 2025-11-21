@@ -61,26 +61,26 @@ class UserData {
   static User getUserInfoById(String id) {
       return _allUsers.firstWhere((p) => p.id == id);
   }
-  
+
   //temp function to insert new consumer for signup
   static void addConsumer(
-    String username, 
-    String hashedPassword, 
-    String firstName, 
-    String lastName, 
-    String emailAddress, 
-    String address, 
+    String username,
+    String hashedPassword,
+    String firstName,
+    String lastName,
+    String emailAddress,
+    String address,
     String contactNumber,
     //String profilePic,
   ){
     User newConsumer = User(
-      id: (_allUsers.length + 1).toString(), 
-      username: username, 
-      password: hashedPassword, 
-      firstName: firstName, 
-      lastName: lastName, 
-      emailAddress: emailAddress, 
-      address: address, 
+      id: (_allUsers.length + 1).toString(),
+      username: username,
+      password: hashedPassword,
+      firstName: firstName,
+      lastName: lastName,
+      emailAddress: emailAddress,
+      address: address,
       contactNumber: contactNumber,
       profilePic: 'default_profile',
       type: 'consumer',);
@@ -88,24 +88,24 @@ class UserData {
   }
 //temp function to insert new farmer for signup
   static void addFarmer(
-    String username, 
-    String hashedPassword, 
-    String firstName, 
-    String lastName, 
-    String emailAddress, 
-    String address, 
+    String username,
+    String hashedPassword,
+    String firstName,
+    String lastName,
+    String emailAddress,
+    String address,
     String contactNumber,
     String farm,
     //String profilePic,
   ){
     User newFarmer = User(
-      id: (_allUsers.length + 1).toString(), 
-      username: username, 
-      password: hashedPassword, 
-      firstName: firstName, 
-      lastName: lastName, 
-      emailAddress: emailAddress, 
-      address: address, 
+      id: (_allUsers.length + 1).toString(),
+      username: username,
+      password: hashedPassword,
+      firstName: firstName,
+      lastName: lastName,
+      emailAddress: emailAddress,
+      address: address,
       contactNumber: contactNumber,
       profilePic: 'default_profile',
       type: 'farmer',
