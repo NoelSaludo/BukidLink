@@ -8,7 +8,9 @@ class User{
   final String address;
   final String contactNumber;
   final String profilePic;
-  final String type;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? type;
   final String? farm;
   
   User({
@@ -21,7 +23,9 @@ class User{
     required this.address,
     required this.contactNumber,
     required this.profilePic,
-    required this.type,
+    required this.createdAt,
+    required this.updatedAt,
+    this.type,
     this.farm,
   });
 
