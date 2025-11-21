@@ -140,6 +140,7 @@ class _AccountPageState extends State<AccountPage> {
   @override
   Widget build(BuildContext context) {
     final user = widget.currentUser;
+    debugPrint('User: $user');
     
     return Scaffold(
       backgroundColor: AppColors.backgroundYellow,
@@ -156,7 +157,7 @@ class _AccountPageState extends State<AccountPage> {
     final String profileImage = user?.profilePic != null 
         ? 'assets/images/${user!.profilePic}'
         : '';
-    
+
     return SliverToBoxAdapter(
       child: Container(
         height: 280,

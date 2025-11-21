@@ -1,3 +1,4 @@
+import 'package:bukidlink/services/UserService.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
@@ -81,9 +82,7 @@ class HomeAppBar extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => AccountPage(
-                            currentUser: UserData.getAllUsers().isNotEmpty 
-                                ? UserData.getAllUsers()[0] 
-                                : null,
+                            currentUser: UserService.currentUser,
                           ),
                         ),
                       );
