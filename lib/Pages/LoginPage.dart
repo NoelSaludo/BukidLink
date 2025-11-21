@@ -129,13 +129,13 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const SizedBox(height: 20.0),
                   UsernameField(
-                    controller: usernameController, 
+                    controller: usernameController,
                     mode: 'Login',
                     forceErrorText: forceErrorText,
                     onChanged: onChanged,),
                   PasswordField(
-                    controller: passwordController, 
-                    mode: 'Login', 
+                    controller: passwordController,
+                    mode: 'Login',
                     forceErrorText: forceErrorText,
                     onChanged: onChanged,),
                   ForgotPassword(onPressed: () => handleLogin(context)),
