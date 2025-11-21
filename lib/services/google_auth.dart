@@ -51,24 +51,6 @@ class FirebaseService {
 
       final UserCredential userCredential = await _auth.signInWithCredential(credential);
 
-      final User? user = userCredential.user;
-
-      if (user == null) {
-        throw FirebaseAuthException(code: "error", message: "error");
-      }
-      final userDoc = FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid);
-      final userSnapshot = await userDoc.get();
-      if (!userSnapshot.exists) {
-        await userDoc.set({
-          'email': user.email,
-          'displayName': user.displayName,
-          'photoURL': user.photoURL,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-      }
-
       return userCredential;
     }
 
