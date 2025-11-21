@@ -12,6 +12,7 @@ import 'package:bukidlink/data/UserData.dart';
 import 'package:bukidlink/models/User.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
+import 'package:bukidlink/services/google_auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -38,6 +39,32 @@ class _LoginPageState extends State<LoginPage> {
       setState(() {
         forceErrorText = null;
       });
+    }
+  }
+
+  // Handler for signing in with Google using the existing FirebaseService
+  void handleGoogleSignIn(BuildContext context) async {
+    setState(() => isLoading = true);
+    try {
+      final userCredential = await FirebaseService().signInWithGoogle();
+      if (context.mounted) {
+        setState(() => isLoading = false);
+        if (userCredential != null) {
+          // Proceed to loading / main flow on successful Google sign-in
+          PageNavigator().goTo(context, LoadingPage());
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Google sign-in failed')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Google sign-in error: $e')),
+        );
+      }
     }
   }
 
@@ -116,6 +143,21 @@ class _LoginPageState extends State<LoginPage> {
                   LoginorSigninButton(
                     onPressed: () => handleLogin(context),
                     mode: 'Login',
+                  ),
+                  const SizedBox(height: 10.0),
+                  // Google Sign-In button
+                  SizedBox(
+                    width: 260,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.login),
+                      label: const Text('Continue with Google'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black87,
+                        elevation: 2,
+                      ),
+                      onPressed: () => handleGoogleSignIn(context),
+                    ),
                   ),
                   GoToSignUp(onPressed: () => goToSignUp(context)),
                   const SizedBox(height: 17.0),
