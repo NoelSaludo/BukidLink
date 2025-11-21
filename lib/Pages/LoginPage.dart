@@ -67,7 +67,7 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => isLoading = true);
 
     try {
-      // Use UserService to login with Firebase Auth
+      // Use UserService to login with username (it will look up the email)
       await UserService().loginUser(
         emailController.text.trim(),
         passwordController.text,
@@ -80,9 +80,21 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       if (context.mounted) {
         setState(() => isLoading = false);
-        setState(() {
-          // forceErrorText = 'Incorrect Username or Password';
-        });
+
+        // Extract the error message from the exception
+        String errorMessage = 'Login failed. Please try again.';
+        if (e is Exception) {
+          // Get the message after "Exception: "
+          errorMessage = e.toString().replaceFirst('Exception: ', '');
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     }
   }

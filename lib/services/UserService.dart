@@ -69,18 +69,74 @@ class UserService {
 
   Future<void> loginUser(String email, String password) async {
     try {
-      await _auth.signInWithEmailAndPassword(
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'user-not-found') {
-        debugPrint('No user found for that email.');
-      } else if (e.code == 'wrong-password') {
-        debugPrint('Wrong password provided for that user.');
+
+      // Fetch user data from Firestore
+      FirebaseFirestore firestore = FirebaseFirestore.instance;
+      DocumentSnapshot userDoc = await firestore
+          .collection('users')
+          .doc(userCredential.user?.uid).get();
+
+      if (userDoc.exists) {
+        final data = userDoc.data() as Map<String, dynamic>;
+        currentUser = User(
+          id: userCredential.user!.uid,
+          username: data['username'] ?? '',
+          password: password,
+          firstName: data['firstName'] ?? '',
+          lastName: data['lastName'] ?? '',
+          emailAddress: email,
+          address: data['address'] ?? '',
+          contactNumber: data['contactNumber'] ?? '',
+          profilePic: data['profilePic'] ?? '',
+          createdAt: data['created_at'] != null
+              ? (data['created_at'] as Timestamp).toDate()
+              : DateTime.now(),
+          updatedAt: data['updated_at'] != null
+              ? (data['updated_at'] as Timestamp).toDate()
+              : DateTime.now(),
+        );
       } else {
-        debugPrint('Error during login: ${e.message}');
+        // User authenticated but no Firestore document - create minimal currentUser
+        currentUser = User(
+          id: userCredential.user!.uid,
+          username: '',
+          password: password,
+          firstName: '',
+          lastName: '',
+          emailAddress: email,
+          address: '',
+          contactNumber: '',
+          profilePic: '',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
       }
+    } on FirebaseAuthException catch (e) {
+      // Clear current user on failed login
+      currentUser = null;
+
+      // Throw user-friendly error messages
+      if (e.code == 'user-not-found') {
+        throw Exception('No account found with this email.');
+      } else if (e.code == 'wrong-password') {
+        throw Exception('Incorrect password. Please try again.');
+      } else if (e.code == 'invalid-email') {
+        throw Exception('Invalid email address format.');
+      } else if (e.code == 'user-disabled') {
+        throw Exception('This account has been disabled.');
+      } else if (e.code == 'too-many-requests') {
+        throw Exception('Too many failed attempts. Please try again later.');
+      } else {
+        throw Exception('Login failed. Please check your credentials.');
+      }
+    } catch (e) {
+      debugPrint('Unexpected error during login: $e');
+      currentUser = null;
+      rethrow;
     }
   }
   // Sign out
