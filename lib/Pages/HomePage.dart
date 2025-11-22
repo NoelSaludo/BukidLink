@@ -64,7 +64,7 @@ class _HomePageState extends State<HomePage> {
                       style: AppTextStyles.sectionTitle,
                     ),
                   ),
-                  const ProductGrid(),
+                  ProductGrid(),
                 ],
               ),
             ),
