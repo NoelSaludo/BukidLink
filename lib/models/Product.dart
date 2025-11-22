@@ -63,7 +63,7 @@ class Product {
     return Product(
       id: doc.id,
       name: data['name'] ?? '',
-      farmName: data['farm_id']?.toString() ?? '',
+      farmName: data['farm_name'] ?? '',
       imagePath: imagePath,
       category: data['category'] ?? '',
       price: price,

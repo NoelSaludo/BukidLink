@@ -8,7 +8,6 @@ import 'package:bukidlink/services/CartService.dart';
 import 'package:bukidlink/pages/CartPage.dart';
 import 'package:bukidlink/pages/AllReviewsPage.dart';
 import 'package:bukidlink/widgets/productinfo/ProductInfoAppBar.dart';
-import 'package:bukidlink/widgets/productinfo/ProductImageCard.dart';
 import 'package:bukidlink/widgets/productinfo/ProductHeaderWithQuantity.dart';
 import 'package:bukidlink/widgets/productinfo/ProductDetailsCard.dart';
 import 'package:bukidlink/widgets/productinfo/ProductReviewsSection.dart';
@@ -42,6 +41,45 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
   void initState() {
     super.initState();
     _totalPrice = widget.product.price;
+  }
+
+  // Helper that returns a network image when path is a URL, otherwise an asset image.
+  Widget _buildImage(String path, {BoxFit? fit, double? width, double? height}) {
+    final lower = path.toLowerCase();
+    if (lower.startsWith('http://') || lower.startsWith('https://')) {
+      return Image.network(
+        path,
+        width: width,
+        height: height,
+        fit: fit ?? BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const Center(child: CircularProgressIndicator());
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            color: Colors.grey[200],
+            alignment: Alignment.center,
+            child: const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+          );
+        },
+      );
+    }
+
+    // Fallback to asset
+    return Image.asset(
+      path.isNotEmpty ? path : 'assets/images/default_cover_photo.png',
+      width: width,
+      height: height,
+      fit: fit ?? BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: Colors.grey[200],
+          alignment: Alignment.center,
+          child: const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+        );
+      },
+    );
   }
 
   void _handleQuantityChanged(int quantity) {
@@ -92,10 +130,54 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ProductImageCard(
-              imagePath: widget.product.imagePath,
-              category: widget.product.category,
+            // Inline image card using network-capable helper so URLs load properly
+            Container(
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                    spreadRadius: 0,
+                  ),
+                  BoxShadow(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.05),
+                    blurRadius: 12,
+                    offset: const Offset(0, 2),
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Stack(
+                  children: [
+                    AspectRatio(
+                      aspectRatio: 1,
+                      child: _buildImage(widget.product.imagePath, fit: BoxFit.cover),
+                    ),
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.05),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
+
             ProductHeaderWithQuantity(
               product: widget.product,
               quantity: _quantity,
