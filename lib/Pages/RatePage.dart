@@ -52,7 +52,7 @@ class _RatePageState extends State<RatePage> {
 
     final orderService = OrderService.shared;
     for (final order in orderService.orders) {
-      if (order.items.any((i) => i.product.id == widget.product.id)) {
+      if (order.items.any((i) => i.product?.id == widget.product.id)) {
         orderService.checkAndMarkCompleted(order);
         break;
       }

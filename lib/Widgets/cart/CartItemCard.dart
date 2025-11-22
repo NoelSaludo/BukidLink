@@ -54,6 +54,11 @@ class _CartItemCardState extends State<CartItemCard>
 
   @override
   Widget build(BuildContext context) {
+    // Return early if product is null
+    if (widget.cartItem.product == null) {
+      return const SizedBox.shrink();
+    }
+
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Container(
@@ -94,6 +99,7 @@ class _CartItemCardState extends State<CartItemCard>
   }
 
   Widget _buildProductImage() {
+    final imagePath = widget.cartItem.product?.imagePath ?? '';
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -101,7 +107,7 @@ class _CartItemCardState extends State<CartItemCard>
         height: 80,
         color: AppColors.INACTIVE_GREY,
         child: Image.asset(
-          widget.cartItem.product.imagePath,
+          imagePath,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) => const Icon(
             Icons.image_not_supported,
@@ -114,6 +120,8 @@ class _CartItemCardState extends State<CartItemCard>
   }
 
   Widget _buildProductInfo() {
+    final product = widget.cartItem.product!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -125,7 +133,7 @@ class _CartItemCardState extends State<CartItemCard>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.cartItem.product.name,
+                    product.name,
                     style: const TextStyle(
                       fontFamily: AppTextStyles.FONT_FAMILY,
                       fontSize: 16,
@@ -137,7 +145,7 @@ class _CartItemCardState extends State<CartItemCard>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    widget.cartItem.product.farmName,
+                    product.farmName,
                     style: const TextStyle(
                       fontFamily: AppTextStyles.FONT_FAMILY,
                       fontSize: 13,
@@ -172,7 +180,7 @@ class _CartItemCardState extends State<CartItemCard>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             PesoText(
-              amount: widget.cartItem.product.price,
+              amount: product.price,
               decimalPlaces: 2,
               style: const TextStyle(
                 fontFamily: AppTextStyles.FONT_FAMILY,
@@ -182,7 +190,7 @@ class _CartItemCardState extends State<CartItemCard>
               ),
             ),
             CartQuantityControls(
-              quantity: widget.cartItem.quantity,
+              quantity: widget.cartItem.amount,
               onQuantityChanged: widget.onQuantityChanged,
             ),
           ],

@@ -19,11 +19,22 @@ class CartPage extends StatefulWidget {
 class _CartPageState extends State<CartPage> {
   final CartService _cartService = CartService();
   bool _isProcessing = false;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _cartService.addListener(_onCartChanged);
+    _loadCartData();
+  }
+
+  Future<void> _loadCartData() async {
+    setState(() => _isLoading = true);
+    try {
+      await _cartService.loadCart();
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -36,18 +47,32 @@ class _CartPageState extends State<CartPage> {
     if (mounted) setState(() {});
   }
 
-  void _handleQuantityChanged(String cartItemId, int newQuantity) {
-    _cartService.updateQuantity(cartItemId, newQuantity);
-    if (newQuantity == 0) {
-      SnackBarHelper.showInfo(context, 'Item removed from cart');
+  void _handleQuantityChanged(String productId, int newQuantity) async {
+    setState(() => _isProcessing = true);
+    try {
+      await _cartService.updateProductAmount(productId, newQuantity);
+      if (newQuantity == 0) {
+        SnackBarHelper.showInfo(context, 'Item removed from cart');
+      }
+    } catch (e) {
+      SnackBarHelper.showError(context, 'Failed to update quantity');
+    } finally {
+      setState(() => _isProcessing = false);
     }
   }
 
-  void _handleRemoveItem(String cartItemId) {
-    final item = _cartService.getItem(cartItemId);
-    _cartService.removeItem(cartItemId);
-    if (item != null) {
-      SnackBarHelper.showInfo(context, '${item.product.name} removed from cart');
+  void _handleRemoveItem(String productId) async {
+    final item = _cartService.getItem(productId);
+    setState(() => _isProcessing = true);
+    try {
+      await _cartService.removeProductFromCart(productId);
+      if (item != null && item.product != null) {
+        SnackBarHelper.showInfo(context, '${item.product!.name} removed from cart');
+      }
+    } catch (e) {
+      SnackBarHelper.showError(context, 'Failed to remove item');
+    } finally {
+      setState(() => _isProcessing = false);
     }
   }
 
@@ -56,7 +81,6 @@ class _CartPageState extends State<CartPage> {
       SnackBarHelper.showWarning(context, 'Your cart is empty');
       return;
     }
-
 
     final result = await Navigator.push(
       context,
@@ -71,7 +95,7 @@ class _CartPageState extends State<CartPage> {
     );
 
     if (result == true) {
-      _cartService.clear();
+      await _cartService.clearCart();
       if (mounted) {
         setState(() {});
         SnackBarHelper.showSuccess(context, 'Order placed successfully!');
@@ -79,13 +103,23 @@ class _CartPageState extends State<CartPage> {
     }
   }
 
-
   void _handleStartShopping() {
     PageNavigator().goBack(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.APP_BACKGROUND,
+        appBar: CartAppBar(
+          onBackPressed: () => PageNavigator().goBack(context),
+          itemCount: 0,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.APP_BACKGROUND,
       appBar: CartAppBar(
@@ -121,8 +155,8 @@ class _CartPageState extends State<CartPage> {
               return CartItemCard(
                 cartItem: cartItem,
                 onQuantityChanged: (newQuantity) =>
-                    _handleQuantityChanged(cartItem.id, newQuantity),
-                onRemove: () => _handleRemoveItem(cartItem.id),
+                    _handleQuantityChanged(cartItem.productId, newQuantity),
+                onRemove: () => _handleRemoveItem(cartItem.productId),
               );
             },
           ),
