@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class ProductService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  List<Product> _productsCache = [];
+
   Future<List<Product>> fetchProducts() async {
     List<Product> products = [];
     try {
@@ -13,6 +15,8 @@ class ProductService {
       for (var doc in snapshot.docs) {
         products.add(Product.fromDocument(doc));
       }
+      // Update cache
+      _productsCache = products;
 
     } catch (e) {
       print('Error fetching products: $e');
