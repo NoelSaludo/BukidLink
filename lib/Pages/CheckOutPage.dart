@@ -4,8 +4,6 @@ import 'package:bukidlink/services/OrderService.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 
-
-// THIS UPDATED ATA
 class CheckoutPage extends StatefulWidget {
   final List<CartItem> cartItems;
   final String recipientName;
@@ -132,7 +130,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
         children: [
           GestureDetector(
             onTap: () {
-              // Placeholder for future expansion (dialog or bottom sheet)
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text("Only Cash on Delivery is available for now.")),
               );
@@ -197,6 +194,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Widget _buildProductRow(CartItem item) {
+    if (item.product == null) return const SizedBox.shrink();
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -204,7 +203,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.asset(
-              item.product.imagePath,
+              item.product!.imagePath,
               width: 60,
               height: 60,
               fit: BoxFit.cover,
@@ -215,9 +214,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.product.name,
+                Text(item.product!.name,
                     style: AppTextStyles.CHECKOUT_PRODUCT_NAME),
-                Text("x${item.quantity} ${item.product.unit ?? ''}",
+                Text("x${item.amount} ${item.product!.unit ?? ''}",
                     style: AppTextStyles.CHECKOUT_PRODUCT_DETAILS),
               ],
             ),
@@ -308,7 +307,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Map<String, List<CartItem>> _groupByFarmName() {
     final Map<String, List<CartItem>> grouped = {};
     for (var item in widget.cartItems) {
-      final key = item.product.farmName;
+      if (item.product == null) continue;
+      final key = item.product!.farmName;
       grouped.putIfAbsent(key, () => []).add(item);
     }
     return grouped;

@@ -8,7 +8,6 @@ import 'package:bukidlink/models/CartItem.dart';
 import 'package:bukidlink/pages/RatePage.dart';
 import 'package:bukidlink/pages/OrderDetailsPage.dart';
 
-
 class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
 
@@ -27,8 +26,6 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
     OrderStatus.toRate,
     OrderStatus.completed,
   ];
-
-  final Map<String, double> _quickRatings = {};
 
   @override
   void initState() {
@@ -66,7 +63,6 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
       _tabController.animateTo(nextIndex);
     }
   }
-
 
   String _statusLabel(OrderStatus s) {
     switch (s) {
@@ -148,7 +144,8 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
     Map<String, List<CartItem>> _groupItemsByFarm(List<CartItem> items) {
       final Map<String, List<CartItem>> grouped = {};
       for (var item in items) {
-        final farm = item.product.farmName;
+        if (item.product == null) continue;
+        final farm = item.product!.farmName;
         grouped.putIfAbsent(farm, () => []).add(item);
       }
       return grouped;
@@ -194,6 +191,8 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
                     const SizedBox(height: 8),
 
                     ...farmItems.map((item) {
+                      if (item.product == null) return const SizedBox.shrink();
+
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6),
                         child: Column(
@@ -204,7 +203,7 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
                                   child: Image.asset(
-                                    item.product.imagePath,
+                                    item.product!.imagePath,
                                     width: 60,
                                     height: 60,
                                     fit: BoxFit.cover,
@@ -214,11 +213,10 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
 
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment
-                                        .start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        item.product.name,
+                                        item.product!.name,
                                         style: const TextStyle(
                                           fontFamily: 'Outfit',
                                           fontWeight: FontWeight.w600,
@@ -227,8 +225,7 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        '₱${item.product.price.toStringAsFixed(
-                                            2)} each',
+                                        '₱${item.product!.price.toStringAsFixed(2)} each',
                                         style: const TextStyle(
                                           fontFamily: 'Outfit',
                                           fontSize: 13,
@@ -243,7 +240,7 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      'Qty: ${item.quantity}',
+                                      'Qty: ${item.amount}',
                                       style: const TextStyle(
                                         fontFamily: 'Outfit',
                                         fontSize: 14,
@@ -265,14 +262,14 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
                                   final starValue = index + 1;
                                   return IconButton(
                                     icon: Icon(
-                                      starValue <= item.product.tempRating
+                                      starValue <= item.product!.tempRating
                                           ? Icons.star
                                           : Icons.star_border,
                                       color: Colors.amber,
                                     ),
                                     onPressed: () {
                                       setState(() {
-                                        item.product.tempRating =
+                                        item.product!.tempRating =
                                             starValue.toDouble();
                                       });
 
@@ -281,7 +278,7 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
                                         MaterialPageRoute(
                                           builder: (_) =>
                                               RatePage(
-                                                product: item.product,
+                                                product: item.product!,
                                                 initialRating: starValue
                                                     .toDouble(),
                                               ),

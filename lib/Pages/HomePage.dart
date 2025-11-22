@@ -1,3 +1,4 @@
+import 'package:bukidlink/services/CartService.dart';
 import 'package:flutter/material.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
@@ -27,6 +28,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    CartService().loadCart();
     return Scaffold(
       backgroundColor: AppColors.backgroundYellow,
       body: Column(

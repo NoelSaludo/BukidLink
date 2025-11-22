@@ -34,6 +34,6 @@ class Order {
 
   /// Check if all products in this order are rated
   bool get isAllRated {
-    return items.every((item) => item.product.tempRating > 0);
+    return items.every((item) => (item.product?.rating ?? 0) > 0);
   }
 }
