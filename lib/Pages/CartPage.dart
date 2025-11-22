@@ -1,45 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/services/CartService.dart';
-import 'package:bukidlink/utils/PageNavigator.dart';
+import 'package:bukidlink/services/OrderService.dart';
+import 'package:bukidlink/services/UserService.dart';
 import 'package:bukidlink/utils/SnackBarHelper.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/widgets/cart/CartAppBar.dart';
 import 'package:bukidlink/widgets/cart/CartItemCard.dart';
 import 'package:bukidlink/widgets/cart/CartSummaryCard.dart';
 import 'package:bukidlink/widgets/cart/EmptyCartWidget.dart';
-import 'package:bukidlink/pages/CheckoutPage.dart';
+import 'package:bukidlink/utils/PageNavigator.dart';
+import 'package:bukidlink/models/User.dart' as ModelUser;
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
-
   @override
   State<CartPage> createState() => _CartPageState();
 }
 
 class _CartPageState extends State<CartPage> {
-  final CartService _cartService = CartService();
-  bool _isProcessing = false;
-  bool _isLoading = true;
+  final cartService = CartService();
+  bool loading = true;
+  bool processing = false;
 
   @override
   void initState() {
     super.initState();
-    _cartService.addListener(_onCartChanged);
-    _loadCartData();
+    cartService.addListener(_onCartChanged);
+    _load();
   }
 
-  Future<void> _loadCartData() async {
-    setState(() => _isLoading = true);
+  Future<void> _load() async {
+    setState(() => loading = true);
     try {
-      await _cartService.loadCart();
+      await cartService.loadCart();
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => loading = false);
     }
   }
 
   @override
   void dispose() {
-    _cartService.removeListener(_onCartChanged);
+    cartService.removeListener(_onCartChanged);
     super.dispose();
   }
 
@@ -47,121 +48,103 @@ class _CartPageState extends State<CartPage> {
     if (mounted) setState(() {});
   }
 
-  void _handleQuantityChanged(String productId, int newQuantity) async {
-    setState(() => _isProcessing = true);
+  Future<void> _changeQty(String productId, int qty) async {
+    setState(() => processing = true);
     try {
-      await _cartService.updateProductAmount(productId, newQuantity);
-      if (newQuantity == 0) {
-        SnackBarHelper.showInfo(context, 'Item removed from cart');
-      }
-    } catch (e) {
-      SnackBarHelper.showError(context, 'Failed to update quantity');
+      await cartService.updateProductAmount(productId, qty);
+      if (qty == 0) SnackBarHelper.showInfo(context, 'Item removed');
+    } catch (_) {
+      SnackBarHelper.showError(context, 'Failed to update');
     } finally {
-      setState(() => _isProcessing = false);
+      if (mounted) setState(() => processing = false);
     }
   }
 
-  void _handleRemoveItem(String productId) async {
-    final item = _cartService.getItem(productId);
-    setState(() => _isProcessing = true);
+  Future<void> _remove(String productId) async {
+    setState(() => processing = true);
     try {
-      await _cartService.removeProductFromCart(productId);
-      if (item != null && item.product != null) {
-        SnackBarHelper.showInfo(context, '${item.product!.name} removed from cart');
-      }
-    } catch (e) {
-      SnackBarHelper.showError(context, 'Failed to remove item');
+      await cartService.removeProductFromCart(productId);
+      SnackBarHelper.showInfo(context, 'Item removed');
+    } catch (_) {
+      SnackBarHelper.showError(context, 'Failed to remove');
     } finally {
-      setState(() => _isProcessing = false);
+      if (mounted) setState(() => processing = false);
     }
   }
 
-  void _handleCheckout() async {
-    if (_cartService.isEmpty) {
-      SnackBarHelper.showWarning(context, 'Your cart is empty');
-      return;
-    }
-
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CheckoutPage(
-          cartItems: _cartService.items,
-          recipientName: 'Juan Dela Cruz',
-          contactNumber: '09123456789',
-          shippingAddress: 'Purok 5, Barangay Maligaya, Bukidnon',
-        ),
-      ),
-    );
-
-    if (result == true) {
-      await _cartService.clearCart();
-      if (mounted) {
-        setState(() {});
-        SnackBarHelper.showSuccess(context, 'Order placed successfully!');
+  Map<String, String> _recipient(ModelUser.User u) {
+    for (final candidate in [u.firstName, u.lastName, u.username, u.emailAddress.split('@').first]) {
+      final trimmed = candidate.trim();
+      if (trimmed.isNotEmpty) {
+        return {
+          'recipientName': trimmed,
+          'contactNumber': u.contactNumber,
+          'shippingAddress': u.address,
+        };
       }
     }
+    return {
+      'recipientName': 'Customer',
+      'contactNumber': u.contactNumber,
+      'shippingAddress': u.address,
+    };
   }
 
-  void _handleStartShopping() {
-    PageNavigator().goBack(context);
+  Future<void> _checkout() async {
+    if (cartService.isEmpty) { SnackBarHelper.showWarning(context, 'Cart is empty'); return; }
+    final u = UserService.currentUser;
+    if (u == null) { SnackBarHelper.showError(context, 'Login required'); return; }
+    final info = _recipient(u);
+    if (info['contactNumber']!.isEmpty || info['shippingAddress']!.isEmpty) { SnackBarHelper.showWarning(context, 'Complete profile first'); return; }
+    setState(() => processing = true);
+    try {
+      final orderId = await OrderService().addOrder(
+        items: cartService.items,
+        recipientName: info['recipientName']!,
+        contactNumber: info['contactNumber']!,
+        shippingAddress: info['shippingAddress']!,
+      );
+      if (orderId != null) { await cartService.clearCart(); SnackBarHelper.showSuccess(context, 'Order placed'); }
+      else { SnackBarHelper.showError(context, 'Checkout failed'); }
+    } catch (_) { SnackBarHelper.showError(context, 'Error during checkout'); }
+    finally { if (mounted) setState(() => processing = false); }
   }
+
+  void _back() => PageNavigator().goBack(context);
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    if (loading) {
       return Scaffold(
         backgroundColor: AppColors.APP_BACKGROUND,
-        appBar: CartAppBar(
-          onBackPressed: () => PageNavigator().goBack(context),
-          itemCount: 0,
-        ),
+        appBar: CartAppBar(onBackPressed: _back, itemCount: 0),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
-
     return Scaffold(
       backgroundColor: AppColors.APP_BACKGROUND,
-      appBar: CartAppBar(
-        onBackPressed: () => PageNavigator().goBack(context),
-        itemCount: _cartService.itemCount,
-      ),
-      body: _cartService.isEmpty ? _buildEmptyCart() : _buildCartContent(),
-      bottomNavigationBar: _cartService.isEmpty
-          ? null
-          : CartSummaryCard(
-        subtotal: _cartService.subtotal,
-        deliveryFee: _cartService.deliveryFee,
-        total: _cartService.total,
-        onCheckout: _handleCheckout,
-        isProcessing: _isProcessing,
+      appBar: CartAppBar(onBackPressed: _back, itemCount: cartService.itemCount),
+      body: cartService.isEmpty ? EmptyCartWidget(onStartShopping: _back) : _list(),
+      bottomNavigationBar: cartService.isEmpty ? null : CartSummaryCard(
+        subtotal: cartService.subtotal,
+        deliveryFee: cartService.deliveryFee,
+        total: cartService.total,
+        onCheckout: _checkout,
+        isProcessing: processing,
       ),
     );
   }
 
-  Widget _buildEmptyCart() {
-    return EmptyCartWidget(onStartShopping: _handleStartShopping);
-  }
-
-  Widget _buildCartContent() {
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: _cartService.items.length,
-            itemBuilder: (context, index) {
-              final cartItem = _cartService.items[index];
-              return CartItemCard(
-                cartItem: cartItem,
-                onQuantityChanged: (newQuantity) =>
-                    _handleQuantityChanged(cartItem.productId, newQuantity),
-                onRemove: () => _handleRemoveItem(cartItem.productId),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
+  Widget _list() => ListView.builder(
+    padding: const EdgeInsets.all(16),
+    itemCount: cartService.items.length,
+    itemBuilder: (context, i) {
+      final item = cartService.items[i];
+      return CartItemCard(
+        cartItem: item,
+        onQuantityChanged: (q) => _changeQty(item.productId, q),
+        onRemove: () => _remove(item.productId),
+      );
+    },
+  );
 }

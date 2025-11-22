@@ -1,7 +1,4 @@
-import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:bukidlink/models/User.dart';
 import 'package:flutter/material.dart';
