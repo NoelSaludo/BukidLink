@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/services/CartService.dart';
-import 'package:bukidlink/services/OrderService.dart';
 import 'package:bukidlink/services/UserService.dart';
 import 'package:bukidlink/utils/SnackBarHelper.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
@@ -10,6 +9,7 @@ import 'package:bukidlink/widgets/cart/CartSummaryCard.dart';
 import 'package:bukidlink/widgets/cart/EmptyCartWidget.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
 import 'package:bukidlink/models/User.dart' as ModelUser;
+import 'package:bukidlink/Pages/CheckOutPage.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -92,22 +92,40 @@ class _CartPageState extends State<CartPage> {
 
   Future<void> _checkout() async {
     if (cartService.isEmpty) { SnackBarHelper.showWarning(context, 'Cart is empty'); return; }
-    final u = UserService.currentUser;
-    if (u == null) { SnackBarHelper.showError(context, 'Login required'); return; }
+    final u = UserService.currentUser; if (u == null) { SnackBarHelper.showError(context, 'Login required'); return; }
     final info = _recipient(u);
     if (info['contactNumber']!.isEmpty || info['shippingAddress']!.isEmpty) { SnackBarHelper.showWarning(context, 'Complete profile first'); return; }
+
+    // Debug: notify user we're navigating
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening checkout...')));
+    debugPrint('[CartPage] Navigating to CheckoutPage with ${cartService.items.length} items');
+
+    final confirmed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CheckoutPage(
+          cartItems: cartService.items,
+          recipientName: info['recipientName']!,
+          contactNumber: info['contactNumber']!,
+          shippingAddress: info['shippingAddress']!,
+        ),
+      ),
+    );
+
+    debugPrint('[CartPage] Returned from CheckoutPage with result: $confirmed');
+
+    if (!mounted) return;
     setState(() => processing = true);
     try {
-      final orderId = await OrderService().addOrder(
-        items: cartService.items,
-        recipientName: info['recipientName']!,
-        contactNumber: info['contactNumber']!,
-        shippingAddress: info['shippingAddress']!,
-      );
-      if (orderId != null) { await cartService.clearCart(); SnackBarHelper.showSuccess(context, 'Order placed'); }
-      else { SnackBarHelper.showError(context, 'Checkout failed'); }
-    } catch (_) { SnackBarHelper.showError(context, 'Error during checkout'); }
-    finally { if (mounted) setState(() => processing = false); }
+      if (confirmed == true) {
+        await cartService.clearCart();
+        SnackBarHelper.showSuccess(context, 'Order placed');
+      } else {
+        SnackBarHelper.showInfo(context, 'Checkout cancelled');
+      }
+    } finally {
+      if (mounted) setState(() => processing = false);
+    }
   }
 
   void _back() => PageNavigator().goBack(context);
@@ -129,7 +147,7 @@ class _CartPageState extends State<CartPage> {
         subtotal: cartService.subtotal,
         deliveryFee: cartService.deliveryFee,
         total: cartService.total,
-        onCheckout: _checkout,
+        onCheckout: _checkout, // updated to navigate
         isProcessing: processing,
       ),
     );
