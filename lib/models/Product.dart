@@ -17,6 +17,7 @@ class Product {
   final int stockCount; // Remaining stock quantity
   final List<ProductReview>? reviews; // Product reviews
   double tempRating = 0.0;
+  final String? farmId;
 
 
   Product({
@@ -33,6 +34,7 @@ class Product {
     this.unit,
     this.reviewCount,
     this.reviews,
+    this.farmId,
   });
 
   static Product fromDocument(QueryDocumentSnapshot<Object?> doc) {
@@ -64,6 +66,8 @@ class Product {
       id: doc.id,
       name: data['name'] ?? '',
       farmName: data['farm_name'] ?? '',
+      // TODO: Create a farm model for this field
+      // farmId: data['farm_id'],
       imagePath: imagePath,
       category: data['category'] ?? '',
       price: price,

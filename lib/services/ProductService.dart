@@ -26,4 +26,8 @@ class ProductService {
     return products;
   }
 
+  List<Product> getCachedProducts() {
+    return _productsCache;
+  }
+
 }
