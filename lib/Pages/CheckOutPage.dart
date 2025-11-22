@@ -24,6 +24,7 @@ class CheckoutPage extends StatefulWidget {
 
 class _CheckoutPageState extends State<CheckoutPage> {
   String selectedPaymentMethod = "Cash on Delivery";
+  bool _isPlacing = false; // added flag
 
   double get subtotal =>
       widget.cartItems.fold(0, (sum, item) => sum + item.totalPrice);
@@ -202,12 +203,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              item.product!.imagePath,
-              width: 60,
-              height: 60,
-              fit: BoxFit.cover,
-            ),
+            child: _buildProductImage(item.product!.imagePath),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -225,6 +221,47 @@ class _CheckoutPageState extends State<CheckoutPage> {
               style: AppTextStyles.CHECKOUT_PRICE),
         ],
       ),
+    );
+  }
+
+  Widget _buildProductImage(String path) {
+    final isNetwork = path.startsWith('http://') || path.startsWith('https://');
+    final effectivePath = path.isNotEmpty ? path : 'assets/images/default_cover_photo.png';
+    if (isNetwork) {
+      return Image.network(
+        effectivePath,
+        width: 60,
+        height: 60,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: 60,
+            height: 60,
+            alignment: Alignment.center,
+            child: const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return Image.asset(
+            'assets/images/default_cover_photo.png',
+            width: 60,
+            height: 60,
+            fit: BoxFit.cover,
+          );
+        },
+      );
+    }
+    // Asset fallback
+    return Image.asset(
+      effectivePath,
+      width: 60,
+      height: 60,
+      fit: BoxFit.cover,
     );
   }
 
@@ -268,24 +305,55 @@ class _CheckoutPageState extends State<CheckoutPage> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () async {
-          final orderService = OrderService();
-          orderService.addOrder(
-            items: widget.cartItems,
-            recipientName: widget.recipientName,
-            contactNumber: widget.contactNumber,
-            shippingAddress: widget.shippingAddress,
-          );
-          Navigator.pop(context, true);
+        onPressed: _isPlacing ? null : () async {
+          if (widget.cartItems.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Cart is empty.')),
+            );
+            return;
+          }
+          setState(() => _isPlacing = true);
+          try {
+            final orderService = OrderService();
+            final orderId = await orderService.addOrder(
+              items: widget.cartItems,
+              recipientName: widget.recipientName,
+              contactNumber: widget.contactNumber,
+              shippingAddress: widget.shippingAddress,
+            );
+            if (orderId != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Order placed successfully.')),
+              );
+              Navigator.pop(context, true);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Failed to place order. Please try again.')),
+              );
+            }
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error: $e')),
+            );
+          } finally {
+            if (mounted) setState(() => _isPlacing = false);
+          }
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.HEADER_GRADIENT_START,
+          disabledBackgroundColor: AppColors.HEADER_GRADIENT_START.withOpacity(0.5),
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
         ),
-        child: Text("Place Order", style: AppTextStyles.CHECKOUT_BUTTON_TEXT),
+        child: _isPlacing
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              )
+            : Text("Place Order", style: AppTextStyles.CHECKOUT_BUTTON_TEXT),
       ),
     );
   }
