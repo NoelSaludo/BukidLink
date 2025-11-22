@@ -49,6 +49,7 @@ class UserService {
       if (!userDoc.exists) {
         await firestore.collection('users').doc(userCredential.user?.uid).set({
           'username': user.username,
+          'email' : user.emailAddress,
           'firstName': user.firstName,
           'lastName': user.lastName,
           'address': user.address,

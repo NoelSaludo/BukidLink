@@ -51,6 +51,33 @@ class ProductCard extends StatelessWidget {
     );
   }
 
+  // Helper that decides whether to use a network image or an asset image.
+  Widget _buildImage(String path, {double? width, double? height, BoxFit? fit}) {
+    if (path.toLowerCase().startsWith('http')) {
+      return Image.network(
+        path,
+        width: width,
+        height: height,
+        fit: fit ?? BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(
+          color: Colors.grey[200],
+          child: const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+        ),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const Center(child: CircularProgressIndicator());
+        },
+      );
+    }
+
+    return Image.asset(
+      path,
+      width: width,
+      height: height,
+      fit: fit ?? BoxFit.cover,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -93,7 +120,8 @@ class ProductCard extends StatelessWidget {
             ),
             child: Stack(
               children: [
-                Image.asset(
+                // Use helper to render network or asset image
+                _buildImage(
                   product.imagePath,
                   width: 180,
                   height: 140,
@@ -258,7 +286,7 @@ class ProductCard extends StatelessWidget {
               ),
               child: Stack(
                 children: [
-                  Image.asset(
+                  _buildImage(
                     product.imagePath,
                     width: double.infinity,
                     fit: BoxFit.cover,
