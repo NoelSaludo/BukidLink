@@ -40,7 +40,7 @@ class _LoginPageState extends State<LoginPage> {
         setState(() => isLoading = false);
         if (userCredential != null) {
           // Proceed to loading / main flow on successful Google sign-in
-          PageNavigator().goTo(context, LoadingPage());
+          PageNavigator().goTo(context, LoadingPage(userType: "Consumer"));
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Google sign-in failed')),
@@ -50,9 +50,9 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       if (context.mounted) {
         setState(() => isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Google sign-in error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Google sign-in error: $e')));
       }
     }
   }
@@ -75,7 +75,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (context.mounted) {
         setState(() => isLoading = false);
-        PageNavigator().goTo(context, LoadingPage());
+        PageNavigator().goTo(context, LoadingPage(userType: "Consumer"));
       }
     } catch (e) {
       if (context.mounted) {

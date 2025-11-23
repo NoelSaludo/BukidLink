@@ -1,22 +1,26 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:bukidlink/models/User.dart';
+import 'package:bukidlink/models/Farm.dart';
 import 'package:flutter/material.dart';
 
 class UserService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   static final UserService _instance = UserService._internal();
-  factory UserService() {return _instance;}
+  factory UserService() {
+    return _instance;
+  }
   UserService._internal();
   static User? currentUser;
 
   // Sign in with email and password
-  Future<UserCredential?> register(User user) async {
+  Future<UserCredential?> registerUser(User user) async {
     try {
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: user.emailAddress,
-        password: user.password,
-      );
+      UserCredential userCredential = await _auth
+          .createUserWithEmailAndPassword(
+            email: user.emailAddress,
+            password: user.password,
+          );
 
       //verify email
       if (!userCredential.user!.emailVerified) {
@@ -41,26 +45,104 @@ class UserService {
       FirebaseFirestore firestore = FirebaseFirestore.instance;
       DocumentSnapshot userDoc = await firestore
           .collection('users')
-          .doc(userCredential.user?.uid).get();
+          .doc(userCredential.user?.uid)
+          .get();
 
       if (!userDoc.exists) {
         await firestore.collection('users').doc(userCredential.user?.uid).set({
           'username': user.username,
-          'email' : user.emailAddress,
+          'email': user.emailAddress,
           'firstName': user.firstName,
           'lastName': user.lastName,
           'address': user.address,
           'contactNumber': user.contactNumber,
+          'userType': user.type,
           'profilePic': user.profilePic,
           'created_at': FieldValue.serverTimestamp(),
           'updated_at': FieldValue.serverTimestamp(),
         });
       }
 
-
       return userCredential;
     } on FirebaseAuthException catch (e) {
       print('Error during email/password sign-in: $e');
+      return null;
+    }
+  }
+
+  // Register a user and create a farm document linked to that user.
+  // Steps:
+  // 1. Create auth user
+  // 2. Create user document with a null farm reference
+  // 3. Create farm document with ownerId pointing to the user document
+  // 4. Update user document's farmId to point to the created farm document
+  Future<UserCredential?> registerFarm(User user, Farm farm) async {
+    try {
+      UserCredential userCredential = await _auth
+          .createUserWithEmailAndPassword(
+            email: user.emailAddress,
+            password: user.password,
+          );
+
+      // verify email
+      if (!userCredential.user!.emailVerified) {
+        await userCredential.user!.sendEmailVerification();
+      }
+
+      final String uid = userCredential.user!.uid;
+
+      FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+      final DocumentReference userRef = firestore.collection('users').doc(uid);
+
+      // Create the user document first with no farm reference
+      await userRef.set({
+        'username': user.username,
+        'email': user.emailAddress,
+        'firstName': user.firstName,
+        'lastName': user.lastName,
+        'address': user.address,
+        'contactNumber': user.contactNumber,
+        'profilePic': user.profilePic,
+        'type': user.type,
+        'farmId': null,
+        'created_at': FieldValue.serverTimestamp(),
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      // Create the farm document with ownerId set to the user document reference
+      final DocumentReference farmRef = firestore.collection('farms').doc();
+      await farmRef.set({
+        'name': farm.name,
+        'address': farm.address,
+        'ownerId': userRef,
+        'created_at': FieldValue.serverTimestamp(),
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      // Update the user's farmId to point to the created farm reference
+      await userRef.update({'farmId': farmRef});
+
+      // Update local currentUser
+      currentUser = User(
+        id: uid,
+        username: user.username,
+        password: user.password,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        emailAddress: user.emailAddress,
+        address: user.address,
+        contactNumber: user.contactNumber,
+        profilePic: user.profilePic,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        type: user.type,
+        farmId: farmRef,
+      );
+
+      return userCredential;
+    } on FirebaseAuthException catch (e) {
+      print('Error during farm registration: $e');
       return null;
     }
   }
@@ -76,7 +158,8 @@ class UserService {
       FirebaseFirestore firestore = FirebaseFirestore.instance;
       DocumentSnapshot userDoc = await firestore
           .collection('users')
-          .doc(userCredential.user?.uid).get();
+          .doc(userCredential.user?.uid)
+          .get();
 
       if (userDoc.exists) {
         final data = userDoc.data() as Map<String, dynamic>;
@@ -137,6 +220,7 @@ class UserService {
       rethrow;
     }
   }
+
   // Sign out
   Future<void> signOut() async {
     try {
@@ -152,5 +236,24 @@ class UserService {
   // Get current user
   User? getCurrentUser() {
     return currentUser;
+  }
+
+  // Fetch a Farm document given its DocumentReference. Returns null on error or if not found.
+  Future<Farm?> getFarmByReference(DocumentReference? farmRef) async {
+    if (farmRef == null) return null;
+    try {
+      final doc = await farmRef.get();
+      if (!doc.exists) return null;
+      return Farm.fromDocument(doc);
+    } catch (e) {
+      debugPrint('Error fetching farm by reference: $e');
+      return null;
+    }
+  }
+
+  // Convenience: fetch the farm for a given User model (uses user's farmId reference).
+  Future<Farm?> getFarmForUser(User? user) async {
+    if (user == null) return null;
+    return await getFarmByReference(user.farmId);
   }
 }

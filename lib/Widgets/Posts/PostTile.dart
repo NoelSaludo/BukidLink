@@ -8,15 +8,13 @@ import 'package:bukidlink/data/UserData.dart';
 import 'package:bukidlink/data/PostData.dart';
 import 'package:bukidlink/models/Post.dart';
 import 'package:bukidlink/models/User.dart';
+import 'package:bukidlink/models/Farm.dart';
+import 'package:bukidlink/services/UserService.dart';
 import 'package:intl/intl.dart';
-
 
 class PostTile extends StatelessWidget {
   final Post post;
-  const PostTile({
-    super.key,
-    required this.post,
-  });
+  const PostTile({super.key, required this.post});
 
   @override
   Widget build(BuildContext context) {
@@ -26,63 +24,74 @@ class PostTile extends StatelessWidget {
     String imageUrl = poster.profilePic;
     DateFormat formatter = DateFormat('MMM d, yyyy · H:mm a');
     return Container(
-  margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-  padding: const EdgeInsets.all(12),
-  decoration: BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(10),
-    boxShadow: [
-      BoxShadow(
-        color: Colors.black.withOpacity(0.1),
-        blurRadius: 4,
-        offset: const Offset(0, 2),
-      ),
-    ],
-  ),
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      // Header: Profile icon + Username + Timestamp
-      Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-
-          PostIcon(
-            imageUrl: imageUrl,
-            onTapped: () => Navigator.pushNamed(
-              context,
-              '/profile',
-              arguments: post.posterID,
-            ),
-          ),
-          const SizedBox(width: 10),
-
-          // Username + Timestamp
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                PostUsername(
-                  username: poster.username, 
-                  farmName: (poster.farmName?.trim().isNotEmpty ?? false) ? 
-                  poster.farmName!.trim(): 'unset value',),
-                const SizedBox(height: 2),
-                PostTimestamp(timestamp: formatter.format(post.timestamp)),
-              ],
-            ),
+      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header: Profile icon + Username + Timestamp
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              PostIcon(
+                imageUrl: imageUrl,
+                onTapped: () => Navigator.pushNamed(
+                  context,
+                  '/profile',
+                  arguments: post.posterID,
+                ),
+              ),
+              const SizedBox(width: 10),
 
-      const SizedBox(height: 10),
-      Divider(thickness: 1,),
+              // Username + Timestamp
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FutureBuilder<Farm?>(
+                      future: UserService().getFarmByReference(poster.farmId),
+                      builder: (context, snap) {
+                        final farmName =
+                            (snap.hasData &&
+                                snap.data != null &&
+                                snap.data!.name.trim().isNotEmpty)
+                            ? snap.data!.name.trim()
+                            : 'unset value';
 
-      PostContent(
-        textContent: post.textContent,
-        imageContent: post.imageContent,
+                        return PostUsername(
+                          username: poster.username,
+                          farmName: farmName,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 2),
+                    PostTimestamp(timestamp: formatter.format(post.timestamp)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+          Divider(thickness: 1),
+
+          PostContent(
+            textContent: post.textContent,
+            imageContent: post.imageContent,
+          ),
+        ],
       ),
-    ],
-  ),
-);
+    );
   }
 }
