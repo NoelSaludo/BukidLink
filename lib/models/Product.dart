@@ -79,7 +79,58 @@ class Product {
           : null,
       availability: availability,
       stockCount: stockCount,
-      reviews: null,
+      reviews: data['reviews'] != null
+          ? (data['reviews'] as List<dynamic>).map((reviewData) {
+              final reviewMap = reviewData as Map<String, dynamic>;
+              return ProductReview(
+                id: reviewMap['id'] ?? '',
+                userName: reviewMap['userName'] ?? '',
+                userAvatar: reviewMap['userAvatar'] ?? '',
+                rating: (reviewMap['rating'] != null)
+                    ? double.tryParse(reviewMap['rating'].toString()) ?? 0.0
+                    : 0.0,
+                comment: reviewMap['comment'] ?? '',
+                date: reviewMap['date'] ?? '',
+                isVerifiedPurchase: reviewMap['isVerifiedPurchase'] ?? false,
+              );
+            }).toList()
+          : null,
     );
   }
-}
+
+  // Create a modified copy of this Product. Useful for updating cached instances.
+  Product copyWith({
+    String? id,
+    String? name,
+    String? farmName,
+    String? imagePath,
+    String? category,
+    double? price,
+    String? description,
+    double? rating,
+    String? unit,
+    int? reviewCount,
+    String? availability,
+    int? stockCount,
+    List<ProductReview>? reviews,
+    String? farmId,
+  }) {
+    return Product(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      farmName: farmName ?? this.farmName,
+      imagePath: imagePath ?? this.imagePath,
+      category: category ?? this.category,
+      price: price ?? this.price,
+      availability: availability ?? this.availability,
+      stockCount: stockCount ?? this.stockCount,
+      description: description ?? this.description,
+      rating: rating ?? this.rating,
+      unit: unit ?? this.unit,
+      reviewCount: reviewCount ?? this.reviewCount,
+      reviews: reviews ?? this.reviews,
+      farmId: farmId ?? this.farmId,
+    );
+  }
+
+ }
