@@ -1,4 +1,6 @@
-class User{
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class User {
   final String id;
   final String username;
   final String password;
@@ -11,8 +13,7 @@ class User{
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? type;
-  final String? farm;
-  
+  final DocumentReference? farmId;
   User({
     required this.id,
     required this.username,
@@ -26,7 +27,7 @@ class User{
     required this.createdAt,
     required this.updatedAt,
     this.type,
-    this.farm,
+    this.farmId,
   });
 
   Map<String, dynamic> toJson() {
@@ -41,7 +42,7 @@ class User{
       'contactNumber': contactNumber,
       'profilePic': profilePic,
       'type': type,
-      'farm': farm,
+      'farmId': farmId,
     };
   }
 }
