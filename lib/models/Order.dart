@@ -1,4 +1,6 @@
+//Order.dart
 import 'package:bukidlink/models/CartItem.dart';
+import 'package:bukidlink/models/FarmerOrderSubStatus.dart';
 
 enum OrderStatus {
   toPay,
@@ -36,4 +38,17 @@ class Order {
   bool get isAllRated {
     return items.every((item) => item.product.tempRating > 0);
   }
+
 }
+
+class OrderWithFarmerStage {
+  final Order order;
+  final FarmerSubStatus farmerStage;
+
+  OrderWithFarmerStage({
+    required this.order,
+    required this.farmerStage,
+  });
+}
+
+
