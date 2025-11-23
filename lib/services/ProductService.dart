@@ -78,31 +78,16 @@ class ProductService {
   Future<List<ProductReview>> fetchProductReviews(String productId) async {
     List<ProductReview> reviews = [];
     try {
-      DocumentSnapshot doc = await _firestore
+      QuerySnapshot reviewSnapshot = await _firestore
           .collection('products')
           .doc(productId)
+          .collection('reviews')
           .get();
 
-      if (doc.exists) {
+      reviews = reviewSnapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
-        if (data['reviews'] != null && data['reviews'] is List) {
-          reviews = (data['reviews'] as List)
-              .map((reviewData) {
-                if (reviewData is Map<String, dynamic>) {
-                  return ProductReview.fromDocument(reviewData);
-                } else {
-                  print('Review data is not a Map: $reviewData');
-                  return null;
-                }
-              })
-              .whereType<ProductReview>()
-              .toList();
-        } else {
-          print(
-            'No reviews found or reviews field is not a List for product $productId',
-          );
-        }
-      }
+        return ProductReview.fromDocument(data);
+      }).toList();
     } catch (e) {
       print('Error fetching product reviews: $e');
     }
