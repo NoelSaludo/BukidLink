@@ -144,9 +144,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   width: width * 0.90,
                   // No fixed height to allow the container to grow and the SingleChildScrollView to scroll
                   decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20.0),
-                      topRight: Radius.circular(20.0),
+                    borderRadius: const BorderRadius.all(Radius.circular(20.0)
                     ),
                     gradient: LinearGradient(
                       begin: Alignment.topCenter, // Starting point of the gradient
