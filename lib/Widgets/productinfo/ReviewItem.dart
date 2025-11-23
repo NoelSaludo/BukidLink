@@ -101,7 +101,7 @@ class ReviewItem extends StatelessWidget {
                         }),
                       ),
                       const SizedBox(width: 8),
-                      Text(review.date, style: AppTextStyles.REVIEW_DATE),
+                      Text(review.date.toString(), style: AppTextStyles.REVIEW_DATE),
                     ],
                   ),
                 ],

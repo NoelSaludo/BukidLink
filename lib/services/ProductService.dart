@@ -10,15 +10,13 @@ class ProductService {
   Future<List<Product>> fetchProducts() async {
     List<Product> products = [];
     try {
-      QuerySnapshot snapshot =
-          await _firestore.collection('products').get();
+      QuerySnapshot snapshot = await _firestore.collection('products').get();
 
       for (var doc in snapshot.docs) {
         products.add(Product.fromDocument(doc));
       }
       // Update cache
       _productsCache = products;
-
     } catch (e) {
       print('Error fetching products: $e');
     }
@@ -28,13 +26,17 @@ class ProductService {
   }
 
   // Accept a ProductReview and persist it as a Map to Firestore.
-  Future<void> addReviewToProduct(String productId, ProductReview review) async {
+  Future<void> addReviewToProduct(
+    String productId,
+    ProductReview review,
+  ) async {
     try {
-      DocumentReference productRef =
-          _firestore.collection('products').doc(productId);
+      DocumentReference productRef = _firestore
+          .collection('products')
+          .doc(productId);
 
       await productRef.update({
-        'reviews': FieldValue.arrayUnion([review.toJson()])
+        'reviews': FieldValue.arrayUnion([review.toJson()]),
       });
 
       // Update cache if product exists in cache by replacing the product with a copy
@@ -49,7 +51,6 @@ class ProductService {
 
         _productsCache[index] = existing.copyWith(reviews: updatedReviews);
       }
-
     } catch (e) {
       print('Error adding review to product: $e');
     }
@@ -57,12 +58,11 @@ class ProductService {
 
   Future<void> updateProductStock(String productId, int newStock) async {
     try {
-      DocumentReference productRef =
-          _firestore.collection('products').doc(productId);
+      DocumentReference productRef = _firestore
+          .collection('products')
+          .doc(productId);
 
-      await productRef.update({
-        'stock_count': newStock
-      });
+      await productRef.update({'stock_count': newStock});
 
       // Update cache if product exists in cache by replacing the product with a copy
       int index = _productsCache.indexWhere((p) => p.id == productId);
@@ -70,14 +70,47 @@ class ProductService {
         final existing = _productsCache[index];
         _productsCache[index] = existing.copyWith(stockCount: newStock);
       }
-
     } catch (e) {
       print('Error updating product stock: $e');
     }
   }
 
+  Future<List<ProductReview>> fetchProductReviews(String productId) async {
+    List<ProductReview> reviews = [];
+    try {
+      DocumentSnapshot doc = await _firestore
+          .collection('products')
+          .doc(productId)
+          .get();
+
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        if (data['reviews'] != null && data['reviews'] is List) {
+          reviews = (data['reviews'] as List)
+              .map((reviewData) {
+                if (reviewData is Map<String, dynamic>) {
+                  return ProductReview.fromDocument(reviewData);
+                } else {
+                  print('Review data is not a Map: $reviewData');
+                  return null;
+                }
+              })
+              .whereType<ProductReview>()
+              .toList();
+        } else {
+          print(
+            'No reviews found or reviews field is not a List for product $productId',
+          );
+        }
+      }
+    } catch (e) {
+      print('Error fetching product reviews: $e');
+    }
+
+    return reviews;
+  }
+
   List<Product> getCachedProducts() {
     return _productsCache;
   }
-
 }

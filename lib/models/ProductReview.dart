@@ -1,14 +1,12 @@
 class ProductReview {
-  final String id;
   final String userName;
   final String userAvatar; // Initials or image path
   final double rating;
   final String comment;
-  final String date; // e.g., "2 days ago"
+  final DateTime date;
   final bool isVerifiedPurchase;
 
   ProductReview({
-    required this.id,
     required this.userName,
     required this.userAvatar,
     required this.rating,
@@ -19,25 +17,25 @@ class ProductReview {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'userName': userName,
       'userAvatar': userAvatar,
       'rating': rating,
       'comment': comment,
-      'date': date,
+      'date': date.toIso8601String(),
       'isVerifiedPurchase': isVerifiedPurchase,
     };
   }
 
-  ProductReview fromDocument(Map<String, dynamic> data) {
+  static ProductReview fromDocument(Map<String, dynamic> data) {
     return ProductReview(
-      id: data['id'] ?? '',
-      userName: data['userName'] ?? '',
-      userAvatar: data['userAvatar'] ?? '',
+      userName: data['username'] ?? '',
+      userAvatar: data['user_avatar'] ?? '',
       rating: double.tryParse(data['rating'].toString()) ?? 0.0,
       comment: data['comment'] ?? '',
-      date: data['date'] ?? '',
-      isVerifiedPurchase: data['isVerifiedPurchase'] ?? false,
+      date: data['date'] is DateTime
+          ? data['date']
+          : DateTime.tryParse(data['date']?.toString() ?? '') ?? DateTime.now(),
+      isVerifiedPurchase: data['is_verified_purchase'] ?? false,
     );
   }
 }

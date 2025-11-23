@@ -82,17 +82,7 @@ class Product {
       reviews: data['reviews'] != null
           ? (data['reviews'] as List<dynamic>).map((reviewData) {
               final reviewMap = reviewData as Map<String, dynamic>;
-              return ProductReview(
-                id: reviewMap['id'] ?? '',
-                userName: reviewMap['userName'] ?? '',
-                userAvatar: reviewMap['userAvatar'] ?? '',
-                rating: (reviewMap['rating'] != null)
-                    ? double.tryParse(reviewMap['rating'].toString()) ?? 0.0
-                    : 0.0,
-                comment: reviewMap['comment'] ?? '',
-                date: reviewMap['date'] ?? '',
-                isVerifiedPurchase: reviewMap['isVerifiedPurchase'] ?? false,
-              );
+              return ProductReview.fromDocument(reviewMap);
             }).toList()
           : null,
     );
