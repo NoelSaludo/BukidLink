@@ -1,196 +1,241 @@
+//Customer Order Details Page
 import 'package:flutter/material.dart';
 import 'package:bukidlink/models/Order.dart';
+import 'package:bukidlink/models/FarmerOrderSubStatus.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
+import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 
 class OrderDetailsPage extends StatelessWidget {
   final Order order;
+  final FarmerSubStatus? farmerStage;
 
-  const OrderDetailsPage({super.key, required this.order});
+  const OrderDetailsPage({super.key, required this.order, this.farmerStage});
 
-  (String message, IconData icon, Color color) _getStatusInfo(OrderStatus status) {
-    switch (status) {
+  (String message, IconData icon, Color color) _getStatusInfo() {
+    if (farmerStage != null) {
+      switch (farmerStage!) {
+        case FarmerSubStatus.pending:
+          return ('Waiting for seller approval', Icons.access_time, Colors.orange);
+        case FarmerSubStatus.toPack:
+          return ('Seller is preparing your order', Icons.inventory_2, Colors.blue);
+        case FarmerSubStatus.toHandover:
+          return ('Seller is handing over to courier', Icons.local_shipping, Colors.purple);
+        case FarmerSubStatus.shipping:
+          return ('Your order is on the way!', Icons.local_shipping_outlined, Colors.teal);
+        case FarmerSubStatus.completed:
+          final deliveredDate = order.dateDelivered != null
+              ? _formatDate(order.dateDelivered!)
+              : _formatDate(order.datePlaced);
+          return ('Delivered on $deliveredDate', Icons.check_circle, Colors.green);
+      }
+    }
+
+    // fallback: original OrderStatus
+    switch (order.status) {
       case OrderStatus.toPay:
-        return ('Waiting for seller approval', Icons.access_time, Colors.orangeAccent);
+        return ('Waiting for seller approval', Icons.access_time, Colors.orange);
       case OrderStatus.toShip:
-        return ('Seller is preparing your order', Icons.local_shipping, Colors.blueAccent);
+        return ('Seller is preparing your order', Icons.inventory_2, Colors.blue);
       case OrderStatus.toReceive:
-        return ('Package is in transit — est. delivery 2-3 days', Icons.local_shipping_outlined, Colors.teal);
+        return ('Package is in transit', Icons.local_shipping_outlined, Colors.teal);
       case OrderStatus.completed:
         final deliveredDate = order.dateDelivered != null
-            ? order.dateDelivered!.toLocal().toString().split(' ')[0]
-            : order.datePlaced.toLocal().toString().split(' ')[0];
+            ? _formatDate(order.dateDelivered!)
+            : _formatDate(order.datePlaced);
         return ('Delivered on $deliveredDate', Icons.check_circle, Colors.green);
-
       default:
         return ('', Icons.help_outline, Colors.grey);
     }
   }
 
+  String _getStatusLabel(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.toPay:
+        return 'To Pay';
+      case OrderStatus.toShip:
+        return 'To Ship';
+      case OrderStatus.toReceive:
+        return 'To Receive';
+      case OrderStatus.toRate:
+        return 'To Rate';
+      case OrderStatus.completed:
+        return 'Completed';
+    }
+  }
+
+  Color _getStatusColor(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.toPay:
+        return Colors.orange;
+      case OrderStatus.toShip:
+        return Colors.blue;
+      case OrderStatus.toReceive:
+        return Colors.purple;
+      case OrderStatus.toRate:
+        return Colors.amber;
+      case OrderStatus.completed:
+        return Colors.green;
+    }
+  }
+
+  double get subtotal => order.total - 50.0;
+  double get shippingFee => 50.0;
+  double get total => order.total;
+
   @override
   Widget build(BuildContext context) {
-    final (statusMessage, statusIcon, statusColor) = _getStatusInfo(order.status);
+    final (statusMessage, statusIcon, statusColor) = _getStatusInfo();
 
     return Scaffold(
-      backgroundColor: AppColors.APP_BACKGROUND,
+      backgroundColor: AppColors.backgroundYellow,
       appBar: AppBar(
-        title: const Text(
-          'Order Details',
-          style: TextStyle(
-            fontFamily: 'Outfit',
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        automaticallyImplyLeading: true,
+        title: Text('Order Details', style: AppTextStyles.PRODUCT_INFO_TITLE),
         centerTitle: true,
+        backgroundColor: AppColors.HEADER_GRADIENT_START,
+        elevation: 0,
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [AppColors.HEADER_GRADIENT_START, AppColors.HEADER_GRADIENT_END],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                AppColors.HEADER_GRADIENT_START,
+                AppColors.HEADER_GRADIENT_END,
+              ],
             ),
           ),
         ),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // STATUS BOX
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
+            _buildSectionTitle("Order Status"),
+            _buildStatusCard(statusMessage, statusIcon, statusColor),
+            const SizedBox(height: 16),
+            _buildSectionTitle("Shipping Information"),
+            _buildShippingInfo(),
+            const SizedBox(height: 16),
+            _buildSectionTitle("Order Summary"),
+            _buildOrderItems(),
+            const SizedBox(height: 16),
+            _buildSectionTitle("Logistics Status"),
+            _buildLogisticsStatus(),
+            const SizedBox(height: 16),
+            _buildSectionTitle("Payment Method"),
+            _buildPaymentMethod(),
+            const SizedBox(height: 16),
+            _buildSectionTitle("Order Total"),
+            _buildTotalCard(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ------------------------------
+  // Section Builders
+  // ------------------------------
+
+  Widget _buildSectionTitle(String title) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.HEADER_GRADIENT_START,
+            AppColors.HEADER_GRADIENT_END,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+      ),
+      child: Text(title, style: AppTextStyles.CHECKOUT_SECTION_TITLE),
+    );
+  }
+
+  Widget _buildStatusCard(String message, IconData icon, Color color) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: _whiteBoxDecoration(),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 28),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontFamily: 'Outfit',
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: _getStatusColor(order.status),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              _getStatusLabel(order.status),
+              style: const TextStyle(
+                fontFamily: 'Outfit',
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12.withOpacity(0.05),
-                    blurRadius: 5,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Icon(statusIcon, color: statusColor, size: 28),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          statusMessage,
-                          style: TextStyle(
-                            fontFamily: 'Outfit',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: statusColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
               ),
             ),
-            const SizedBox(height: 20),
+          ),
+        ],
+      ),
+    );
+  }
 
-            // SHIPPING DETAILS
-            _sectionBox(
-              title: 'Shipping Details',
-              children: [
-                _infoRow('Recipient', order.recipientName),
-                _infoRow('Contact', order.contactNumber),
-                _infoRow('Address', order.shippingAddress),
-              ],
-            ),
-            const SizedBox(height: 20),
+  Widget _buildShippingInfo() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: _whiteBoxDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _infoRow("Recipient Name", order.recipientName),
+          _infoRow("Contact Number", order.contactNumber),
+          _infoRow("Shipping Address", order.shippingAddress),
+          const SizedBox(height: 8),
+          _infoRow("Order ID", order.id),
+          _infoRow("Date Placed", _formatDate(order.datePlaced)),
+        ],
+      ),
+    );
+  }
 
-            // ORDER ITEMS
-            _sectionBox(
-              title: 'Order Items',
-              children: order.items
-                  .map(
-                    (item) => Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Image.asset(
-                        item.product.imagePath,
-                        width: 60,
-                        height: 60,
-                        fit: BoxFit.cover,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item.product.name,
-                              style: const TextStyle(
-                                fontFamily: 'Outfit',
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '₱${item.product.price.toStringAsFixed(2)} x${item.quantity}',
-                              style: const TextStyle(fontFamily: 'Outfit', fontSize: 14),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        '₱${(item.product.price * item.quantity).toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontFamily: 'Outfit',
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-                  .toList(),
-            ),
-            const SizedBox(height: 20),
-
-            // PAYMENT METHOD
-            _sectionBox(
-              title: 'Payment Method',
-              children: const [
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.payments, color: Colors.black54),
-                  title: Text(
-                    'Cash on Delivery',
-                    style: TextStyle(fontFamily: 'Outfit'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // COMPUTATION
-            _sectionBox(
-              title: 'Price Summary',
-              children: [
-                _priceRow('Subtotal', _computeSubtotal(order)),
-                _priceRow('Shipping Fee', 50),
-                const Divider(),
-                _priceRow('Total Payment', order.total, bold: true, highlight: true),
-              ],
+  Widget _infoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: RichText(
+        text: TextSpan(
+          text: "$label: ",
+          style: AppTextStyles.CHECKOUT_LABEL,
+          children: [
+            TextSpan(
+              text: value,
+              style: AppTextStyles.CHECKOUT_VALUE,
             ),
           ],
         ),
@@ -198,84 +243,225 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 
-  double _computeSubtotal(Order o) => o.total - 50;
+  Widget _buildOrderItems() {
+    // Group items by farm
+    final Map<String, List<dynamic>> groupedItems = {};
+    for (var item in order.items) {
+      final farm = item.product.farmName;
+      groupedItems.putIfAbsent(farm, () => []).add(item);
+    }
 
-  Widget _sectionBox({required String title, required List<Widget> children}) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black12.withOpacity(0.05),
-          blurRadius: 5,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontFamily: 'Outfit',
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 10),
-        ...children,
-      ],
-    ),
-  );
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: _whiteBoxDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: groupedItems.entries.map((entry) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(entry.key, style: AppTextStyles.CHECKOUT_SHOP_NAME),
+              const SizedBox(height: 8),
+              ...entry.value.map((item) => _buildProductRow(item)).toList(),
+              if (entry.key != groupedItems.keys.last)
+                const Divider(height: 24, thickness: 1),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
 
-  Widget _infoRow(String label, String value) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 4),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label,
-            style: const TextStyle(fontFamily: 'Outfit', fontSize: 14, color: Colors.black54)),
-        Flexible(
-          child: Text(
-            value,
-            style: const TextStyle(fontFamily: 'Outfit', fontSize: 14, color: Colors.black87),
-            textAlign: TextAlign.end,
-          ),
-        ),
-      ],
-    ),
-  );
-
-  // 💰 Price Row
-  Widget _priceRow(String label, double value, {bool bold = false, bool highlight = false}) {
-    final color = highlight ? Colors.green[700] : Colors.black87;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+  Widget _buildProductRow(dynamic item) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Outfit',
-              fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-              fontSize: 15,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset(
+              item.product.imagePath,
+              width: 60,
+              height: 60,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item.product.name, style: AppTextStyles.CHECKOUT_PRODUCT_NAME),
+                Text(
+                  "x${item.quantity} ${item.product.unit ?? ''}",
+                  style: AppTextStyles.CHECKOUT_PRODUCT_DETAILS,
+                ),
+              ],
             ),
           ),
           Text(
-            '₱${value.toStringAsFixed(2)}',
+            "₱${item.totalPrice.toStringAsFixed(2)}",
+            style: AppTextStyles.CHECKOUT_PRICE,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLogisticsStatus() {
+    final statuses = [
+      OrderStatus.toPay,
+      OrderStatus.toShip,
+      OrderStatus.toReceive,
+      OrderStatus.toRate,
+      OrderStatus.completed,
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: _whiteBoxDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: statuses.map((status) {
+          final isCompleted = statuses.indexOf(status) <= statuses.indexOf(order.status);
+          final isCurrent = status == order.status;
+
+          return Row(
+            children: [
+              Column(
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isCompleted ? AppColors.primaryGreen : Colors.grey[300],
+                      border: Border.all(
+                        color: isCurrent ? AppColors.primaryGreen : Colors.transparent,
+                        width: 3,
+                      ),
+                    ),
+                    child: isCompleted
+                        ? const Icon(Icons.check, color: Colors.white, size: 14)
+                        : null,
+                  ),
+                  if (status != statuses.last)
+                    Container(
+                      width: 2,
+                      height: 30,
+                      color: isCompleted ? AppColors.primaryGreen : Colors.grey[300],
+                    ),
+                ],
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  _getStatusLabel(status),
+                  style: TextStyle(
+                    fontFamily: 'Outfit',
+                    fontSize: 14,
+                    fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                    color: isCompleted ? Colors.black87 : Colors.grey,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildPaymentMethod() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: _whiteBoxDecoration(),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGreen.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.payments,
+              color: AppColors.primaryGreen,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Text(
+            'Cash on Delivery',
             style: TextStyle(
               fontFamily: 'Outfit',
-              fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-              fontSize: highlight ? 18 : 15,
-              color: color,
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildTotalCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: _whiteBoxDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _totalRow("Subtotal", subtotal),
+          _totalRow("Shipping Fee", shippingFee),
+          const Divider(height: 20, thickness: 1),
+          _totalRow("Grand Total", total, isBold: true),
+        ],
+      ),
+    );
+  }
+
+  Widget _totalRow(String label, double value, {bool isBold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: isBold
+                ? AppTextStyles.CHECKOUT_TOTAL_LABEL
+                : AppTextStyles.CHECKOUT_LABEL,
+          ),
+          Text(
+            "₱${value.toStringAsFixed(2)}",
+            style: isBold
+                ? AppTextStyles.CHECKOUT_TOTAL_VALUE
+                : AppTextStyles.CHECKOUT_VALUE,
+          ),
+        ],
+      ),
+    );
+  }
+
+  BoxDecoration _whiteBoxDecoration() {
+    return BoxDecoration(
+      color: AppColors.containerWhite,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.1),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.month}/${date.day}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
 }

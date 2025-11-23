@@ -1,6 +1,7 @@
 import 'package:bukidlink/models/Order.dart';
 import 'package:bukidlink/models/CartItem.dart';
 import 'package:uuid/uuid.dart';
+import 'package:bukidlink/data/TestOrdersData.dart';
 
 class OrderService {
   static final OrderService shared = OrderService._internal();
@@ -82,4 +83,14 @@ class OrderService {
       updateOrderStatus(order.id, OrderStatus.completed);
     }
   }
+
+  void removeOrder(String orderId) {
+    _orders.removeWhere((o) => o.id == orderId);
+  }
+
+  void loadTestOrders() {
+    _orders.clear();
+    _orders.addAll(TestOrders.orders);
+  }
+
 }
