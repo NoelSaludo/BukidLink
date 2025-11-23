@@ -64,8 +64,8 @@ class PostTile extends StatelessWidget {
               children: [
                 PostUsername(
                   username: poster.username, 
-                  farmName: (poster.farm?.trim().isNotEmpty ?? false) ? 
-                  poster.farm!.trim(): 'unset value',),
+                  farmName: (poster.farmName?.trim().isNotEmpty ?? false) ? 
+                  poster.farmName!.trim(): 'unset value',),
                 const SizedBox(height: 2),
                 PostTimestamp(timestamp: formatter.format(post.timestamp)),
               ],

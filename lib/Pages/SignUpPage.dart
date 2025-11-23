@@ -26,6 +26,7 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController addressController = TextEditingController();
   final TextEditingController contactNumberController = TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  final ValueNotifier<String> activeTab = ValueNotifier<String>('Consumer');
   String? forceErrorText;
   bool isLoading = false;
 
@@ -98,7 +99,8 @@ class _SignUpPageState extends State<SignUpPage> {
         lastName: lastNameController.text,
         emailAddress: emailAddressController.text, 
         address: addressController.text, 
-        contactNumber: contactNumberController.text,));
+        contactNumber: contactNumberController.text,
+        accountType: activeTab.value));
   }
 
   @override
@@ -112,9 +114,6 @@ class _SignUpPageState extends State<SignUpPage> {
 
   Widget _buildContent(BuildContext context) {
      final width = MediaQuery.of(context).size.width;
-
-     final ValueNotifier<String> activeTab = ValueNotifier<String>('Sign Up');
-     activeTab.value = 'Consumer';
 
     return SafeArea(
       child: SingleChildScrollView(
