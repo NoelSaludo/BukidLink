@@ -56,7 +56,7 @@ class _SignUpPageState extends State<SignUpPage> {
         setState(() => isLoading = false);
         if (userCredential != null) {
           // Navigate to loading/main flow on successful sign-in
-          PageNavigator().goTo(context, LoadingPage());
+          PageNavigator().goTo(context, LoadingPage(userType: 'Consumer'));
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Google sign-in failed')),
@@ -66,9 +66,9 @@ class _SignUpPageState extends State<SignUpPage> {
     } catch (e) {
       if (context.mounted) {
         setState(() => isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Google sign-in error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Google sign-in error: $e')));
       }
     }
   }
@@ -93,14 +93,16 @@ class _SignUpPageState extends State<SignUpPage> {
     //   }
     // }
     PageNavigator().goToAndKeep(
-      context, 
+      context,
       SignUpContinuedPage(
-        firstName: firstNameController.text, 
+        firstName: firstNameController.text,
         lastName: lastNameController.text,
-        emailAddress: emailAddressController.text, 
-        address: addressController.text, 
+        emailAddress: emailAddressController.text,
+        address: addressController.text,
         contactNumber: contactNumberController.text,
-        accountType: activeTab.value));
+        accountType: activeTab.value,
+      ),
+    );
   }
 
   @override
@@ -113,7 +115,7 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   Widget _buildContent(BuildContext context) {
-     final width = MediaQuery.of(context).size.width;
+    final width = MediaQuery.of(context).size.width;
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -144,11 +146,12 @@ class _SignUpPageState extends State<SignUpPage> {
                   width: width * 0.90,
                   // No fixed height to allow the container to grow and the SingleChildScrollView to scroll
                   decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.all(Radius.circular(20.0)
-                    ),
+                    borderRadius: const BorderRadius.all(Radius.circular(20.0)),
                     gradient: LinearGradient(
-                      begin: Alignment.topCenter, // Starting point of the gradient
-                      end: Alignment.bottomCenter, // Ending point of the gradient
+                      begin:
+                          Alignment.topCenter, // Starting point of the gradient
+                      end: Alignment
+                          .bottomCenter, // Ending point of the gradient
                       colors: [
                         const Color.fromARGB(
                           255,
@@ -169,7 +172,10 @@ class _SignUpPageState extends State<SignUpPage> {
                   child: Form(
                     key: formKey,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 24.0,
+                      ),
                       child: ValueListenableBuilder<String>(
                         valueListenable: activeTab,
                         builder: (context, tab, _) {
@@ -184,24 +190,32 @@ class _SignUpPageState extends State<SignUpPage> {
                                 children: [
                                   Expanded(
                                     flex: 1,
-                                    child: FirstNameField(controller: firstNameController),
+                                    child: FirstNameField(
+                                      controller: firstNameController,
+                                    ),
                                   ),
                                   const SizedBox(width: 8.0),
                                   Expanded(
                                     flex: 1,
-                                    child: LastNameField(controller: lastNameController),
+                                    child: LastNameField(
+                                      controller: lastNameController,
+                                    ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 8.0),
-                              EmailAddressField(controller: emailAddressController),
+                              EmailAddressField(
+                                controller: emailAddressController,
+                              ),
                               const SizedBox(height: 8.0),
                               AddressField(
                                 controller: addressController,
                                 onChanged: onChanged,
                               ),
                               const SizedBox(height: 8.0),
-                              ContactNumberField(controller: contactNumberController),
+                              ContactNumberField(
+                                controller: contactNumberController,
+                              ),
                               const SizedBox(height: 12.0),
 
                               Text(
@@ -217,13 +231,17 @@ class _SignUpPageState extends State<SignUpPage> {
                                   borderRadius: BorderRadius.circular(50),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
                                       child: GestureDetector(
-                                        onTap: () => activeTab.value = 'Consumer',
+                                        onTap: () =>
+                                            activeTab.value = 'Consumer',
                                         child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 200),
+                                          duration: const Duration(
+                                            milliseconds: 200,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: tab == 'Consumer'
                                                 ? const Color.fromARGB(
@@ -233,7 +251,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                                     109,
                                                   )
                                                 : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(50),
+                                            borderRadius: BorderRadius.circular(
+                                              50,
+                                            ),
                                           ),
                                           alignment: Alignment.center,
                                           child: Text(
@@ -252,7 +272,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                       child: GestureDetector(
                                         onTap: () => activeTab.value = 'Farmer',
                                         child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 200),
+                                          duration: const Duration(
+                                            milliseconds: 200,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: tab == 'Farmer'
                                                 ? const Color.fromARGB(
@@ -262,7 +284,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                                     109,
                                                   )
                                                 : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(50),
+                                            borderRadius: BorderRadius.circular(
+                                              50,
+                                            ),
                                           ),
                                           alignment: Alignment.center,
                                           child: Text(
@@ -324,16 +348,16 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-   void goBack(BuildContext context) {
-     PageNavigator().goBack(context);
-   }
+  void goBack(BuildContext context) {
+    PageNavigator().goBack(context);
+  }
 
-   Future<String?> validateInputFromServer(
-     String emailAddress,
-     String address,
-     String contactNumber,
-   ) async {
-     // Not implemented yet — return null to indicate "no error" by default.
-     return null;
-   }
- }
+  Future<String?> validateInputFromServer(
+    String emailAddress,
+    String address,
+    String contactNumber,
+  ) async {
+    // Not implemented yet — return null to indicate "no error" by default.
+    return null;
+  }
+}

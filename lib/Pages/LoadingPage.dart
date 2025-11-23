@@ -3,8 +3,12 @@ import 'dart:async';
 import 'package:bukidlink/Utils/PageNavigator.dart';
 import 'package:bukidlink/Pages/HomePage.dart';
 
+// TODO: @joelaguzar dito nagrouroute ang app pag naglaunch
 class LoadingPage extends StatefulWidget {
-  const LoadingPage({super.key});
+  // pede mo to gamitin to distinguish user types
+  // at to route accordingly sa HomePage
+  final String userType;
+  const LoadingPage({super.key, required this.userType});
 
   @override
   State<LoadingPage> createState() => _LoadingPageState();
