@@ -11,8 +11,8 @@ class User{
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? type;
-  final String? farm;
-  
+  final String? farmName;
+  final String? farmAddress;
   User({
     required this.id,
     required this.username,
@@ -26,7 +26,8 @@ class User{
     required this.createdAt,
     required this.updatedAt,
     this.type,
-    this.farm,
+    this.farmName,
+    this.farmAddress
   });
 
   Map<String, dynamic> toJson() {
@@ -41,7 +42,8 @@ class User{
       'contactNumber': contactNumber,
       'profilePic': profilePic,
       'type': type,
-      'farm': farm,
+      'farmName': farmName,
+      'farmAddress': farmAddress,
     };
   }
 }

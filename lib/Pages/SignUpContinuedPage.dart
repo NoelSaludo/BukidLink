@@ -4,6 +4,8 @@ import 'package:bukidlink/Widgets/SignupandLogin/LoginorSigninButton.dart';
 import 'package:bukidlink/Widgets/SignupandLogin/UsernameField.dart';
 import 'package:bukidlink/Widgets/SignupandLogin/PasswordField.dart';
 import 'package:bukidlink/Widgets/SignupandLogin/ConfirmPasswordField.dart';
+import 'package:bukidlink/Widgets/SignupandLogin/FarmAddress.dart';
+import 'package:bukidlink/Widgets/SignupandLogin/FarmName.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
 import 'package:bukidlink/Widgets/CustomBackButton.dart';
 import 'package:bukidlink/Pages/LoadingPage.dart';
@@ -17,6 +19,7 @@ class SignUpContinuedPage extends StatefulWidget {
   final String emailAddress;
   final String address;
   final String contactNumber;
+  final String accountType;
   const SignUpContinuedPage({
     super.key,
     required this.firstName,
@@ -24,6 +27,7 @@ class SignUpContinuedPage extends StatefulWidget {
     required this.emailAddress,
     required this.address,
     required this.contactNumber,
+    required this.accountType
     });
 
   @override
@@ -35,11 +39,19 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
   TextEditingController();
+  final TextEditingController farmAddressController = TextEditingController();
+  final TextEditingController farmNameController = TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final ValueNotifier<String> accountType = ValueNotifier<String>('Sign Up');
   String? forceErrorText;
   bool isLoading = false;
 
+@override
+  void initState() {
+    super.initState();
+    accountType.value = widget.accountType; // <-- set the value from the previous page
+  }
+  
   void dispose() {
     usernameController.dispose();
     passwordController.dispose();
@@ -71,6 +83,8 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
         // Firebase will generate the UID, we'll use empty string for now
         username: usernameController.text,
         password: passwordController.text,
+        farmName: farmNameController.text,
+        farmAddress: farmAddressController.text,
         // Plain password - Firebase handles hashing
         firstName: widget.firstName,
         lastName: widget.lastName,
@@ -130,7 +144,7 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
         .of(context)
         .size
         .width;
-    accountType.value = 'Consumer';
+    // accountType.value = 'Consumer';
 
     return Stack(
       children: [
@@ -209,6 +223,16 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
                         controller: confirmPasswordController,
 
                       ),
+                      if (tab == 'Farmer') ...[
+                        FarmNameField(
+                          controller: farmNameController,
+                          onChanged: onChanged,
+                        ),
+                        FarmAddressField(
+                          controller: farmAddressController,
+                          onChanged: onChanged,
+                        ),
+                      ],
                       const SizedBox(height: 16.0),
                       // --- Action button ---
                       const Spacer(),

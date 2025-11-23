@@ -127,4 +127,34 @@ class FormValidator {
 
     return null;
   }
+
+  String? farmAddressValidator(String? value) {
+  if (value == null || value.trim().isEmpty) {
+    return "This field is required";
+  }
+
+  final trimmed = value.trim();
+
+  // Must contain at least one letter (avoid pure numbers)
+  if (!RegExp(r'[A-Za-z]').hasMatch(trimmed)) {
+    return "Address must contain letters";
+  }
+
+  // Allowed characters: letters, numbers, spaces, commas, periods, hyphens
+  if (!RegExp(r'^[A-Za-z0-9\s,.\-]+$').hasMatch(trimmed)) {
+    return "Address contains invalid characters";
+  }
+
+  return null; // valid
+}
+
+String? farmNameValidator(String? value) {
+  if (value == null || value.trim().isEmpty) {
+    return "This field is required";
+  }
+
+  final trimmed = value.trim();
+
+  return null; // valid
+}
 }
