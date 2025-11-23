@@ -16,4 +16,28 @@ class ProductReview {
     required this.date,
     this.isVerifiedPurchase = false,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'userName': userName,
+      'userAvatar': userAvatar,
+      'rating': rating,
+      'comment': comment,
+      'date': date,
+      'isVerifiedPurchase': isVerifiedPurchase,
+    };
+  }
+
+  ProductReview fromDocument(Map<String, dynamic> data) {
+    return ProductReview(
+      id: data['id'] ?? '',
+      userName: data['userName'] ?? '',
+      userAvatar: data['userAvatar'] ?? '',
+      rating: double.tryParse(data['rating'].toString()) ?? 0.0,
+      comment: data['comment'] ?? '',
+      date: data['date'] ?? '',
+      isVerifiedPurchase: data['isVerifiedPurchase'] ?? false,
+    );
+  }
 }
