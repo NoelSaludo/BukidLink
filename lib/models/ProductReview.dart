@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class ProductReview {
   final String userName;
   final String userAvatar; // Initials or image path
@@ -27,6 +29,7 @@ class ProductReview {
   }
 
   static ProductReview fromDocument(Map<String, dynamic> data) {
+    Timestamp stamp = Timestamp.now();
     return ProductReview(
       userName: data['username'] ?? '',
       userAvatar: data['user_avatar'] ?? '',
@@ -34,7 +37,9 @@ class ProductReview {
       comment: data['comment'] ?? '',
       date: data['date'] is DateTime
           ? data['date']
-          : DateTime.tryParse(data['date']?.toString() ?? '') ?? DateTime.now(),
+          : data['date'] is Timestamp
+              ? (data['date'] as Timestamp).toDate()
+              : DateTime.tryParse(data['date'].toString()) ?? stamp.toDate(),
       isVerifiedPurchase: data['is_verified_purchase'] ?? false,
     );
   }
