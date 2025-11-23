@@ -38,12 +38,11 @@ class _RatePageState extends State<RatePage> {
     }
 
     final newReview = ProductReview(
-      id: const Uuid().v4(),
       userName: 'Anonymous',
       userAvatar: 'A',
       rating: _rating.toDouble(),
       comment: _reviewController.text.trim(),
-      date: 'Just now',
+      date: DateTime.now(),
       isVerifiedPurchase: true,
     );
 

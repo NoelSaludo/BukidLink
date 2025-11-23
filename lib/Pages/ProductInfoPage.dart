@@ -1,9 +1,9 @@
+import 'package:bukidlink/models/ProductReview.dart';
 import 'package:flutter/material.dart';
 import 'package:bukidlink/models/Product.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
 import 'package:bukidlink/utils/SnackBarHelper.dart';
 import 'package:bukidlink/data/ProductData.dart';
-import 'package:bukidlink/data/ReviewData.dart';
 import 'package:bukidlink/services/CartService.dart';
 import 'package:bukidlink/pages/CartPage.dart';
 import 'package:bukidlink/pages/AllReviewsPage.dart';
@@ -14,6 +14,7 @@ import 'package:bukidlink/widgets/productinfo/ProductReviewsSection.dart';
 import 'package:bukidlink/widgets/productinfo/RecommendedProductsSection.dart';
 import 'package:bukidlink/widgets/productinfo/BottomActionBar.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
+import 'package:bukidlink/services/ProductService.dart';
 
 class ProductInfoPage extends StatefulWidget {
   final Product product;
@@ -34,13 +35,22 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
   static const int _recommendedProductsLimit = 6;
 
   final CartService _cartService = CartService();
+  final ProductService _productService = ProductService();
   int _quantity = _minQuantity;
   late double _totalPrice;
+  late Future<List<ProductReview>> _reviewsFuture = Future.value([]);
 
   @override
   void initState() {
     super.initState();
     _totalPrice = widget.product.price;
+    // Fetch reviews for the current product from Firestore
+    _reviewsFuture = _productService.fetchProductReviews(widget.product.id);
+    if (widget.product.reviews != null) {
+      _reviewsFuture = Future.value(widget.product.reviews);
+    } else {
+      debugPrint('No reviews found');
+    }
   }
 
   // Helper that returns a network image when path is a URL, otherwise an asset image.
@@ -118,8 +128,6 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
             .take(_recommendedProductsLimit)
             .toList();
 
-    final sampleReviews = ReviewData.getSampleReviews();
-
     return Scaffold(
       backgroundColor: AppColors.APP_BACKGROUND,
       appBar: ProductInfoAppBar(
@@ -189,16 +197,28 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
                   'Fresh and high-quality ${widget.product.name.toLowerCase()} sourced directly from local farms.',
               farmName: widget.product.farmName,
             ),
-            ProductReviewsSection(
-              reviews: sampleReviews,
-              onViewAll: () => PageNavigator().goToAndKeepWithTransition(
-                context,
-                AllReviewsPage(
-                  reviews: sampleReviews,
-                  product: widget.product,
-                ),
-                PageTransitionType.slideFromRight,
-              ),
+            FutureBuilder<List<ProductReview>>(
+              future: _reviewsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                final reviews = snapshot.data ?? [];
+                return ProductReviewsSection(
+                  reviews: reviews,
+                  onViewAll: () => PageNavigator().goToAndKeepWithTransition(
+                    context,
+                    AllReviewsPage(
+                      reviews: reviews,
+                      product: widget.product,
+                    ),
+                    PageTransitionType.slideFromRight,
+                  ),
+                );
+              },
             ),
             RecommendedProductsSection(products: recommendedProducts),
             const SizedBox(height: 20),
