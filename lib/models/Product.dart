@@ -19,7 +19,6 @@ class Product {
   double tempRating = 0.0;
   final String? farmId;
 
-
   Product({
     required this.id,
     required this.name,
@@ -41,25 +40,34 @@ class Product {
     final data = doc.data() as Map<String, dynamic>;
 
     // Stock/amount may be stored under different keys depending on the document
-    final dynamic rawAmount = data['amount'] ?? data['stock_count'] ?? data['stockCount'] ?? 0;
+    final dynamic rawAmount =
+        data['amount'] ?? data['stock_count'] ?? data['stockCount'] ?? 0;
     final int stockCount = rawAmount is int
         ? rawAmount
         : int.tryParse(rawAmount?.toString() ?? '0') ?? 0;
 
     // Price/cost may be stored under 'cost' or 'price' and may be numeric or string
     final dynamic rawPrice = data['cost'] ?? data['price'];
-    final double price = rawPrice != null ? double.tryParse(rawPrice.toString()) ?? 0.0 : 0.0;
+    final double price = rawPrice != null
+        ? double.tryParse(rawPrice.toString()) ?? 0.0
+        : 0.0;
 
     // Image path may be 'image_url' or 'imagePath'. Use default asset if missing.
-    final String rawImage = (data['image_url'] ?? data['imagePath'] ?? '').toString();
-    final String imagePath = rawImage.isNotEmpty ? rawImage : 'assets/images/default_cover_photo.png';
+    final String rawImage = (data['image_url'] ?? data['imagePath'] ?? '')
+        .toString();
+    final String imagePath = rawImage.isNotEmpty
+        ? rawImage
+        : 'assets/images/default_cover_photo.png';
 
     // Rating may not exist or may be stored as string/number
     final dynamic rawRating = data['rating'];
-    final double? rating = rawRating != null ? double.tryParse(rawRating.toString()) ?? 0.0 : null;
+    final double? rating = rawRating != null
+        ? double.tryParse(rawRating.toString()) ?? 0.0
+        : null;
 
     // Derive availability if it's not explicitly provided
-    final String availability = (data['availability'] as String?) ??
+    final String availability =
+        (data['availability'] as String?) ??
         (stockCount > 0 ? 'In Stock' : 'Out of Stock');
 
     return Product(
@@ -123,4 +131,24 @@ class Product {
     );
   }
 
- }
+  // Helper to convert Product to a Map for Firestore since Product model lacks toJson().
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'farm_name': farmName,
+      'imagePath': imagePath,
+      'category': category,
+      'price': price,
+      'description': description,
+      'rating': rating,
+      'unit': unit,
+      'review_count': reviewCount,
+      'availability': availability,
+      'stock_count': stockCount,
+      'farm_id': farmId,
+      'reviews': reviews != null
+          ? reviews!.map((r) => r.toJson()).toList()
+          : null,
+    };
+  }
+}

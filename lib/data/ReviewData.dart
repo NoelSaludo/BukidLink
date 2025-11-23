@@ -8,7 +8,6 @@ class ReviewData {
   static List<ProductReview> getSampleReviews() {
     return [
       ProductReview(
-        id: '1',
         userName: 'Maria Santos',
         userAvatar: 'MS',
         rating: 5.0,
@@ -18,7 +17,6 @@ class ReviewData {
         isVerifiedPurchase: true,
       ),
       ProductReview(
-        id: '2',
         userName: 'Juan Dela Cruz',
         userAvatar: 'JD',
         rating: 4.5,
@@ -27,7 +25,6 @@ class ReviewData {
         isVerifiedPurchase: true,
       ),
       ProductReview(
-        id: '3',
         userName: 'Anna Reyes',
         userAvatar: 'AR',
         rating: 4.0,
@@ -36,7 +33,6 @@ class ReviewData {
         isVerifiedPurchase: false,
       ),
       ProductReview(
-        id: '4',
         userName: 'Roberto Garcia',
         userAvatar: 'RG',
         rating: 5.0,
@@ -46,7 +42,6 @@ class ReviewData {
         isVerifiedPurchase: true,
       ),
       ProductReview(
-        id: '5',
         userName: 'Carmen Flores',
         userAvatar: 'CF',
         rating: 4.5,
@@ -56,7 +51,6 @@ class ReviewData {
         isVerifiedPurchase: true,
       ),
       ProductReview(
-        id: '6',
         userName: 'Pedro Martinez',
         userAvatar: 'PM',
         rating: 3.5,
@@ -66,7 +60,6 @@ class ReviewData {
         isVerifiedPurchase: true,
       ),
       ProductReview(
-        id: '7',
         userName: 'Lisa Aquino',
         userAvatar: 'LA',
         rating: 5.0,
@@ -76,7 +69,6 @@ class ReviewData {
         isVerifiedPurchase: true,
       ),
       ProductReview(
-        id: '8',
         userName: 'Miguel Torres',
         userAvatar: 'MT',
         rating: 4.0,
@@ -86,7 +78,6 @@ class ReviewData {
         isVerifiedPurchase: false,
       ),
       ProductReview(
-        id: '9',
         userName: 'Sofia Mendoza',
         userAvatar: 'SM',
         rating: 4.5,
@@ -96,7 +87,6 @@ class ReviewData {
         isVerifiedPurchase: true,
       ),
       ProductReview(
-        id: '10',
         userName: 'Ricardo Bautista',
         userAvatar: 'RB',
         rating: 5.0,
@@ -106,7 +96,6 @@ class ReviewData {
         isVerifiedPurchase: true,
       ),
       ProductReview(
-        id: '11',
         userName: 'Elena Cruz',
         userAvatar: 'EC',
         rating: 4.0,
@@ -116,7 +105,6 @@ class ReviewData {
         isVerifiedPurchase: true,
       ),
       ProductReview(
-        id: '12',
         userName: 'Antonio Ramos',
         userAvatar: 'AR',
         rating: 4.5,
@@ -126,7 +114,6 @@ class ReviewData {
         isVerifiedPurchase: true,
       ),
       ProductReview(
-        id: '13',
         userName: 'Grace Villanueva',
         userAvatar: 'GV',
         rating: 5.0,
@@ -136,7 +123,6 @@ class ReviewData {
         isVerifiedPurchase: true,
       ),
       ProductReview(
-        id: '14',
         userName: 'Daniel Santiago',
         userAvatar: 'DS',
         rating: 3.5,
@@ -146,7 +132,6 @@ class ReviewData {
         isVerifiedPurchase: false,
       ),
       ProductReview(
-        id: '15',
         userName: 'Patricia Castillo',
         userAvatar: 'PC',
         rating: 4.5,
