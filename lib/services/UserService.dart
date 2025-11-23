@@ -37,6 +37,7 @@ class UserService {
         address: user.address,
         contactNumber: user.contactNumber,
         profilePic: user.profilePic,
+        type: user.type,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -56,7 +57,7 @@ class UserService {
           'lastName': user.lastName,
           'address': user.address,
           'contactNumber': user.contactNumber,
-          'userType': user.type,
+          'type': user.type,
           'profilePic': user.profilePic,
           'created_at': FieldValue.serverTimestamp(),
           'updated_at': FieldValue.serverTimestamp(),
@@ -179,6 +180,7 @@ class UserService {
           updatedAt: data['updated_at'] != null
               ? (data['updated_at'] as Timestamp).toDate()
               : DateTime.now(),
+          type: data['type'] ?? 'Consumer',
         );
       } else {
         // User authenticated but no Firestore document - create minimal currentUser
@@ -194,6 +196,7 @@ class UserService {
           profilePic: '',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          type: 'Consumer',
         );
       }
     } on FirebaseAuthException catch (e) {
