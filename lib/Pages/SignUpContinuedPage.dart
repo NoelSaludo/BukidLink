@@ -135,132 +135,118 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
     );
   }
 
-  Widget _buildContent(BuildContext context) {
-    final height = MediaQuery
-        .of(context)
-        .size
-        .height;
-    final width = MediaQuery
-        .of(context)
-        .size
-        .width;
-    // accountType.value = 'Consumer';
+Widget _buildContent(BuildContext context) {
+  final height = MediaQuery.of(context).size.height;
+  final width = MediaQuery.of(context).size.width;
 
-    return Stack(
-      children: [
-        const SizedBox(height: 150.0),
-        Positioned(
-          top: 20,
-          left: 10,
-          child: CustomBackButton(
-            onPressed: () => PageNavigator().goBack(context),
-          ),
-        ),
-        Align(
-          alignment: Alignment.topCenter,
-          child: Column(
-            children: [
-              const SizedBox(height: 150.0),
-              const WelcomeText(text: 'Almost Done!'),
-            ],
-          ),
-        ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: Container(
-            width: width * 0.90,
-            height: height * 0.70,
-            decoration: const BoxDecoration(
-              color: Color.fromARGB(255, 160, 190, 92),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20.0),
-                topRight: Radius.circular(20.0),
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter, // Starting point of the gradient
-                end: Alignment.bottomCenter, // Ending point of the gradient
-                colors: [
-                  const Color.fromARGB(
-                    255,
-                    200,
-                    230,
-                    108,
-                  ), // First color in the gradient
-                  const Color.fromARGB(
-                    255,
-                    52,
-                    82,
-                    52,
-                  ), // Second color in the gradient
-                ],
-                stops: [0.0, 1.0], // Optional: Define color distribution
-              ),
-            ),
-            child: Form(
-              key: formKey,
-              child: ValueListenableBuilder<String>(
-                valueListenable: accountType,
-                builder: (context, tab, _) {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // --- Input fields ---
-                      const SizedBox(height: 50.0),
-                      EmailField(
-                        controller: usernameController,
-                        mode: 'SignUp',
-                        forceErrorText: forceErrorText,
-                        onChanged: onChanged,
-                      ),
-                      PasswordField(
-                        controller: passwordController,
-                        mode: 'SignUp',
-                        forceErrorText: null,
-                        onChanged: onChanged,
-                      ),
-                      ConfirmPasswordField(
-                        controller: confirmPasswordController,
-
-                      ),
-                      if (tab == 'Farmer') ...[
-                        FarmNameField(
-                          controller: farmNameController,
-                          onChanged: onChanged,
-                        ),
-                        FarmAddressField(
-                          controller: farmAddressController,
-                          onChanged: onChanged,
-                        ),
-                      ],
-                      const SizedBox(height: 16.0),
-                      // --- Action button ---
-                      const Spacer(),
-                      Container(
-                        alignment: Alignment.bottomCenter,
-                        child: LoginorSigninButton(
-                          onPressed: () {
-                            if (tab == 'Consumer') {
-                              handleSignUp(context);
-                            } else if (tab == 'Farmer') {
-                              handleSignUp(context);
-                            }
-                          },
-                          mode: tab,
-                        ),
-                      ),
-
-                      const SizedBox(height: 50.0),
-                    ],
-                  );
-                },
+  return SafeArea(
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 24.0),
+      child: Column(
+        children: [
+          // Top-left back button
+          Padding(
+            padding: const EdgeInsets.only(left: 10.0, top: 20.0),
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: CustomBackButton(
+                onPressed: () => PageNavigator().goBack(context),
               ),
             ),
           ),
-        ),
-      ],
-    );
-  }
+
+          // Greeting text
+          const SizedBox(height: 30.0),
+          const WelcomeText(text: 'Almost Done!'),
+          const SizedBox(height: 20.0),
+
+          // Form container
+          Center(
+            child: Container(
+              width: width * 0.90,
+              height: height * 0.70, // fixed container height
+              decoration: const BoxDecoration(
+                color: Color.fromARGB(255, 160, 190, 92),
+                borderRadius: BorderRadius.all(
+                  Radius.circular(20.0)
+                ),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color.fromARGB(255, 200, 230, 108),
+                    Color.fromARGB(255, 52, 82, 52),
+                  ],
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight,
+                        ),
+                        child: IntrinsicHeight(
+                          child: Form(
+                            key: formKey,
+                            child: ValueListenableBuilder<String>(
+                              valueListenable: accountType,
+                              builder: (context, tab, _) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    const SizedBox(height: 50.0),
+                                    EmailField(
+                                      controller: usernameController,
+                                      mode: 'SignUp',
+                                      forceErrorText: forceErrorText,
+                                      onChanged: onChanged,
+                                    ),
+                                    PasswordField(
+                                      controller: passwordController,
+                                      mode: 'SignUp',
+                                      forceErrorText: null,
+                                      onChanged: onChanged,
+                                    ),
+                                    ConfirmPasswordField(controller: confirmPasswordController),
+                                    if (tab == 'Farmer') ...[
+                                      FarmNameField(
+                                        controller: farmNameController,
+                                        onChanged: onChanged,
+                                      ),
+                                      FarmAddressField(
+                                        controller: farmAddressController,
+                                        onChanged: onChanged,
+                                      ),
+                                    ],
+                                    const SizedBox(height: 16.0),
+                                    const Spacer(), // pushes button to bottom if content is short
+                                    LoginorSigninButton(
+                                      onPressed: () => handleSignUp(context),
+                                      mode: tab,
+                                    ),
+                                    const SizedBox(height: 16.0),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 
   Widget _buildTabButton(String label, bool isActive, VoidCallback onPressed) {
     return ElevatedButton(
