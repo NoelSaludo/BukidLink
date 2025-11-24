@@ -42,6 +42,87 @@ class _EditPageState extends State<EditPage> {
   String? _selectedUnit;
   String? _customUnit;
 
+  bool _hasChanges() {
+    // Check if basic fields differ
+    if (_productNameController.text != widget.product.name) return true;
+    if (_descriptionController.text != (widget.product.description ?? '')) return true;
+    if (_priceController.text != widget.product.price.toString()) return true;
+    if (_stockController.text != widget.product.stockCount.toString()) return true;
+
+    // Check if image changed
+    if (_productImagePath != widget.product.imagePath) return true;
+
+    // Check if category changed
+    if (_selectedCategory != widget.product.category) return true;
+
+    // Check if unit changed
+    // Current unit logic:
+    // If _selectedUnit is 'Other', the unit is _customUnitController.text
+    // Otherwise, it is _selectedUnit
+    final String? currentUnit = _selectedUnit == 'Other'
+        ? _customUnitController.text
+        : _selectedUnit;
+
+    // Original unit logic:
+    // If widget.product.unit was effectively 'Other' (not in list), it might be different
+    if (currentUnit != widget.product.unit) return true;
+
+    return false;
+  }
+
+  Future<void> _handlePop(bool didPop) async {
+    if (didPop) return;
+
+    if (_hasChanges()) {
+      final shouldPop = await _showDiscardChangesDialog();
+      if (shouldPop == true && mounted) {
+        Navigator.of(context).pop();
+      }
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
+  Future<bool?> _showDiscardChangesDialog() {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          'Discard Changes?',
+          style: AppTextStyles.DIALOG_TITLE,
+        ),
+        content: Text(
+          'You have unsaved changes. Are you sure you want to discard them?',
+          style: AppTextStyles.BODY_TEXT,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              'Cancel',
+              style: AppTextStyles.BODY_TEXT.copyWith(
+                color: AppColors.TEXT_SECONDARY,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              'Discard',
+              style: AppTextStyles.BODY_TEXT.copyWith(
+                color: AppColors.ERROR_RED,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _productNameController.dispose();
@@ -475,246 +556,254 @@ class _EditPageState extends State<EditPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) => _handlePop(didPop),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F5F5),
+        appBar: AppBar(
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => _handlePop(false),
+          ),
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  AppColors.HEADER_GRADIENT_START,
+                  AppColors.HEADER_GRADIENT_END,
+                ],
+              ),
+            ),
+          ),
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.25),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.edit,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Edit Product',
+                style: TextStyle(
+                  fontFamily: AppTextStyles.FONT_FAMILY,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          centerTitle: true,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: Container(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
               colors: [
-                AppColors.HEADER_GRADIENT_START,
-                AppColors.HEADER_GRADIENT_END,
+                const Color(0xFFF5F5F5),
+                const Color(0xFFE8F5E9).withOpacity(0.3),
               ],
             ),
           ),
-        ),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.25),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.edit,
-                color: Colors.white,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Edit Product',
-              style: TextStyle(
-                fontFamily: AppTextStyles.FONT_FAMILY,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
-        ),
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              const Color(0xFFF5F5F5),
-              const Color(0xFFE8F5E9).withOpacity(0.3),
-            ],
-          ),
-        ),
-        child: Column(
-          children: [
-            Expanded(
-              child: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSectionHeader('Basic Information', Icons.info_outline),
-                      const SizedBox(height: 16),
-                      _buildCard(
-                        child: Column(
-                          children: [
-                            CustomTextField(
-                              label: 'Product Name',
-                              hint: 'e.g., Fresh Tomatoes',
-                              controller: _productNameController,
-                              validator: _validateProductName,
-                            ),
-                            const SizedBox(height: 20),
-                            CustomTextField(
-                              label: 'Product Description',
-                              hint: 'Describe your product in detail',
-                              controller: _descriptionController,
-                              maxLines: 4,
-                              maxLength: 500,
-                              validator: _validateDescription,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      _buildSectionHeader('Product Image', Icons.image_outlined),
-                      const SizedBox(height: 16),
-                      _buildCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Upload a clear image of your product',
-                              style: AppTextStyles.BODY_MEDIUM.copyWith(
-                                color: AppColors.TEXT_SECONDARY,
-                                fontSize: 13,
+          child: Column(
+            children: [
+              Expanded(
+                child: Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionHeader('Basic Information', Icons.info_outline),
+                        const SizedBox(height: 16),
+                        _buildCard(
+                          child: Column(
+                            children: [
+                              CustomTextField(
+                                label: 'Product Name',
+                                hint: 'e.g., Fresh Tomatoes',
+                                controller: _productNameController,
+                                validator: _validateProductName,
                               ),
-                            ),
-                            const SizedBox(height: 12),
-                            ImagePickerCard(
-                              imagePath: _productImagePath,
-                              onTap: _handleImagePicker,
-                              onRemove: _productImagePath != null ? _handleRemoveImage : null,
-                            ),
-                          ],
+                              const SizedBox(height: 20),
+                              CustomTextField(
+                                label: 'Product Description',
+                                hint: 'Describe your product in detail',
+                                controller: _descriptionController,
+                                maxLines: 4,
+                                maxLength: 500,
+                                validator: _validateDescription,
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      _buildSectionHeader('Category', Icons.category_outlined),
-                      const SizedBox(height: 16),
-                      _buildCard(
-                        child: CategorySelector(
-                          selectedCategory: _selectedCategory,
-                          onCategorySelected: _handleCategorySelected,
+                        const SizedBox(height: 24),
+                        _buildSectionHeader('Product Image', Icons.image_outlined),
+                        const SizedBox(height: 16),
+                        _buildCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Upload a clear image of your product',
+                                style: AppTextStyles.BODY_MEDIUM.copyWith(
+                                  color: AppColors.TEXT_SECONDARY,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              ImagePickerCard(
+                                imagePath: _productImagePath,
+                                onTap: _handleImagePicker,
+                                onRemove: _productImagePath != null ? _handleRemoveImage : null,
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      _buildSectionHeader('Pricing & Stock', Icons.monetization_on_outlined),
-                      const SizedBox(height: 16),
-                      _buildCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: CustomTextField(
-                                    label: 'Price',
-                                    hint: '0.00',
-                                    controller: _priceController,
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    validator: _validatePrice,
-                                    prefix: Text(
-                                      '₱',
-                                      style: AppTextStyles.PESO_SYMBOL.copyWith(
-                                        fontSize: 18,
-                                        color: AppColors.primaryGreen,
+                        const SizedBox(height: 24),
+                        _buildSectionHeader('Category', Icons.category_outlined),
+                        const SizedBox(height: 16),
+                        _buildCard(
+                          child: CategorySelector(
+                            selectedCategory: _selectedCategory,
+                            onCategorySelected: _handleCategorySelected,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        _buildSectionHeader('Pricing & Stock', Icons.monetization_on_outlined),
+                        const SizedBox(height: 16),
+                        _buildCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: CustomTextField(
+                                      label: 'Price',
+                                      hint: '0.00',
+                                      controller: _priceController,
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      validator: _validatePrice,
+                                      prefix: Text(
+                                        '₱',
+                                        style: AppTextStyles.PESO_SYMBOL.copyWith(
+                                          fontSize: 18,
+                                          color: AppColors.primaryGreen,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: CustomTextField(
-                                    label: 'Stock',
-                                    hint: '0',
-                                    controller: _stockController,
-                                    keyboardType: TextInputType.number,
-                                    validator: _validateStock,
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: CustomTextField(
+                                      label: 'Stock',
+                                      hint: '0',
+                                      controller: _stockController,
+                                      keyboardType: TextInputType.number,
+                                      validator: _validateStock,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            _buildSRPAlert(),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      _buildSectionHeader('Unit of Sale', Icons.shopping_basket_outlined),
-                      const SizedBox(height: 16),
-                      _buildCard(
-                        child: UnitSelector(
-                          selectedUnit: _selectedUnit,
-                          onUnitSelected: _handleUnitSelected,
-                          customUnit: _customUnit,
-                          onCustomUnitChanged: _handleCustomUnitChanged,
-                          customUnitController: _customUnitController,
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(50),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.ACCENT_LIME.withOpacity(0.4),
-                              blurRadius: 12,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _handleSubmit,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.ACCENT_LIME,
-                              disabledBackgroundColor: AppColors.ACCENT_LIME.withOpacity(0.6),
-                              foregroundColor: AppColors.DARK_TEXT,
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(50),
+                                ],
                               ),
-                              elevation: 0,
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                              height: 26,
-                              width: 26,
-                              child: CircularProgressIndicator(
-                                color: AppColors.DARK_TEXT,
-                                strokeWidth: 2.5,
+                              _buildSRPAlert(),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        _buildSectionHeader('Unit of Sale', Icons.shopping_basket_outlined),
+                        const SizedBox(height: 16),
+                        _buildCard(
+                          child: UnitSelector(
+                            selectedUnit: _selectedUnit,
+                            onUnitSelected: _handleUnitSelected,
+                            customUnit: _customUnit,
+                            onCustomUnitChanged: _handleCustomUnitChanged,
+                            customUnitController: _customUnitController,
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(50),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.ACCENT_LIME.withOpacity(0.4),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
                               ),
-                            )
-                                : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.save_outlined,
-                                  size: 26,
+                            ],
+                          ),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _handleSubmit,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.ACCENT_LIME,
+                                disabledBackgroundColor: AppColors.ACCENT_LIME.withOpacity(0.6),
+                                foregroundColor: AppColors.DARK_TEXT,
+                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(50),
                                 ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  'Save Changes',
-                                  style: AppTextStyles.PRIMARY_BUTTON_TEXT.copyWith(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.5,
+                                elevation: 0,
+                              ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                height: 26,
+                                width: 26,
+                                child: CircularProgressIndicator(
+                                  color: AppColors.DARK_TEXT,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                                  : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.save_outlined,
+                                    size: 26,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Save Changes',
+                                    style: AppTextStyles.PRIMARY_BUTTON_TEXT.copyWith(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
