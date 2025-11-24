@@ -7,6 +7,7 @@ import 'package:bukidlink/widgets/farmer/ImagePickerCard.dart';
 import 'package:bukidlink/widgets/farmer/CategorySelector.dart';
 import 'package:bukidlink/widgets/farmer/UnitSelector.dart';
 import 'package:bukidlink/services/ImagePickerService.dart';
+import 'package:bukidlink/services/FarmService.dart';
 import 'package:bukidlink/models/Product.dart';
 
 // Farmer Edit Product Page
@@ -21,18 +22,21 @@ class EditPage extends StatefulWidget {
 class _EditPageState extends State<EditPage> {
   final _formKey = GlobalKey<FormState>();
   final ImagePickerService _imagePickerService = ImagePickerService();
+  final FarmService _farmService = FarmService();
 
   // Form controllers
   late TextEditingController _productNameController;
   late TextEditingController _descriptionController;
   late TextEditingController _priceController;
   late TextEditingController _stockController;
+  late TextEditingController _customUnitController;
 
   // Static SRP value for demo
   static const double _srp = 100.0;
   String? _priceAlert;
 
   // Form state
+  bool _isLoading = false;
   String? _productImagePath;
   String? _selectedCategory;
   String? _selectedUnit;
@@ -44,6 +48,7 @@ class _EditPageState extends State<EditPage> {
     _descriptionController.dispose();
     _priceController.dispose();
     _stockController.dispose();
+    _customUnitController.dispose();
     super.dispose();
   }
 
@@ -56,8 +61,20 @@ class _EditPageState extends State<EditPage> {
     _stockController = TextEditingController(text: widget.product.stockCount.toString());
     _productImagePath = widget.product.imagePath;
     _selectedCategory = widget.product.category;
-    _selectedUnit = widget.product.unit;
-    _customUnit = null; // No customUnit in Product model
+
+    // Logic to handle custom units
+    if (widget.product.unit != null &&
+        !UnitSelector.units.contains(widget.product.unit) &&
+        widget.product.unit != 'Other') {
+      _selectedUnit = 'Other';
+      _customUnit = widget.product.unit;
+    } else {
+      _selectedUnit = widget.product.unit;
+      _customUnit = null;
+    }
+
+    _customUnitController = TextEditingController(text: _customUnit);
+
     _priceController.addListener(_checkPriceAgainstSRP);
   }
 
@@ -113,6 +130,7 @@ class _EditPageState extends State<EditPage> {
       _selectedUnit = unit;
       if (unit != 'Other') {
         _customUnit = null;
+        _customUnitController.clear();
       }
     });
   }
@@ -175,8 +193,8 @@ class _EditPageState extends State<EditPage> {
                     text: isHigh
                         ? 'The price is too high compared to the SRP ('
                         : isLow
-                            ? 'The price is too low compared to the SRP ('
-                            : '',
+                        ? 'The price is too low compared to the SRP ('
+                        : '',
                     style: AppTextStyles.BODY_MEDIUM.copyWith(
                       color: AppColors.ERROR_RED,
                       fontSize: 13,
@@ -222,7 +240,7 @@ class _EditPageState extends State<EditPage> {
     return null;
   }
 
-  void _handleSubmit() {
+  Future<void> _handleSubmit() async {
     HapticFeedback.mediumImpact();
     if (_productImagePath == null) {
       _showErrorDialog('Please add a product image');
@@ -236,13 +254,48 @@ class _EditPageState extends State<EditPage> {
       _showErrorDialog('Please select how the product is sold');
       return;
     }
+
+    // Update _customUnit from controller before validation
+    if (_selectedUnit == 'Other') {
+      _customUnit = _customUnitController.text;
+    }
+
     if (_selectedUnit == 'Other' && (_customUnit == null || _customUnit!.trim().isEmpty)) {
       _showErrorDialog('Please enter a custom unit');
       return;
     }
     if (_formKey.currentState?.validate() ?? false) {
-      // TODO: Update product in database
-      _showSuccessDialog();
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        final updatedProduct = widget.product.copyWith(
+          name: _productNameController.text,
+          description: _descriptionController.text,
+          price: double.parse(_priceController.text),
+          stockCount: int.parse(_stockController.text),
+          imagePath: _productImagePath,
+          category: _selectedCategory,
+          unit: _selectedUnit == 'Other' ? _customUnit : _selectedUnit,
+        );
+
+        await _farmService.updateProduct(updatedProduct);
+
+        if (mounted) {
+          _showSuccessDialog();
+        }
+      } catch (e) {
+        if (mounted) {
+          _showErrorDialog('Failed to update product: $e');
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 
@@ -393,7 +446,7 @@ class _EditPageState extends State<EditPage> {
             child: ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close dialog
-                Navigator.of(context).pop(); // Go back to previous page
+                Navigator.of(context).pop(); // Go back to store
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.SUCCESS_GREEN,
@@ -405,7 +458,7 @@ class _EditPageState extends State<EditPage> {
                 elevation: 0,
               ),
               child: const Text(
-                'Back to Store',
+                'Close',
                 style: TextStyle(
                   fontFamily: AppTextStyles.FONT_FAMILY,
                   fontSize: 16,
@@ -596,6 +649,7 @@ class _EditPageState extends State<EditPage> {
                           onUnitSelected: _handleUnitSelected,
                           customUnit: _customUnit,
                           onCustomUnitChanged: _handleCustomUnitChanged,
+                          customUnitController: _customUnitController,
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -613,9 +667,10 @@ class _EditPageState extends State<EditPage> {
                         child: SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: _handleSubmit,
+                            onPressed: _isLoading ? null : _handleSubmit,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.ACCENT_LIME,
+                              disabledBackgroundColor: AppColors.ACCENT_LIME.withOpacity(0.6),
                               foregroundColor: AppColors.DARK_TEXT,
                               padding: const EdgeInsets.symmetric(vertical: 18),
                               shape: RoundedRectangleBorder(
@@ -623,7 +678,16 @@ class _EditPageState extends State<EditPage> {
                               ),
                               elevation: 0,
                             ),
-                            child: Row(
+                            child: _isLoading
+                                ? const SizedBox(
+                              height: 26,
+                              width: 26,
+                              child: CircularProgressIndicator(
+                                color: AppColors.DARK_TEXT,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                                : Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const Icon(
