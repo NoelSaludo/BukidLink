@@ -123,11 +123,71 @@ class _FarmerStorePageState extends State<FarmerStorePage>
   }
 
   void _handleRemoveProduct(Product product) {
-    // TODO: Show confirmation dialog and remove product
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Remove ${product.name}'),
-        duration: const Duration(seconds: 1),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.CARD_BACKGROUND,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text(
+          'Remove Product',
+          style: AppTextStyles.DIALOG_TITLE,
+        ),
+        content: Text(
+          'Are you sure you want to remove "${product.name}"? This will archive the product.',
+          style: AppTextStyles.BODY_TEXT,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.TEXT_SECONDARY),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+              try {
+                // Show loading indicator
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Removing product...'),
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
+                }
+
+                await _farmService.archiveProduct(product.id);
+
+                if (mounted) {
+                  _fetchProducts(); // Refresh list
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${product.name} removed successfully'),
+                      backgroundColor: AppColors.SUCCESS_GREEN,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error removing product: $e'),
+                      backgroundColor: AppColors.ERROR_RED,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text(
+              'Remove',
+              style: TextStyle(color: AppColors.ERROR_RED),
+            ),
+          ),
+        ],
       ),
     );
   }
