@@ -291,6 +291,8 @@ class _FarmerStorePageState extends State<FarmerStorePage>
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              const Icon(Icons.storefront_outlined, size: 20),
+                              const SizedBox(width: 8),
                               const Text('On sale'),
                               const SizedBox(width: 4),
                               Text('(${_onSaleProducts.length})'),
@@ -304,6 +306,9 @@ class _FarmerStorePageState extends State<FarmerStorePage>
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              const Icon(Icons.remove_shopping_cart_outlined,
+                                  size: 20),
+                              const SizedBox(width: 8),
                               const Text('Sold Out'),
                               const SizedBox(width: 4),
                               Text('(${_soldOutProducts.length})'),
@@ -317,6 +322,8 @@ class _FarmerStorePageState extends State<FarmerStorePage>
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              const Icon(Icons.inventory_2_outlined, size: 20),
+                              const SizedBox(width: 8),
                               const Text('Archived'),
                               const SizedBox(width: 4),
                               Text('(${_archivedProducts.length})'),
@@ -330,6 +337,8 @@ class _FarmerStorePageState extends State<FarmerStorePage>
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              const Icon(Icons.swap_horiz_outlined, size: 20),
+                              const SizedBox(width: 8),
                               const Text('Trades'),
                               const SizedBox(width: 4),
                               Text('(${_tradeOffers.length})'),

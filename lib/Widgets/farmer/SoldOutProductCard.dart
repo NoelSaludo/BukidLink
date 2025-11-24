@@ -31,9 +31,10 @@ class SoldOutProductCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            spreadRadius: 1,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -58,10 +59,43 @@ class SoldOutProductCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product Name
-                  Text(
-                    product.name,
-                    style: AppTextStyles.STORE_PRODUCT_NAME,
+                  // Header Row with Name and Sold Out Badge
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          product.name,
+                          style: AppTextStyles.STORE_PRODUCT_NAME,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.ERROR_RED.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.remove_shopping_cart,
+                              size: 12,
+                              color: AppColors.ERROR_RED,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Sold Out',
+                              style: AppTextStyles.CAPTION.copyWith(
+                                color: AppColors.ERROR_RED,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   // Price per unit
