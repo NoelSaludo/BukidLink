@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bukidlink/models/Message.dart';
 import 'package:bukidlink/Widgets/message/MessageBubble.dart';
+import 'package:bukidlink/services/ChatService.dart';
+import 'package:bukidlink/services/UserService.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 
@@ -15,43 +20,145 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   final TextEditingController _controller = TextEditingController();
-  final List<Message> _messages = [
-    Message(
-      sender: 'Admin',
-      senderId: 'admin123',
-      receiverId: 'you123',
-      lastMessage: '',
-      text: 'Hello! How can I help you?',
-      time: DateTime.now().subtract(const Duration(minutes: 5)),
-      isMe: false,
-    ),
-    Message(
-      sender: 'You',
-      senderId: 'you123',
-      receiverId: 'admin123',
-      lastMessage: '',
-      text: 'I have a question about my crops.',
-      time: DateTime.now().subtract(const Duration(minutes: 4)),
-      isMe: true,
-    ),
-  ];
+  final List<Message> _messages = [];
+  final ScrollController _scrollController = ScrollController();
+  final ChatService _chatService = ChatService();
+  StreamSubscription<List<Message>>? _messagesSub;
+  String? _conversationId;
+  String? _currentUid;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  final int _pageSize = 50;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentUid = UserService.currentUser?.id ?? 'you123';
+    _conversationId = _chatService.conversationIdFor(
+      _currentUid!,
+      widget.sender,
+    );
+    _scrollController.addListener(_onScroll);
+    _initConversation();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    // if we're at the top, load more
+    if (_scrollController.position.pixels <= 0) {
+      _loadMoreMessages();
+    }
+  }
+
+  Future<void> _initConversation() async {
+    if (_conversationId == null || _currentUid == null) return;
+    await _chatService.createConversation(_currentUid!, widget.sender);
+    await _loadInitialMessages();
+
+    _messagesSub = _chatService
+        .streamMessages(_conversationId!, limit: 200)
+        .listen((incoming) {
+          _mergeMessages(incoming);
+          _scrollToBottom();
+        });
+  }
+
+  Future<void> _loadInitialMessages() async {
+    if (_conversationId == null) return;
+    final msgs = await _chatService.fetchMessages(
+      _conversationId!,
+      limit: _pageSize,
+    );
+    setState(() {
+      _messages.clear();
+      _messages.addAll(msgs);
+    });
+    _scrollToBottom();
+  }
+
+  Future<void> _loadMoreMessages() async {
+    if (_isLoadingMore || !_hasMore) return;
+    if (_conversationId == null) return;
+    if (_messages.isEmpty) return;
+
+    _isLoadingMore = true;
+    try {
+      final oldest = _messages.first;
+      final beforeTs = Timestamp.fromDate(oldest.time);
+      final older = await _chatService.fetchMessages(
+        _conversationId!,
+        limit: _pageSize,
+        before: beforeTs,
+      );
+      if (older.isEmpty) {
+        _hasMore = false;
+      } else {
+        setState(() {
+          // prepend older messages
+          _messages.insertAll(0, older);
+        });
+      }
+    } finally {
+      _isLoadingMore = false;
+    }
+  }
+
+  void _mergeMessages(List<Message> incoming) {
+    if (incoming.isEmpty) return;
+    final Map<String, Message> keyed = {};
+    for (final m in _messages) {
+      final key =
+          '${m.senderId}_${m.time.millisecondsSinceEpoch}_${m.text.hashCode}';
+      keyed[key] = m;
+    }
+    for (final m in incoming) {
+      final key =
+          '${m.senderId}_${m.time.millisecondsSinceEpoch}_${m.text.hashCode}';
+      keyed[key] = m;
+    }
+
+    final merged = keyed.values.toList();
+    merged.sort(
+      (a, b) => a.time.millisecondsSinceEpoch.compareTo(
+        b.time.millisecondsSinceEpoch,
+      ),
+    );
+    setState(() {
+      _messages
+        ..clear()
+        ..addAll(merged);
+    });
+  }
+
+  @override
+  void dispose() {
+    _messagesSub?.cancel();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
 
   void _sendMessage() {
-    if (_controller.text.trim().isEmpty) return;
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+    if (_conversationId == null || _currentUid == null) return;
 
-    setState(() {
-      _messages.add(
-        Message(
-          sender: 'You',
-          senderId: 'you123',
-          receiverId: 'admin123',
-          lastMessage: '',
-          text: _controller.text.trim(),
-          time: DateTime.now(),
-          isMe: true,
-        ),
-      );
-      _controller.clear();
+    _chatService.sendMessage(_conversationId!, _currentUid!, text);
+    _controller.clear();
+    _scrollToBottom();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      try {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      } catch (_) {}
     });
   }
 
@@ -88,6 +195,7 @@ class _ChatPageState extends State<ChatPage> {
         children: [
           Expanded(
             child: ListView.builder(
+              controller: _scrollController,
               padding: const EdgeInsets.all(10),
               itemCount: _messages.length,
               itemBuilder: (context, index) {
