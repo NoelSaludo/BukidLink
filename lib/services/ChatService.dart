@@ -28,6 +28,7 @@ class ChatService {
       await convoRef.set({
         'id': convoId,
         'participants': [uidA, uidB],
+        'lastMessage': initialText ?? '',
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
@@ -70,7 +71,12 @@ class ChatService {
     final WriteBatch batch = _firestore.batch();
     final DocumentReference newMsgRef = messagesRef.doc();
     batch.set(newMsgRef, messageData);
-    batch.update(convoRef, {'updatedAt': FieldValue.serverTimestamp()});
+    batch.update(convoRef, {
+      'lastMessage': text,
+      'lastMessageSenderId': senderId,
+      'lastMessageId': newMsgRef.id,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
 
     await batch.commit();
     return newMsgRef;
@@ -137,6 +143,19 @@ class ChatService {
         return data;
       }).toList(),
     );
+  }
+
+  /// Returns the stored `lastMessage` string for a conversation.
+  /// Returns an empty string when the conversation doesn't exist or no lastMessage.
+  Future<String> getConversationLastMessage(String conversationId) async {
+    final DocumentReference convoRef = _firestore
+        .collection('conversations')
+        .doc(conversationId);
+    final snap = await convoRef.get();
+    if (!snap.exists) return '';
+    final data = snap.data() as Map<String, dynamic>?;
+    if (data == null) return '';
+    return (data['lastMessage'] as String?) ?? '';
   }
 
   Future<void> markMessageRead(

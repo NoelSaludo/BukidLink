@@ -1,36 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
-import 'package:bukidlink/models/Message.dart';
 import 'package:bukidlink/pages/ChatPage.dart';
+import 'package:bukidlink/services/ChatService.dart';
+import 'package:bukidlink/services/UserService.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class InboxPage extends StatelessWidget {
+class InboxPage extends StatefulWidget {
   InboxPage({super.key});
 
-  final List<Message> conversations = [
-    Message(
-      sender: 'Admin',
-      senderId: 'test_sender_id',
-      text: 'Your request has been approved.',
-      time: DateTime.now(),
-      isMe: false,
-    ),
-    Message(
-      sender: 'Farmer John',
-      senderId: 'test_sender_id',
-      text: 'Thanks for the help!',
-      time: DateTime.now().subtract(const Duration(hours: 2)),
-      isMe: false,
-    ),
-    Message(
-      sender: 'Agri Support',
-      senderId: 'test_sender_id',
-      text: 'We’ll send an update soon.',
-      time: DateTime.now().subtract(const Duration(days: 1)),
-      isMe: false,
-    ),
-  ];
+  @override
+  State<InboxPage> createState() => _InboxPageState();
+}
+
+class _InboxPageState extends State<InboxPage> {
+  final ChatService _chatService = ChatService();
+  String? _currentUid;
 
   String formatTime(DateTime time) {
     final now = DateTime.now();
@@ -43,6 +29,7 @@ class InboxPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final uid = UserService.currentUser?.id;
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: true,
@@ -70,47 +57,76 @@ class InboxPage extends StatelessWidget {
           ),
         ),
       ),
-      body: ListView.builder(
-        itemCount: conversations.length,
-        itemBuilder: (context, index) {
-          final convo = conversations[index];
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundColor: AppColors.HEADER_GRADIENT_START,
-              child: Text(
-                convo.sender[0],
-                style: GoogleFonts.outfit(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: _chatService.streamConversationsForUser(uid ?? ''),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final convos = snapshot.data ?? [];
+          if (convos.isEmpty) {
+            return const Center(child: Text('No conversations'));
+          }
+          return ListView.builder(
+            itemCount: convos.length,
+            itemBuilder: (context, index) {
+              final conv = convos[index];
+              final participants =
+                  (conv['participants'] as List<dynamic>?)?.cast<String>() ??
+                  [];
+              String otherId = conv['id'] as String? ?? '';
+              if (uid != null && participants.isNotEmpty) {
+                otherId = participants.firstWhere(
+                  (p) => p != uid,
+                  orElse: () => participants.first,
+                );
+              } else if (participants.isNotEmpty) {
+                otherId = participants.first;
+              }
+
+              final lastMsg = (conv['lastMessage'] as String?) ?? '';
+              final updated = conv['updatedAt'] as Timestamp?;
+              final time = updated != null ? updated.toDate() : DateTime.now();
+
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: AppColors.HEADER_GRADIENT_START,
+                  child: Text(
+                    otherId.isNotEmpty ? otherId[0].toUpperCase() : '?',
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            title: Text(
-              convo.sender,
-              style: GoogleFonts.outfit(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
-            ),
-            subtitle: Text(
-              convo.text,
-              style: GoogleFonts.outfit(color: Colors.grey.shade700),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: Text(
-              formatTime(convo.time),
-              style: GoogleFonts.outfit(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-              ),
-            ),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChatPage(sender: convo.sender),
+                title: Text(
+                  otherId,
+                  style: GoogleFonts.outfit(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
                 ),
+                subtitle: Text(
+                  lastMsg,
+                  style: GoogleFonts.outfit(color: Colors.grey.shade700),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: Text(
+                  formatTime(time),
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChatPage(sender: otherId),
+                    ),
+                  );
+                },
               );
             },
           );
