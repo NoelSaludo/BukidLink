@@ -7,12 +7,13 @@ import 'package:bukidlink/widgets/farmer/FarmerBottomNavBar.dart';
 import 'package:bukidlink/widgets/farmer/StoreProductCard.dart';
 import 'package:bukidlink/widgets/farmer/SoldOutProductCard.dart';
 import 'package:bukidlink/widgets/farmer/TradeOfferCard.dart';
-import 'package:bukidlink/data/ProductData.dart';
 import 'package:bukidlink/data/TradeOfferData.dart';
 import 'package:bukidlink/models/Product.dart';
 import 'package:bukidlink/models/TradeOffer.dart';
 import 'package:bukidlink/pages/farmer/SellPage.dart';
 import 'package:bukidlink/pages/farmer/EditPage.dart';
+import 'package:bukidlink/services/ProductService.dart';
+import 'package:bukidlink/services/UserService.dart';
 
 class FarmerStorePage extends StatefulWidget {
   const FarmerStorePage({super.key});
@@ -24,57 +25,68 @@ class FarmerStorePage extends StatefulWidget {
 class _FarmerStorePageState extends State<FarmerStorePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final ProductService _productService = ProductService();
+  bool _isLoading = true;
 
-  // Product lists filtered by status
-  List<Product> get _onSaleProducts => ProductData.getAllProducts()
-      .where((p) => p.availability == 'In Stock')
-      .toList();
-
-  List<Product> get _soldOutProducts => ProductData.getAllProducts()
-      .where((p) => p.availability == 'Out of Stock')
-      .toList();
-
+  List<Product> _onSaleProducts = [];
+  List<Product> _soldOutProducts = [];
   List<TradeOffer> get _tradeOffers => TradeOfferData.getPendingTradeOffers();
-
-  // ON SALE
-  // Calculate sold count based on stock difference (mock calculation)
-  int _getSoldCount(Product product) {
-    // return a mock value based on product ID
-    final mockSales = {
-      '3': 30,  // Strawberry - sold out
-      '7': 15,  // Carrots
-      '8': 10,  // Eggplant
-      '9': 50,  // Broccoli - sold out
-      '10': 8,  // Potato
-      '23': 15, // Rabbit Meat - sold out
-    };
-    return mockSales[product.id] ?? 0;
-  }
-
-  // SOLD OUT
-  // Calculate total earnings for a sold out product
-  double _getTotalEarnings(Product product) {
-    final soldCount = _getSoldCount(product);
-    return product.price * soldCount;
-  }
-
-  // Get rating for sold out products (mock data)
-  double _getProductRating(Product product) {
-    final mockRatings = {
-      '3': 4.5,    // Strawberry
-      '7': 4.0,    // Carrots
-      '8': 5.0,    // Eggplant
-      '9': 4.5,    // Broccoli
-      '10': 4.5,   // Potato
-      '23': 4.0,   // Rabbit Meat
-    };
-    return mockRatings[product.id] ?? product.rating ?? 0.0;
-  }
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _fetchProducts();
+  }
+
+  Future<void> _fetchProducts() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final user = UserService().getCurrentUser();
+      // If user has a farmId (DocumentReference), we use its ID string.
+      // If farmId is null, we can't fetch farm-specific products.
+      final String? farmId = user?.farmId?.id;
+
+      if (farmId != null) {
+        final products = await _productService.fetchProductsByFarm(farmId);
+
+        final onSale = <Product>[];
+        final soldOut = <Product>[];
+
+        for (var product in products) {
+          if (product.stockCount > 0) {
+            onSale.add(product);
+          } else {
+            soldOut.add(product);
+          }
+        }
+
+        if (mounted) {
+          setState(() {
+            _onSaleProducts = onSale;
+            _soldOutProducts = soldOut;
+            _isLoading = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+        print('User has no farm ID linked.');
+      }
+    } catch (e) {
+      print('Error fetching products: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -83,13 +95,31 @@ class _FarmerStorePageState extends State<FarmerStorePage>
     super.dispose();
   }
 
+  // Calculate sold count based on stock difference (mock calculation)
+  int _getSoldCount(Product product) {
+    // For now, returning 0 or placeholder logic as we don't have historical sales data linked here yet
+    // In a real scenario, this might come from an Orders collection
+    return 0;
+  }
+
+  // Calculate total earnings for a sold out product
+  double _getTotalEarnings(Product product) {
+    // Placeholder logic
+    return 0.0;
+  }
+
+  // Get rating for sold out products
+  double _getProductRating(Product product) {
+    return product.rating ?? 0.0;
+  }
+
   void _handleEditProduct(Product product) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditPage(product: product),
       ),
-    );
+    ).then((_) => _fetchProducts()); // Refresh after edit
   }
 
   void _handleRemoveProduct(Product product) {
@@ -109,7 +139,7 @@ class _FarmerStorePageState extends State<FarmerStorePage>
       MaterialPageRoute(
         builder: (context) => const SellPage(),
       ),
-    );
+    ).then((_) => _fetchProducts()); // Refresh after adding new product
   }
 
   @override
@@ -235,17 +265,19 @@ class _FarmerStorePageState extends State<FarmerStorePage>
           ),
           // Tab Content
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // On Sale Tab
-                _buildOnSaleList(),
-                // Sold Out Tab
-                _buildSoldOutList(),
-                // Trades Tab
-                _buildTradesList(),
-              ],
-            ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : TabBarView(
+                    controller: _tabController,
+                    children: [
+                      // On Sale Tab
+                      _buildOnSaleList(),
+                      // Sold Out Tab
+                      _buildSoldOutList(),
+                      // Trades Tab
+                      _buildTradesList(),
+                    ],
+                  ),
           ),
         ],
       ),

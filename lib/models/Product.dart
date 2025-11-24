@@ -74,8 +74,9 @@ class Product {
       id: doc.id,
       name: data['name'] ?? '',
       farmName: data['farm_name'] ?? '',
-      // TODO: Create a farm model for this field
-      // farmId: data['farm_id'],
+      farmId: data['farm_id'] is DocumentReference
+          ? (data['farm_id'] as DocumentReference).id
+          : data['farm_id']?.toString(),
       imagePath: imagePath,
       category: data['category'] ?? '',
       price: price,
