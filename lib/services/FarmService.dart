@@ -2,6 +2,7 @@ import 'package:bukidlink/models/Farm.dart';
 import 'package:bukidlink/models/Product.dart';
 import 'package:bukidlink/models/User.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 
 class FarmService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -48,18 +49,24 @@ class FarmService {
         await docRef.set(json);
       }
     } catch (e) {
-      print('Error adding product to farm: $e');
+      debugPrint('Error adding product to farm: $e');
       rethrow;
     }
   }
 
   // Fetch a Farm document given its DocumentReference
   Future<Farm?> getFarmByReference(DocumentReference? farmRef) async {
-    if (farmRef == null) return null;
+    if (farmRef == null) {
+      debugPrint('getFarmByReference called with null farmRef');
+      return null;
+    }
     try {
       final doc = await farmRef.get();
-      if (!doc.exists) return null;
-      return Farm.fromDocument(doc);
+      if (!doc.exists) {
+        debugPrint('No farm found for reference: ${farmRef.path}');
+        return null;
+      }
+        return Farm.fromDocument(doc);
     } catch (e) {
       print('Error fetching farm by reference: $e');
       return null;

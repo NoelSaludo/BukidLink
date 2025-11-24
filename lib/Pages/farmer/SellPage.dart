@@ -224,11 +224,11 @@ class _SellPageState extends State<SellPage> {
   Future<void> _handleSubmit() async {
     HapticFeedback.mediumImpact();
 
-    // Validate image
-    if (_productImagePath == null) {
+    // Validate image - removed for now not implemented yet :)
+    /* if (_productImagePath == null) {
       _showErrorDialog('Please add a product image');
       return;
-    }
+    } */
 
     // Validate category
     if (_selectedCategory == null) {
@@ -262,6 +262,8 @@ class _SellPageState extends State<SellPage> {
         }
 
         // Use FarmService to get the farm for the user
+        debugPrint('Fetching farm for user: ${user.id}');
+        debugPrint('Farm ID: ${user.farmId?.id}');
         final Farm? farm = await _farmService.getFarmForUser(user);
         if (farm == null) {
           throw Exception('User has no associated farm');
@@ -284,7 +286,7 @@ class _SellPageState extends State<SellPage> {
           name: _productNameController.text,
           farmName: farmName,
           farmId: farm.id, // Store as String ID
-          imagePath: _productImagePath!,
+          imagePath: '',
           category: _selectedCategory!,
           price: price,
           description: _descriptionController.text,
