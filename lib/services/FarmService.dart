@@ -82,6 +82,34 @@ class FarmService {
     }
   }
 
+  // Update an existing product (only editable fields)
+  Future<void> updateProduct(Product product) async {
+    if (product.id.isEmpty) return;
+    try {
+      // Map only the fields that are editable in EditPage
+      // to avoid overwriting other fields like reviews, rating, etc.
+      final Map<String, dynamic> updateData = {
+        'name': product.name,
+        'description': product.description,
+        'price': product.price,
+        'stock_count': product.stockCount,
+        'imagePath': product.imagePath,
+        'category': product.category,
+        'unit': product.unit,
+        // We can also update availability based on stock if needed,
+        // but sticking to strictly edited fields for now.
+      };
+
+      await _firestore
+          .collection('products')
+          .doc(product.id)
+          .update(updateData);
+    } catch (e) {
+      debugPrint('Error updating product: $e');
+      rethrow;
+    }
+  }
+
   // Fetch a Farm document given its DocumentReference
   Future<Farm?> getFarmByReference(DocumentReference? farmRef) async {
     if (farmRef == null) {
@@ -94,7 +122,7 @@ class FarmService {
         debugPrint('No farm found for reference: ${farmRef.path}');
         return null;
       }
-        return Farm.fromDocument(doc);
+      return Farm.fromDocument(doc);
     } catch (e) {
       print('Error fetching farm by reference: $e');
       return null;
