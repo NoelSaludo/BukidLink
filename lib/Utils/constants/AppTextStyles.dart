@@ -503,6 +503,19 @@ class AppTextStyles {
     color: AppColors.TEXT_SECONDARY,
   );
 
+  static const TextStyle DIALOG_TITLE = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontSize: 20.0,
+    fontWeight: FontWeight.w700,
+    color: AppColors.DARK_TEXT,
+  );
+
+  static const TextStyle BODY_TEXT = TextStyle(
+    fontFamily: FONT_FAMILY,
+    color: AppColors.BLACK_TEXT,
+    fontSize: 16.0,
+    fontWeight: FontWeight.normal,
+  );
 }
 
 
