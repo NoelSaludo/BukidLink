@@ -8,10 +8,8 @@ import 'package:bukidlink/Pages/SignUpPage.dart';
 import 'package:bukidlink/Widgets/ForgotPassword.dart';
 import 'package:bukidlink/Widgets/SignUpAndLogin/LoginLogo.dart';
 import 'package:bukidlink/Widgets/SignUpAndLogin/GoToSignUp.dart';
-import 'package:bukidlink/data/UserData.dart';
-import 'package:bukidlink/models/User.dart';
-import 'package:crypto/crypto.dart';
-import 'dart:convert';
+import 'package:bukidlink/services/google_auth.dart';
+import 'package:bukidlink/services/UserService.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -21,27 +19,45 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  String? forceErrorText;
   bool isLoading = false;
 
+  @override
   void dispose() {
-    usernameController.dispose();
+    emailController.dispose();
     passwordController.dispose();
     super.dispose();
   }
 
-  void onChanged(String value) {
-    if (forceErrorText != null) {
-      setState(() {
-        forceErrorText = null;
-      });
+  // Handler for signing in with Google using the existing FirebaseService
+  void handleGoogleSignIn(BuildContext context) async {
+    setState(() => isLoading = true);
+    try {
+      final userCredential = await FirebaseService().signInWithGoogle();
+      if (context.mounted) {
+        setState(() => isLoading = false);
+        if (userCredential != null) {
+          // Proceed to loading / main flow on successful Google sign-in
+          PageNavigator().goTo(context, LoadingPage());
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Google sign-in failed')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Google sign-in error: $e')),
+        );
+      }
     }
   }
 
-  void handleLogin(BuildContext context) async{
+  void handleLogin(BuildContext context) async {
     final bool isValid = formKey.currentState?.validate() ?? false;
 
     if (!isValid) {
@@ -49,20 +65,37 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     setState(() => isLoading = true);
-    final String? errorText = await validateInputFromServer(
-    usernameController.text,
-    passwordController.text);
 
-    if(context.mounted) {
-      setState(() => isLoading = false);
-      if(errorText != null) {
-        setState(() {
-          forceErrorText = errorText;
-        });
+    try {
+      // Use UserService to login with username (it will look up the email)
+      await UserService().loginUser(
+        emailController.text.trim(),
+        passwordController.text,
+      );
+
+      if (context.mounted) {
+        setState(() => isLoading = false);
+        PageNavigator().goTo(context, LoadingPage());
       }
-      else{
-      PageNavigator().goTo(context, LoadingPage());
-    }
+    } catch (e) {
+      if (context.mounted) {
+        setState(() => isLoading = false);
+
+        // Extract the error message from the exception
+        String errorMessage = 'Login failed. Please try again.';
+        if (e is Exception) {
+          // Get the message after "Exception: "
+          errorMessage = e.toString().replaceFirst('Exception: ', '');
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -101,21 +134,38 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const SizedBox(height: 20.0),
-                  UsernameField(
-                    controller: usernameController, 
+                  EmailField(
+                    controller: emailController,
                     mode: 'Login',
-                    forceErrorText: forceErrorText,
-                    onChanged: onChanged,),
+                    forceErrorText: null,
+                    onChanged: (_) {},
+                  ),
                   PasswordField(
-                    controller: passwordController, 
-                    mode: 'Login', 
-                    forceErrorText: forceErrorText,
-                    onChanged: onChanged,),
+                    controller: passwordController,
+                    mode: 'Login',
+                    forceErrorText: null,
+                    onChanged: (_) {},
+                  ),
                   ForgotPassword(onPressed: () => handleLogin(context)),
                   const Spacer(),
                   LoginorSigninButton(
                     onPressed: () => handleLogin(context),
                     mode: 'Login',
+                  ),
+                  const SizedBox(height: 10.0),
+                  // Google Sign-In button
+                  SizedBox(
+                    width: 260,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.login),
+                      label: const Text('Continue with Google'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black87,
+                        elevation: 2,
+                      ),
+                      onPressed: () => handleGoogleSignIn(context),
+                    ),
                   ),
                   GoToSignUp(onPressed: () => goToSignUp(context)),
                   const SizedBox(height: 17.0),
@@ -134,31 +184,5 @@ class _LoginPageState extends State<LoginPage> {
 
   void goBack(BuildContext context) {
     PageNavigator().goBack(context);
-  }
-
-String hashPassword(String password){
-    final bytes = utf8.encode(password);
-    final digest = sha256.convert(bytes);
-    return digest.toString();
-  }
-  
-  Future<String?> validateInputFromServer(
-    String username,
-    String password
-  ) async {
-    final String hashedPassword = hashPassword(password);
-    List<User> existingUser = [];
-    existingUser = UserData.getAllUsers();
-    for(var i = 0; i < existingUser.length; i++){
-      if((existingUser[i].username).contains(username)){
-        if((existingUser[i].password).contains(hashedPassword)){
-          return null;
-        }
-        else{
-          return 'Incorrect Username or Password';
-        }
-      }
-    }
-    return 'Username does not exist!';
   }
 }

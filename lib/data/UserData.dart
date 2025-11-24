@@ -15,6 +15,8 @@ class UserData {
       profilePic: 'farmer1.png',
       type: 'farmer',
       farm: 'Old Market, Batangas City',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
     User(
       id: '2',
@@ -28,6 +30,8 @@ class UserData {
       profilePic: 'farmer2.png',
       type: 'farmer',
       farm: 'New Market, Batangas City',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
     User(
       id: '3',
@@ -41,6 +45,8 @@ class UserData {
       profilePic: 'farmer3.png',
       type: 'farmer',
       farm: 'Old Market, Batangas City',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
   ];
 
@@ -61,55 +67,60 @@ class UserData {
   static User getUserInfoById(String id) {
       return _allUsers.firstWhere((p) => p.id == id);
   }
-  
+
   //temp function to insert new consumer for signup
   static void addConsumer(
-    String username, 
-    String hashedPassword, 
-    String firstName, 
-    String lastName, 
-    String emailAddress, 
-    String address, 
+    String username,
+    String hashedPassword,
+    String firstName,
+    String lastName,
+    String emailAddress,
+    String address,
     String contactNumber,
     //String profilePic,
   ){
     User newConsumer = User(
-      id: (_allUsers.length + 1).toString(), 
-      username: username, 
-      password: hashedPassword, 
-      firstName: firstName, 
-      lastName: lastName, 
-      emailAddress: emailAddress, 
-      address: address, 
+      id: (_allUsers.length + 1).toString(),
+      username: username,
+      password: hashedPassword,
+      firstName: firstName,
+      lastName: lastName,
+      emailAddress: emailAddress,
+      address: address,
       contactNumber: contactNumber,
       profilePic: 'default_profile',
-      type: 'consumer',);
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
     _allUsers.add(newConsumer);
   }
 //temp function to insert new farmer for signup
   static void addFarmer(
-    String username, 
-    String hashedPassword, 
-    String firstName, 
-    String lastName, 
-    String emailAddress, 
-    String address, 
+    String username,
+    String hashedPassword,
+    String firstName,
+    String lastName,
+    String emailAddress,
+    String address,
     String contactNumber,
     String farm,
     //String profilePic,
   ){
     User newFarmer = User(
-      id: (_allUsers.length + 1).toString(), 
-      username: username, 
-      password: hashedPassword, 
-      firstName: firstName, 
-      lastName: lastName, 
-      emailAddress: emailAddress, 
-      address: address, 
+      id: (_allUsers.length + 1).toString(),
+      username: username,
+      password: hashedPassword,
+      firstName: firstName,
+      lastName: lastName,
+      emailAddress: emailAddress,
+      address: address,
       contactNumber: contactNumber,
       profilePic: 'default_profile',
       type: 'farmer',
-      farm: farm);
+      farm: farm,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
     _allUsers.add(newFarmer);
   }
 }

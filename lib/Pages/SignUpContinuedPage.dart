@@ -7,10 +7,8 @@ import 'package:bukidlink/Widgets/SignupandLogin/ConfirmPasswordField.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
 import 'package:bukidlink/Widgets/CustomBackButton.dart';
 import 'package:bukidlink/Pages/LoadingPage.dart';
-import 'package:crypto/crypto.dart';
-import 'dart:convert';
 import 'package:bukidlink/models/User.dart';
-import 'package:bukidlink/data/UserData.dart';
+import 'package:bukidlink/services/UserService.dart';
 
 
 class SignUpContinuedPage extends StatefulWidget {
@@ -36,7 +34,7 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
-      TextEditingController();
+  TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final ValueNotifier<String> accountType = ValueNotifier<String>('Sign Up');
   String? forceErrorText;
@@ -57,7 +55,7 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
     }
   }
 
-  void handleSignUp(BuildContext context) async{
+  void handleSignUp(BuildContext context) async {
     final bool isValid = formKey.currentState?.validate() ?? false;
 
     if (!isValid) {
@@ -65,26 +63,53 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
     }
 
     setState(() => isLoading = true);
-    final String? errorText = await validateInputFromServer(usernameController.text);
 
-    if(context.mounted) {
-      setState(() => isLoading = false);
-      if(errorText != null) {
-        setState(() {
-          forceErrorText = errorText;
-        });
+    try {
+      // Create User model with all collected data
+      final user = User(
+        id: '',
+        // Firebase will generate the UID, we'll use empty string for now
+        username: usernameController.text,
+        password: passwordController.text,
+        // Plain password - Firebase handles hashing
+        firstName: widget.firstName,
+        lastName: widget.lastName,
+        emailAddress: widget.emailAddress,
+        address: widget.address,
+        contactNumber: widget.contactNumber,
+        profilePic: '',
+        // Default empty, can be set later
+        type: accountType
+            .value, // Use the selected account type (Consumer or Farmer)
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      // Use UserService to create account and sign in
+      final userCredential = await UserService().register(
+          user);
+
+      if (context.mounted) {
+        setState(() => isLoading = false);
+
+        if (userCredential != null) {
+          // Successfully signed up and signed in
+          PageNavigator().goTo(context, LoadingPage());
+        } else {
+          // Sign-up failed
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Sign-up failed. Please try again.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
       }
     }
-    insertNewUser(
-      usernameController.text, 
-      passwordController.text, 
-      widget.firstName, 
-      widget.lastName, 
-      widget.emailAddress, 
-      widget.address, 
-      widget.contactNumber,
-      'input not set yet');
-    PageNavigator().goTo(context, LoadingPage());
   }
 
   @override
@@ -97,8 +122,14 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
   }
 
   Widget _buildContent(BuildContext context) {
-    final height = MediaQuery.of(context).size.height;
-    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery
+        .of(context)
+        .size
+        .height;
+    final width = MediaQuery
+        .of(context)
+        .size
+        .width;
     accountType.value = 'Consumer';
 
     return Stack(
@@ -162,7 +193,7 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
                     children: [
                       // --- Input fields ---
                       const SizedBox(height: 50.0),
-                      UsernameField(
+                      EmailField(
                         controller: usernameController,
                         mode: 'SignUp',
                         forceErrorText: forceErrorText,
@@ -179,81 +210,6 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
 
                       ),
                       const SizedBox(height: 16.0),
-                      Text(
-                        'Account Type',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Container(
-                        width: 220,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(50),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () => accountType.value = 'Consumer',
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  decoration: BoxDecoration(
-                                    color: tab == 'Consumer'
-                                        ? const Color.fromARGB(
-                                            255,
-                                            202,
-                                            232,
-                                            109,
-                                          )
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(50),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    'Consumer',
-                                    style: TextStyle(
-                                      color: tab == 'Consumer'
-                                          ? Colors.black
-                                          : Colors.grey[700],
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () => accountType.value = 'Farmer',
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  decoration: BoxDecoration(
-                                    color: tab == 'Farmer'
-                                        ? const Color.fromARGB(
-                                            255,
-                                            202,
-                                            232,
-                                            109,
-                                          )
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(50),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    'Farmer',
-                                    style: TextStyle(
-                                      color: tab == 'Farmer'
-                                          ? Colors.black
-                                          : Colors.grey[700],
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                       // --- Action button ---
                       const Spacer(),
                       Container(
@@ -299,72 +255,4 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
     PageNavigator().goBack(context);
   }
 
-  String hashPassword(String password){
-    final bytes = utf8.encode(password);
-    final digest = sha256.convert(bytes);
-    return digest.toString();
-  }
-  
-  Future<void> insertNewUser(
-    String username, 
-    String password, 
-    String firstName, 
-    String lastName, 
-    String emailAddress, 
-    String address, 
-    String contactNumber,
-    String farm,) async{
-      // final db = await;//access database
-      // if(accountType.value == 'Consumer'){
-      //   await db.insert(
-      //     'Consumer',
-      //     {
-      //       'username': username,
-      //       'password': hashedPassword,
-      //       'firstName': firstName,
-      //       'lastName': lastName,
-      //       'emailAddress': emailAddress,
-      //       'address': address,
-      //       'contactNumber': contactNumber
-      //     }
-      //   );
-      // }
-      
-      //adds consumer object to consumerData
-      switch(accountType){
-        case 'consumer': UserData.addConsumer(
-        username, 
-        hashPassword(password), 
-        firstName, 
-        lastName, 
-        emailAddress, 
-        address, 
-        contactNumber,);
-        break;
-        case 'farmer': UserData.addFarmer(
-        username, 
-        hashPassword(password), 
-        firstName, 
-        lastName, 
-        emailAddress, 
-        address, 
-        contactNumber,
-        farm,);
-        break;
-      }
-      
-  }
-
-  Future<String?> validateInputFromServer(
-    String username,
-  ) async {
-    List<User> takenUsernames = [];
-    takenUsernames = UserData.getAllUsers();
-    for(var i = 0; i < takenUsernames.length; i++){
-      if((takenUsernames[i].username).contains(username)){
-        return 'Username \'$username\' is already taken';
-      }
-    }
-    return null;
-  }
 }
