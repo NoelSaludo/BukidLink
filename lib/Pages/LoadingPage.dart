@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:bukidlink/Utils/PageNavigator.dart';
 import 'package:bukidlink/Pages/HomePage.dart';
+import 'package:bukidlink/Pages/farmer/FarmerStorePage.dart';
 
 // TODO: @joelaguzar dito nagrouroute ang app pag naglaunch
 class LoadingPage extends StatefulWidget {
@@ -21,7 +22,11 @@ class _LoadingPageState extends State<LoadingPage> {
 
     // Simulate loading or initialization delay
     Future.delayed(const Duration(seconds: 3), () {
-      PageNavigator().goTo(context, HomePage());
+      if (widget.userType == "Farmer") {
+        PageNavigator().goTo(context, const FarmerStorePage());
+      } else {
+        PageNavigator().goTo(context, HomePage());
+      }
     });
   }
 
