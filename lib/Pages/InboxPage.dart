@@ -5,13 +5,13 @@ import 'package:bukidlink/models/Message.dart';
 import 'package:bukidlink/pages/ChatPage.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-
 class InboxPage extends StatelessWidget {
   InboxPage({super.key});
 
   final List<Message> conversations = [
     Message(
       sender: 'Admin',
+      senderId: 'test_sender_id',
       lastMessage: 'Your request has been approved.',
       text: 'Your request has been approved.',
       time: DateTime.now(),
@@ -19,6 +19,7 @@ class InboxPage extends StatelessWidget {
     ),
     Message(
       sender: 'Farmer John',
+      senderId: 'test_sender_id',
       lastMessage: 'Thanks for the help!',
       text: 'Thanks for the help!',
       time: DateTime.now().subtract(const Duration(hours: 2)),
@@ -26,6 +27,7 @@ class InboxPage extends StatelessWidget {
     ),
     Message(
       sender: 'Agri Support',
+      senderId: 'test_sender_id',
       lastMessage: 'We’ll send an update soon.',
       text: 'We’ll send an update soon.',
       time: DateTime.now().subtract(const Duration(days: 1)),
@@ -95,9 +97,7 @@ class InboxPage extends StatelessWidget {
             ),
             subtitle: Text(
               convo.lastMessage,
-              style: GoogleFonts.outfit(
-                color: Colors.grey.shade700,
-              ),
+              style: GoogleFonts.outfit(color: Colors.grey.shade700),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -122,5 +122,3 @@ class InboxPage extends StatelessWidget {
     );
   }
 }
-
-
