@@ -13,7 +13,10 @@ class ProductService {
       QuerySnapshot snapshot = await _firestore.collection('products').get();
 
       for (var doc in snapshot.docs) {
-        products.add(Product.fromDocument(doc));
+        final product = Product.fromDocument(doc);
+        if (product.isVisible) {
+          products.add(product);
+        }
       }
       // Update cache
       _productsCache = products;
