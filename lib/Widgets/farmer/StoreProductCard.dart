@@ -9,6 +9,7 @@ class StoreProductCard extends StatelessWidget {
   final int stockSold;
   final VoidCallback? onEdit;
   final VoidCallback? onRemove;
+  final bool isArchived;
 
   const StoreProductCard({
     super.key,
@@ -16,6 +17,7 @@ class StoreProductCard extends StatelessWidget {
     required this.stockSold,
     this.onEdit,
     this.onRemove,
+    this.isArchived = false,
   });
 
   @override
@@ -23,10 +25,12 @@ class StoreProductCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isArchived ? Colors.grey.shade100 : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.ACCENT_LIME.withOpacity(0.3),
+          color: isArchived
+              ? Colors.grey.withOpacity(0.3)
+              : AppColors.ACCENT_LIME.withOpacity(0.3),
           width: 1.5,
         ),
         boxShadow: [
@@ -194,17 +198,33 @@ class StoreProductCard extends StatelessWidget {
                     },
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: const BorderSide(
-                        color: AppColors.DARK_TEXT,
+                      side: BorderSide(
+                        color: isArchived ? AppColors.HEADER_GRADIENT_START : AppColors.DARK_TEXT,
                         width: 1.5,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
-                      'Remove',
-                      style: AppTextStyles.STORE_ACTION_BUTTON,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (isArchived)
+                          const Padding(
+                            padding: EdgeInsets.only(right: 8.0),
+                            child: Icon(
+                              Icons.restore_from_trash,
+                              size: 18,
+                              color: AppColors.HEADER_GRADIENT_START,
+                            ),
+                          ),
+                        Text(
+                          isArchived ? 'Restore' : 'Remove',
+                          style: AppTextStyles.STORE_ACTION_BUTTON.copyWith(
+                            color: isArchived ? AppColors.HEADER_GRADIENT_START : AppColors.DARK_TEXT,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

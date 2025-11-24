@@ -24,10 +24,7 @@ class FarmService {
           .get();
 
       for (var doc in snapshot.docs) {
-        final product = Product.fromDocument(doc);
-        if (product.isVisible) {
-          products.add(product);
-        }
+        products.add(Product.fromDocument(doc));
       }
     } catch (e) {
       print('Error fetching products by farm: $e');
@@ -67,6 +64,20 @@ class FarmService {
           .update({'isVisible': false});
     } catch (e) {
       debugPrint('Error archiving product: $e');
+      rethrow;
+    }
+  }
+
+  // Restore an archived product
+  Future<void> restoreProduct(String productId) async {
+    if (productId.isEmpty) return;
+    try {
+      await _firestore
+          .collection('products')
+          .doc(productId)
+          .update({'isVisible': true});
+    } catch (e) {
+      debugPrint('Error restoring product: $e');
       rethrow;
     }
   }

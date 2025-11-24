@@ -23,19 +23,20 @@ class FarmerStorePage extends StatefulWidget {
 }
 
 class _FarmerStorePageState extends State<FarmerStorePage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late TabController _tabController;
   final FarmService _farmService = FarmService();
   bool _isLoading = true;
 
   List<Product> _onSaleProducts = [];
   List<Product> _soldOutProducts = [];
+  List<Product> _archivedProducts = [];
   List<TradeOffer> get _tradeOffers => TradeOfferData.getPendingTradeOffers();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _fetchProducts();
   }
 
@@ -51,13 +52,17 @@ class _FarmerStorePageState extends State<FarmerStorePage>
       final String? farmId = user?.farmId?.id;
 
       if (farmId != null) {
+        // Fetch all products for the farm (FarmService filters nothing now, returns all)
         final products = await _farmService.fetchProductsByFarm(farmId);
 
         final onSale = <Product>[];
         final soldOut = <Product>[];
+        final archived = <Product>[];
 
         for (var product in products) {
-          if (product.stockCount > 0) {
+          if (!product.isVisible) {
+            archived.add(product);
+          } else if (product.stockCount > 0) {
             onSale.add(product);
           } else {
             soldOut.add(product);
@@ -68,6 +73,7 @@ class _FarmerStorePageState extends State<FarmerStorePage>
           setState(() {
             _onSaleProducts = onSale;
             _soldOutProducts = soldOut;
+            _archivedProducts = archived;
             _isLoading = false;
           });
         }
@@ -154,7 +160,7 @@ class _FarmerStorePageState extends State<FarmerStorePage>
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Removing product...'),
+                      content: Text('Archiving product...'),
                       duration: Duration(seconds: 1),
                     ),
                   );
@@ -166,7 +172,7 @@ class _FarmerStorePageState extends State<FarmerStorePage>
                   _fetchProducts(); // Refresh list
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('${product.name} removed successfully'),
+                      content: Text('${product.name} archived successfully'),
                       backgroundColor: AppColors.SUCCESS_GREEN,
                     ),
                   );
@@ -175,7 +181,7 @@ class _FarmerStorePageState extends State<FarmerStorePage>
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Error removing product: $e'),
+                      content: Text('Error archiving product: $e'),
                       backgroundColor: AppColors.ERROR_RED,
                     ),
                   );
@@ -190,6 +196,40 @@ class _FarmerStorePageState extends State<FarmerStorePage>
         ],
       ),
     );
+  }
+
+  void _handleRestoreProduct(Product product) async {
+    try {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Restoring product...'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+
+      await _farmService.restoreProduct(product.id);
+
+      if (mounted) {
+        _fetchProducts();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${product.name} restored successfully'),
+            backgroundColor: AppColors.SUCCESS_GREEN,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error restoring product: $e'),
+            backgroundColor: AppColors.ERROR_RED,
+          ),
+        );
+      }
+    }
   }
 
   void _handleSellProduct() {
@@ -232,6 +272,8 @@ class _FarmerStorePageState extends State<FarmerStorePage>
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: TabBar(
                     controller: _tabController,
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
                     indicator: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -244,33 +286,55 @@ class _FarmerStorePageState extends State<FarmerStorePage>
                     unselectedLabelStyle: AppTextStyles.FARMER_TAB_LABEL_UNSELECTED,
                     tabs: [
                       Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text('On sale'),
-                            const SizedBox(width: 4),
-                            Text('(${_onSaleProducts.length})'),
-                          ],
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('On sale'),
+                              const SizedBox(width: 4),
+                              Text('(${_onSaleProducts.length})'),
+                            ],
+                          ),
                         ),
                       ),
                       Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text('Sold Out'),
-                            const SizedBox(width: 4),
-                            Text('(${_soldOutProducts.length})'),
-                          ],
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('Sold Out'),
+                              const SizedBox(width: 4),
+                              Text('(${_soldOutProducts.length})'),
+                            ],
+                          ),
                         ),
                       ),
                       Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text('Trades'),
-                            const SizedBox(width: 4),
-                            Text('(${_tradeOffers.length})'),
-                          ],
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('Archived'),
+                              const SizedBox(width: 4),
+                              Text('(${_archivedProducts.length})'),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Tab(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('Trades'),
+                              const SizedBox(width: 4),
+                              Text('(${_tradeOffers.length})'),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -328,22 +392,47 @@ class _FarmerStorePageState extends State<FarmerStorePage>
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : TabBarView(
-                    controller: _tabController,
-                    children: [
-                      // On Sale Tab
-                      _buildOnSaleList(),
-                      // Sold Out Tab
-                      _buildSoldOutList(),
-                      // Trades Tab
-                      _buildTradesList(),
-                    ],
-                  ),
+              controller: _tabController,
+              children: [
+                // On Sale Tab
+                _buildOnSaleList(),
+                // Sold Out Tab
+                _buildSoldOutList(),
+                // Archived Tab
+                _buildArchivedList(),
+                // Trades Tab
+                _buildTradesList(),
+              ],
+            ),
           ),
         ],
       ),
       bottomNavigationBar: const FarmerBottomNavBar(
         currentIndex: 0,
       ),
+    );
+  }
+
+  Widget _buildArchivedList() {
+    if (_archivedProducts.isEmpty) {
+      return _buildEmptyState('No archived products');
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _archivedProducts.length,
+      itemBuilder: (context, index) {
+        final product = _archivedProducts[index];
+        final soldCount = _getSoldCount(product);
+
+        return StoreProductCard(
+          product: product,
+          stockSold: soldCount,
+          onEdit: () => _handleEditProduct(product),
+          onRemove: () => _handleRestoreProduct(product),
+          isArchived: true,
+        );
+      },
     );
   }
 
