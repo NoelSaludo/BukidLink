@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
+import 'package:bukidlink/widgets/common/BouncingDotsLoader.dart';
 
 class ProductImage extends StatelessWidget {
   final String imagePath;
@@ -30,14 +31,11 @@ class ProductImage extends StatelessWidget {
           return Container(
             width: width,
             height: height,
-            color: Colors.grey.withOpacity(0.1),
-            child: Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                    loadingProgress.expectedTotalBytes!
-                    : null,
-                color: AppColors.primaryGreen,
+            color: Colors.grey.withOpacity(0.05),
+            child: const Center(
+              child: BouncingDotsLoader(
+                color: AppColors.ACCENT_LIME,
+                size: 8.0,
               ),
             ),
           );
