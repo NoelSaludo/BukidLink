@@ -12,7 +12,7 @@ import 'package:bukidlink/models/Product.dart';
 import 'package:bukidlink/models/TradeOffer.dart';
 import 'package:bukidlink/pages/farmer/SellPage.dart';
 import 'package:bukidlink/pages/farmer/EditPage.dart';
-import 'package:bukidlink/services/ProductService.dart';
+import 'package:bukidlink/services/FarmService.dart';
 import 'package:bukidlink/services/UserService.dart';
 
 class FarmerStorePage extends StatefulWidget {
@@ -25,7 +25,7 @@ class FarmerStorePage extends StatefulWidget {
 class _FarmerStorePageState extends State<FarmerStorePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final ProductService _productService = ProductService();
+  final FarmService _farmService = FarmService();
   bool _isLoading = true;
 
   List<Product> _onSaleProducts = [];
@@ -51,7 +51,7 @@ class _FarmerStorePageState extends State<FarmerStorePage>
       final String? farmId = user?.farmId?.id;
 
       if (farmId != null) {
-        final products = await _productService.fetchProductsByFarm(farmId);
+        final products = await _farmService.fetchProductsByFarm(farmId);
 
         final onSale = <Product>[];
         final soldOut = <Product>[];

@@ -7,7 +7,7 @@ import 'package:bukidlink/widgets/farmer/ImagePickerCard.dart';
 import 'package:bukidlink/widgets/farmer/CategorySelector.dart';
 import 'package:bukidlink/widgets/farmer/UnitSelector.dart';
 import 'package:bukidlink/services/ImagePickerService.dart';
-import 'package:bukidlink/services/ProductService.dart';
+import 'package:bukidlink/services/FarmService.dart';
 import 'package:bukidlink/services/UserService.dart';
 import 'package:bukidlink/models/Product.dart';
 import 'package:bukidlink/models/Farm.dart';
@@ -23,7 +23,7 @@ class SellPage extends StatefulWidget {
 class _SellPageState extends State<SellPage> {
   final _formKey = GlobalKey<FormState>();
   final ImagePickerService _imagePickerService = ImagePickerService();
-  final ProductService _productService = ProductService();
+  final FarmService _farmService = FarmService();
 
   // Form controllers
   final TextEditingController _productNameController = TextEditingController();
@@ -261,7 +261,8 @@ class _SellPageState extends State<SellPage> {
           throw Exception('No user logged in');
         }
 
-        final Farm? farm = await UserService().getFarmForUser(user);
+        // Use FarmService to get the farm for the user
+        final Farm? farm = await _farmService.getFarmForUser(user);
         if (farm == null) {
           throw Exception('User has no associated farm');
         }
@@ -295,7 +296,7 @@ class _SellPageState extends State<SellPage> {
           reviews: null,
         );
 
-        await _productService.addNewProduct(product);
+        await _farmService.addProductToFarm(product);
 
         if (mounted) {
           _showSuccessDialog();
