@@ -25,6 +25,24 @@ class ProductService {
     return products;
   }
 
+  Future<List<Product>> fetchProductsByFarm(String farmId) async {
+    List<Product> products = [];
+    try {
+      QuerySnapshot snapshot = await _firestore
+          .collection('products')
+          .where('farm_id', isEqualTo: farmId)
+          .get();
+
+      for (var doc in snapshot.docs) {
+        products.add(Product.fromDocument(doc));
+      }
+    } catch (e) {
+      print('Error fetching products by farm: $e');
+    }
+
+    return products;
+  }
+
   // Accept a ProductReview and persist it as a Map to Firestore.
   Future<void> addReviewToProduct(
     String productId,
