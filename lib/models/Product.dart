@@ -18,6 +18,7 @@ class Product {
   final List<ProductReview>? reviews; // Product reviews
   double tempRating = 0.0;
   final String? farmId;
+  final bool isVisible;
 
   Product({
     required this.id,
@@ -34,6 +35,7 @@ class Product {
     this.reviewCount,
     this.reviews,
     this.farmId,
+    this.isVisible = true,
   });
 
   static Product fromDocument(QueryDocumentSnapshot<Object?> doc) {
@@ -74,8 +76,9 @@ class Product {
       id: doc.id,
       name: data['name'] ?? '',
       farmName: data['farm_name'] ?? '',
-      // TODO: Create a farm model for this field
-      // farmId: data['farm_id'],
+      farmId: data['farm_id'] is DocumentReference
+          ? (data['farm_id'] as DocumentReference).id
+          : data['farm_id']?.toString(),
       imagePath: imagePath,
       category: data['category'] ?? '',
       price: price,
@@ -93,6 +96,7 @@ class Product {
               return ProductReview.fromDocument(reviewMap);
             }).toList()
           : null,
+      isVisible: data['isVisible'] ?? true,
     );
   }
 
@@ -112,6 +116,7 @@ class Product {
     int? stockCount,
     List<ProductReview>? reviews,
     String? farmId,
+    bool? isVisible,
   }) {
     return Product(
       id: id ?? this.id,
@@ -128,6 +133,7 @@ class Product {
       reviewCount: reviewCount ?? this.reviewCount,
       reviews: reviews ?? this.reviews,
       farmId: farmId ?? this.farmId,
+      isVisible: isVisible ?? this.isVisible,
     );
   }
 
@@ -149,6 +155,7 @@ class Product {
       'reviews': reviews != null
           ? reviews!.map((r) => r.toJson()).toList()
           : null,
+      'isVisible': isVisible,
     };
   }
 }

@@ -9,6 +9,7 @@ import 'package:bukidlink/widgets/common/AddToCartDialog.dart';
 import 'package:bukidlink/services/CartService.dart';
 import 'package:bukidlink/utils/SnackBarHelper.dart';
 import 'package:bukidlink/widgets/common/PesoText.dart';
+import 'package:bukidlink/widgets/common/ProductImage.dart';
 
 enum ProductCardLayout {
   compact, // Compact layout for recommended products (horizontal scroll)
@@ -48,33 +49,6 @@ class ProductCard extends StatelessWidget {
           }
         },
       ),
-    );
-  }
-
-  // Helper that decides whether to use a network image or an asset image.
-  Widget _buildImage(String path, {double? width, double? height, BoxFit? fit}) {
-    if (path.toLowerCase().startsWith('http')) {
-      return Image.network(
-        path,
-        width: width,
-        height: height,
-        fit: fit ?? BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Container(
-          color: Colors.grey[200],
-          child: const Icon(Icons.broken_image, size: 40, color: Colors.grey),
-        ),
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return const Center(child: CircularProgressIndicator());
-        },
-      );
-    }
-
-    return Image.asset(
-      path,
-      width: width,
-      height: height,
-      fit: fit ?? BoxFit.cover,
     );
   }
 
@@ -121,8 +95,8 @@ class ProductCard extends StatelessWidget {
             child: Stack(
               children: [
                 // Use helper to render network or asset image
-                _buildImage(
-                  product.imagePath,
+                ProductImage(
+                  imagePath: product.imagePath,
                   width: 180,
                   height: 140,
                   fit: BoxFit.cover,
@@ -286,8 +260,8 @@ class ProductCard extends StatelessWidget {
               ),
               child: Stack(
                 children: [
-                  _buildImage(
-                    product.imagePath,
+                  ProductImage(
+                    imagePath: product.imagePath,
                     width: double.infinity,
                     fit: BoxFit.cover,
                   ),

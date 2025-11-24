@@ -29,6 +29,7 @@ class UserService {
 
       currentUser = User(
         id: userCredential.user!.uid,
+        farmId: user.farmId,
         username: user.username,
         password: user.password,
         firstName: user.firstName,
@@ -181,6 +182,7 @@ class UserService {
               ? (data['updated_at'] as Timestamp).toDate()
               : DateTime.now(),
           type: data['type'] ?? 'Consumer',
+          farmId: data['farmId'] as DocumentReference?,
         );
       } else {
         // User authenticated but no Firestore document - create minimal currentUser

@@ -13,7 +13,10 @@ class ProductService {
       QuerySnapshot snapshot = await _firestore.collection('products').get();
 
       for (var doc in snapshot.docs) {
-        products.add(Product.fromDocument(doc));
+        final product = Product.fromDocument(doc);
+        if (product.isVisible) {
+          products.add(product);
+        }
       }
       // Update cache
       _productsCache = products;
@@ -97,35 +100,6 @@ class ProductService {
 
   List<Product> getCachedProducts() {
     return _productsCache;
-  }
-
-  // Adds a new product document to Firestore and updates local cache.
-  Future<void> addNewProduct(Product product) async {
-    try {
-      final CollectionReference productsColl = _firestore.collection(
-        'products',
-      );
-
-      DocumentReference docRef;
-      if (product.id.isNotEmpty) {
-        docRef = productsColl.doc(product.id);
-        await docRef.set(product.toJson());
-      } else {
-        docRef = productsColl.doc();
-        final json = product.toJson();
-        json['id'] = docRef.id;
-        await docRef.set(json);
-      }
-
-      // Ensure there's an (initially empty) reviews subcollection by not adding any docs.
-      // Note: Firestore only materializes subcollections when they have documents.
-
-      // Update cache: add product (use the id from docRef)
-      final added = product.copyWith(id: docRef.id);
-      _productsCache.add(added);
-    } catch (e) {
-      print('Error adding new product: $e');
-    }
   }
 
   // Replaces the product document (by id) in Firestore and updates cache entry.
