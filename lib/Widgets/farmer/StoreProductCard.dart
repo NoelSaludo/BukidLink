@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/models/Product.dart';
+import 'package:bukidlink/widgets/common/ProductImage.dart';
 
 class StoreProductCard extends StatelessWidget {
   final Product product;
@@ -51,23 +52,11 @@ class StoreProductCard extends StatelessWidget {
                 // Product Image
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.asset(
-                    product.imagePath,
+                  child: ProductImage(
+                    imagePath: product.imagePath,
                     width: 80,
                     height: 80,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 80,
-                        height: 80,
-                        color: AppColors.ACCENT_LIME.withOpacity(0.2),
-                        child: Icon(
-                          Icons.image_not_supported,
-                          color: AppColors.ACCENT_LIME,
-                          size: 32,
-                        ),
-                      );
-                    },
                   ),
                 ),
                 const SizedBox(width: 12),
