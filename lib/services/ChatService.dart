@@ -28,8 +28,6 @@ class ChatService {
       await convoRef.set({
         'id': convoId,
         'participants': [uidA, uidB],
-        'lastMessage': initialText ?? '',
-        'lastMessageSenderId': '',
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
@@ -72,11 +70,7 @@ class ChatService {
     final WriteBatch batch = _firestore.batch();
     final DocumentReference newMsgRef = messagesRef.doc();
     batch.set(newMsgRef, messageData);
-    batch.update(convoRef, {
-      'lastMessage': text,
-      'lastMessageSenderId': senderId,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    batch.update(convoRef, {'updatedAt': FieldValue.serverTimestamp()});
 
     await batch.commit();
     return newMsgRef;
@@ -109,7 +103,7 @@ class ChatService {
   Future<List<Message>> fetchMessages(
     String conversationId, {
     int limit = 50,
-    DocumentSnapshot? before,
+    Timestamp? before,
   }) async {
     Query q = _firestore
         .collection('conversations')
@@ -118,7 +112,7 @@ class ChatService {
         .orderBy('time', descending: true)
         .limit(limit);
 
-    if (before != null) q = q.startAfterDocument(before);
+    if (before != null) q = q.startAfter([before]);
 
     final snapshot = await q.get();
     final String currentUid = UserService.currentUser?.id ?? '';

@@ -12,8 +12,6 @@ class InboxPage extends StatelessWidget {
     Message(
       sender: 'Admin',
       senderId: 'test_sender_id',
-      receiverId: 'you123',
-      lastMessage: 'Your request has been approved.',
       text: 'Your request has been approved.',
       time: DateTime.now(),
       isMe: false,
@@ -21,8 +19,6 @@ class InboxPage extends StatelessWidget {
     Message(
       sender: 'Farmer John',
       senderId: 'test_sender_id',
-      receiverId: 'you123',
-      lastMessage: 'Thanks for the help!',
       text: 'Thanks for the help!',
       time: DateTime.now().subtract(const Duration(hours: 2)),
       isMe: false,
@@ -30,8 +26,6 @@ class InboxPage extends StatelessWidget {
     Message(
       sender: 'Agri Support',
       senderId: 'test_sender_id',
-      receiverId: 'you123',
-      lastMessage: 'We’ll send an update soon.',
       text: 'We’ll send an update soon.',
       time: DateTime.now().subtract(const Duration(days: 1)),
       isMe: false,
@@ -99,7 +93,7 @@ class InboxPage extends StatelessWidget {
               ),
             ),
             subtitle: Text(
-              convo.lastMessage,
+              convo.text,
               style: GoogleFonts.outfit(color: Colors.grey.shade700),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
