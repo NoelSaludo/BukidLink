@@ -19,6 +19,7 @@ class _ChatPageState extends State<ChatPage> {
     Message(
       sender: 'Admin',
       senderId: 'admin123',
+      receiverId: 'you123',
       lastMessage: '',
       text: 'Hello! How can I help you?',
       time: DateTime.now().subtract(const Duration(minutes: 5)),
@@ -27,6 +28,7 @@ class _ChatPageState extends State<ChatPage> {
     Message(
       sender: 'You',
       senderId: 'you123',
+      receiverId: 'admin123',
       lastMessage: '',
       text: 'I have a question about my crops.',
       time: DateTime.now().subtract(const Duration(minutes: 4)),
@@ -42,6 +44,7 @@ class _ChatPageState extends State<ChatPage> {
         Message(
           sender: 'You',
           senderId: 'you123',
+          receiverId: 'admin123',
           lastMessage: '',
           text: _controller.text.trim(),
           time: DateTime.now(),
