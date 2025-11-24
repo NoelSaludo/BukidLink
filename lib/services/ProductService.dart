@@ -25,24 +25,6 @@ class ProductService {
     return products;
   }
 
-  Future<List<Product>> fetchProductsByFarm(String farmId) async {
-    List<Product> products = [];
-    try {
-      QuerySnapshot snapshot = await _firestore
-          .collection('products')
-          .where('farm_id', isEqualTo: farmId)
-          .get();
-
-      for (var doc in snapshot.docs) {
-        products.add(Product.fromDocument(doc));
-      }
-    } catch (e) {
-      print('Error fetching products by farm: $e');
-    }
-
-    return products;
-  }
-
   // Accept a ProductReview and persist it as a Map to Firestore.
   Future<void> addReviewToProduct(
     String productId,
@@ -115,35 +97,6 @@ class ProductService {
 
   List<Product> getCachedProducts() {
     return _productsCache;
-  }
-
-  // Adds a new product document to Firestore and updates local cache.
-  Future<void> addNewProduct(Product product) async {
-    try {
-      final CollectionReference productsColl = _firestore.collection(
-        'products',
-      );
-
-      DocumentReference docRef;
-      if (product.id.isNotEmpty) {
-        docRef = productsColl.doc(product.id);
-        await docRef.set(product.toJson());
-      } else {
-        docRef = productsColl.doc();
-        final json = product.toJson();
-        json['id'] = docRef.id;
-        await docRef.set(json);
-      }
-
-      // Ensure there's an (initially empty) reviews subcollection by not adding any docs.
-      // Note: Firestore only materializes subcollections when they have documents.
-
-      // Update cache: add product (use the id from docRef)
-      final added = product.copyWith(id: docRef.id);
-      _productsCache.add(added);
-    } catch (e) {
-      print('Error adding new product: $e');
-    }
   }
 
   // Replaces the product document (by id) in Firestore and updates cache entry.
