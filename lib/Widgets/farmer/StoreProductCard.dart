@@ -36,9 +36,10 @@ class StoreProductCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            spreadRadius: 1,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -157,7 +158,7 @@ class StoreProductCard extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
+                  child: OutlinedButton.icon(
                     onPressed: () {
                       HapticFeedback.lightImpact();
                       onEdit?.call();
@@ -165,22 +166,26 @@ class StoreProductCard extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       side: const BorderSide(
-                        color: AppColors.DARK_TEXT,
+                        color: AppColors.HEADER_GRADIENT_START,
                         width: 1.5,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    child: const Text(
+                    icon: const Icon(Icons.edit_outlined,
+                        size: 18, color: AppColors.HEADER_GRADIENT_START),
+                    label: Text(
                       'Edit',
-                      style: AppTextStyles.STORE_ACTION_BUTTON,
+                      style: AppTextStyles.STORE_ACTION_BUTTON.copyWith(
+                        color: AppColors.HEADER_GRADIENT_START,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: OutlinedButton(
+                  child: OutlinedButton.icon(
                     onPressed: () {
                       HapticFeedback.lightImpact();
                       onRemove?.call();
@@ -188,32 +193,31 @@ class StoreProductCard extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       side: BorderSide(
-                        color: isArchived ? AppColors.HEADER_GRADIENT_START : AppColors.DARK_TEXT,
+                        color: isArchived
+                            ? AppColors.DARK_TEXT
+                            : AppColors.ERROR_RED,
                         width: 1.5,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (isArchived)
-                          const Padding(
-                            padding: EdgeInsets.only(right: 8.0),
-                            child: Icon(
-                              Icons.restore_from_trash,
-                              size: 18,
-                              color: AppColors.HEADER_GRADIENT_START,
-                            ),
-                          ),
-                        Text(
-                          isArchived ? 'Restore' : 'Remove',
-                          style: AppTextStyles.STORE_ACTION_BUTTON.copyWith(
-                            color: isArchived ? AppColors.HEADER_GRADIENT_START : AppColors.DARK_TEXT,
-                          ),
-                        ),
-                      ],
+                    icon: Icon(
+                      isArchived
+                          ? Icons.restore_from_trash
+                          : Icons.delete_outline,
+                      size: 18,
+                      color: isArchived
+                          ? AppColors.DARK_TEXT
+                          : AppColors.ERROR_RED,
+                    ),
+                    label: Text(
+                      isArchived ? 'Restore' : 'Remove',
+                      style: AppTextStyles.STORE_ACTION_BUTTON.copyWith(
+                        color: isArchived
+                            ? AppColors.DARK_TEXT
+                            : AppColors.ERROR_RED,
+                      ),
                     ),
                   ),
                 ),
