@@ -60,3 +60,7 @@ FARMER_STORE_COMPONENT_GUIDE.md
 FARMER_STORE_USAGE_EXAMPLES.md
 SELL_PAGE_IMPLEMENTATION.md
 lib/examples/
+
+# NPM firebase 
+node_modules/
+.firebase/
