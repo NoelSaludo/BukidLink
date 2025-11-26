@@ -189,7 +189,11 @@ class _LoginPageState extends State<LoginPage> {
                   SizedBox(
                     width: 260,
                     child: ElevatedButton.icon(
-                      icon: const Icon(Icons.login),
+                      icon: Image.asset(
+                        'assets/icons/google-logo.png',
+                        height: 24.0,
+                        width: 24.0,
+                      ),
                       label: const Text('Continue with Google'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
