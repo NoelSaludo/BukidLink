@@ -133,17 +133,14 @@ class ChatService {
   Stream<List<Map<String, dynamic>>> streamConversationsForUser(String userId) {
     final Query ref = _firestore
         .collection('conversations')
-        .where('participants', arrayContains: userId)
-        .orderBy('updatedAt', descending: true);
+        .where('participants', arrayContains: userId);
 
     return ref.snapshots().map((snap) {
-      return snap.docs.map((d) {
+      final List<Map<String, dynamic>> mapped = snap.docs.map((d) {
         final raw = d.data() as Map<String, dynamic>;
-        // Make a shallow copy so we can normalize without mutating Firestore data
         final Map<String, dynamic> data = Map<String, dynamic>.from(raw);
         data['id'] = d.id;
 
-        // Normalize participants to List<String> (handle strings and DocumentReference)
         try {
           final partsRaw = raw['participants'] as List<dynamic>?;
           if (partsRaw != null) {
@@ -152,7 +149,6 @@ class ChatService {
                   if (p == null) return '';
                   if (p is String) return p;
                   if (p is DocumentReference) return p.id;
-                  // If it's a map-like object containing an id field
                   if (p is Map && p['id'] != null) return p['id'].toString();
                   return p.toString();
                 })
@@ -161,7 +157,6 @@ class ChatService {
             data['participants'] = normalized;
           }
         } catch (e) {
-          // If normalization fails, leave participants as-is but log for debugging
           print(
             'ChatService: failed to normalize participants for convo ${d.id}: $e',
           );
@@ -169,6 +164,29 @@ class ChatService {
 
         return data;
       }).toList();
+
+      // Sort client-side by updatedAt (newest first). If updatedAt missing, treat as epoch.
+      mapped.sort((a, b) {
+        final aTs = a['updatedAt'];
+        final bTs = b['updatedAt'];
+        int aMillis = 0;
+        int bMillis = 0;
+        try {
+          if (aTs is Timestamp)
+            aMillis = aTs.millisecondsSinceEpoch;
+          else if (aTs is DateTime)
+            aMillis = aTs.millisecondsSinceEpoch;
+        } catch (_) {}
+        try {
+          if (bTs is Timestamp)
+            bMillis = bTs.millisecondsSinceEpoch;
+          else if (bTs is DateTime)
+            bMillis = bTs.millisecondsSinceEpoch;
+        } catch (_) {}
+        return bMillis.compareTo(aMillis);
+      });
+
+      return mapped;
     });
   }
 
