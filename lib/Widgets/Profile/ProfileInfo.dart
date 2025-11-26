@@ -13,10 +13,7 @@ import 'package:bukidlink/Utils/PageNavigator.dart';
 class ProfileInfo extends StatelessWidget {
   final String profileID;
 
-  const ProfileInfo({
-    super.key,
-    required this.profileID,
-  });
+  const ProfileInfo({super.key, required this.profileID});
 
   void onMessagePress(BuildContext context) {
     PageNavigator().goToAndKeep(context, MessagePage());
@@ -54,9 +51,7 @@ class ProfileInfo extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     ProfileCoverPicture(imageUrl: coverImage),
-                    Container(
-                      color: Colors.black.withOpacity(0.2),
-                    ),
+                    Container(color: Colors.black.withOpacity(0.2)),
                     Positioned(
                       top: 30,
                       left: 10,
@@ -85,10 +80,7 @@ class ProfileInfo extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: ProfileIcon(
-                  imageUrl: profileImage,
-                  size: 85,
-                ),
+                child: ProfileIcon(imageUrl: profileImage, size: 85),
               ),
             ),
           ],
@@ -106,42 +98,22 @@ class ProfileInfo extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 "Farmer • Local Producer",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
               ),
               const SizedBox(height: 20),
 
               // --- Buttons Row ---
               Row(
                 children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[300],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8), // less rounded
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        "Follow",
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
+                  Expanded(child: FollowButton(farmId: profile.id)),
                   const SizedBox(width: 10),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () => onMessagePress(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFD5FF6B), // your green theme
+                        backgroundColor: const Color(
+                          0xFFD5FF6B,
+                        ), // your green theme
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -168,10 +140,7 @@ class ProfileInfo extends StatelessWidget {
         // --- Divider ---
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Divider(
-            color: Colors.grey[300],
-            thickness: 1,
-          ),
+          child: Divider(color: Colors.grey[300], thickness: 1),
         ),
       ],
     );

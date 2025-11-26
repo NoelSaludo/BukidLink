@@ -4,15 +4,18 @@ import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
 import 'package:bukidlink/pages/StorePage.dart';
+import 'package:bukidlink/Widgets/Profile/FollowButton.dart';
 
 class ProductDetailsCard extends StatelessWidget {
   final String description;
   final String farmName;
+  final String? farmId;
 
   const ProductDetailsCard({
     super.key,
     required this.description,
     required this.farmName,
+    this.farmId,
   });
 
   void _navigateToStore(BuildContext context) {
@@ -89,7 +92,18 @@ class ProductDetailsCard extends StatelessWidget {
                           style: AppTextStyles.SELLER_LABEL_MEDIUM,
                         ),
                         const SizedBox(height: 2),
-                        Text(farmName, style: AppTextStyles.SELLER_NAME_LARGE),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              farmName,
+                              style: AppTextStyles.SELLER_NAME_LARGE,
+                            ),
+                            const SizedBox(height: 8),
+                            if (farmId != null)
+                              FollowButton(farmId: farmId!, width: 120),
+                          ],
+                        ),
                       ],
                     ),
                   ),

@@ -15,6 +15,8 @@ import 'package:bukidlink/widgets/productinfo/RecommendedProductsSection.dart';
 import 'package:bukidlink/widgets/productinfo/BottomActionBar.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/services/ProductService.dart';
+import 'package:bukidlink/data/UserData.dart';
+import 'package:bukidlink/models/User.dart' as ModelUser;
 
 class ProductInfoPage extends StatefulWidget {
   final Product product;
@@ -54,7 +56,12 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
   }
 
   // Helper that returns a network image when path is a URL, otherwise an asset image.
-  Widget _buildImage(String path, {BoxFit? fit, double? width, double? height}) {
+  Widget _buildImage(
+    String path, {
+    BoxFit? fit,
+    double? width,
+    double? height,
+  }) {
     final lower = path.toLowerCase();
     if (lower.startsWith('http://') || lower.startsWith('https://')) {
       return Image.network(
@@ -165,7 +172,10 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
                   children: [
                     AspectRatio(
                       aspectRatio: 1,
-                      child: _buildImage(widget.product.imagePath, fit: BoxFit.cover),
+                      child: _buildImage(
+                        widget.product.imagePath,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                     Positioned.fill(
                       child: Container(
@@ -196,6 +206,7 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
                   widget.product.description ??
                   'Fresh and high-quality ${widget.product.name.toLowerCase()} sourced directly from local farms.',
               farmName: widget.product.farmName,
+              farmId: _resolveFarmId(),
             ),
             FutureBuilder<List<ProductReview>>(
               future: _reviewsFuture,
@@ -211,10 +222,7 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
                   reviews: reviews,
                   onViewAll: () => PageNavigator().goToAndKeepWithTransition(
                     context,
-                    AllReviewsPage(
-                      reviews: reviews,
-                      product: widget.product,
-                    ),
+                    AllReviewsPage(reviews: reviews, product: widget.product),
                     PageTransitionType.slideFromRight,
                   ),
                 );
@@ -231,5 +239,39 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
         onAddToBasket: _handleAddToBasket,
       ),
     );
+  }
+
+  // Try to resolve a farmId for the product. Priority:
+  // 1) product.farmId if present
+  // 2) Look up a local user whose username matches the product.farmName (from ProductData fixtures)
+  // Returns null if no id could be resolved.
+  String? _resolveFarmId() {
+    if (widget.product.farmId != null && widget.product.farmId!.isNotEmpty) {
+      return widget.product.farmId;
+    }
+
+    try {
+      final List<ModelUser.User> users = UserData.getAllUsers();
+      final matches = users.where(
+        (u) =>
+            u.username.trim().toLowerCase() ==
+            widget.product.farmName.trim().toLowerCase(),
+      );
+      if (matches.isNotEmpty) {
+        final match = matches.first;
+        // Use the user's id as a fallback farmId. This maps the sample data (users list) to follow docs.
+        debugPrint(
+          'Resolved farmId from UserData: ${match.id} for farmName ${widget.product.farmName}',
+        );
+        return match.id;
+      }
+    } catch (e) {
+      debugPrint('Error resolving farmId: $e');
+    }
+
+    debugPrint(
+      'No farmId available for product ${widget.product.id} (${widget.product.name})',
+    );
+    return null;
   }
 }
