@@ -142,6 +142,7 @@ class _ChatPageState extends State<ChatPage> {
         b.time.millisecondsSinceEpoch,
       ),
     );
+    if (!mounted) return;
     setState(() {
       _messages
         ..clear()
