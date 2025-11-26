@@ -517,6 +517,20 @@ class AppTextStyles {
     fontSize: 16.0,
     fontWeight: FontWeight.normal,
   );
+
+  static const TextStyle AUTH_TITLE = TextStyle(
+    fontFamily: FONT_FAMILY,
+    color: AppColors.BACKGROUND_WHITE,
+    fontSize: 24.0,
+    fontWeight: FontWeight.bold,
+  );
+
+  static const TextStyle AUTH_SUBTITLE = TextStyle(
+    fontFamily: FONT_FAMILY,
+    color: AppColors.BACKGROUND_WHITE,
+    fontSize: 16.0,
+    fontWeight: FontWeight.normal,
+  );
 }
 
 
