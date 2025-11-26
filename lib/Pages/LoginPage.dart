@@ -10,6 +10,7 @@ import 'package:bukidlink/Widgets/SignUpAndLogin/LoginLogo.dart';
 import 'package:bukidlink/Widgets/SignUpAndLogin/GoToSignUp.dart';
 import 'package:bukidlink/services/google_auth.dart';
 import 'package:bukidlink/services/UserService.dart';
+import 'package:bukidlink/Utils/constants/AppColors.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -41,10 +42,10 @@ class _LoginPageState extends State<LoginPage> {
         if (userCredential != null) {
           // Proceed to loading / main flow on successful Google sign-in
           PageNavigator().goTo(
-            context,
-            LoadingPage(
-              userType: UserService().getCurrentUser()!.type ?? "Consumer",
-            ),
+              context,
+              LoadingPage(
+                userType: UserService().getCurrentUser()!.type ?? "Consumer",
+              ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -55,9 +56,9 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       if (context.mounted) {
         setState(() => isLoading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Google sign-in error: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Google sign-in error: $e')),
+        );
       }
     }
   }
@@ -112,9 +113,22 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 42, 73, 47),
       resizeToAvoidBottomInset: false,
-      body: _buildContent(context),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.LOGIN_BACKGROUND_START,
+              AppColors.LOGIN_BACKGROUND_END,
+            ],
+          ),
+        ),
+        child: _buildContent(context),
+      ),
     );
   }
 
@@ -130,12 +144,20 @@ class _LoginPageState extends State<LoginPage> {
           child: Container(
             width: double.infinity,
             height: height * 0.55,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20.0),
-                topRight: Radius.circular(20.0),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(40.0),
+                topRight: Radius.circular(40.0),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 10,
+                  offset: const Offset(0, -5),
+                ),
+              ],
             ),
             child: Form(
               key: formKey,
@@ -167,7 +189,11 @@ class _LoginPageState extends State<LoginPage> {
                   SizedBox(
                     width: 260,
                     child: ElevatedButton.icon(
-                      icon: const Icon(Icons.login),
+                      icon: Image.asset(
+                        'assets/icons/google-logo.png',
+                        height: 24.0,
+                        width: 24.0,
+                      ),
                       label: const Text('Continue with Google'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,

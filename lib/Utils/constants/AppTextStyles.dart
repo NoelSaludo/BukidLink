@@ -36,8 +36,9 @@ class AppTextStyles {
 
   static const TextStyle FORGOT_PASSWORD = TextStyle(
     fontFamily: FONT_FAMILY,
-    color: AppColors.BORDER_GREY,
+    color: AppColors.HEADER_GRADIENT_START,
     fontSize: 14.0,
+    fontWeight: FontWeight.w600,
   );
 
   static const TextStyle PRIMARY_BUTTON_TEXT = TextStyle(
@@ -420,7 +421,7 @@ class AppTextStyles {
   // ----------------------------
   // Farmer Store Page Text Styles
   // ----------------------------
-  
+
   // Bottom Navigation
   static const TextStyle FARMER_NAV_SELECTED = TextStyle(
     fontFamily: FONT_FAMILY,
@@ -517,6 +518,5 @@ class AppTextStyles {
     fontWeight: FontWeight.normal,
   );
 }
-
 
 
