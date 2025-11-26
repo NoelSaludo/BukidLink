@@ -10,6 +10,7 @@ import 'package:bukidlink/models/Post.dart';
 import 'package:bukidlink/models/User.dart';
 import 'package:bukidlink/models/Farm.dart';
 import 'package:bukidlink/services/UserService.dart';
+import 'package:bukidlink/Widgets/Profile/FollowButton.dart';
 import 'package:intl/intl.dart';
 
 class PostTile extends StatelessWidget {
@@ -68,10 +69,23 @@ class PostTile extends StatelessWidget {
                                 snap.data!.name.trim().isNotEmpty)
                             ? snap.data!.name.trim()
                             : 'unset value';
+                        final farmId = (snap.hasData && snap.data != null)
+                            ? snap.data!.id
+                            : null;
 
-                        return PostUsername(
-                          username: poster.username,
-                          farmName: farmName,
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: PostUsername(
+                                username: poster.username,
+                                farmName: farmName,
+                              ),
+                            ),
+                            if (farmId != null) ...[
+                              const SizedBox(width: 8),
+                              FollowButton(farmId: farmId, width: 90),
+                            ],
+                          ],
                         );
                       },
                     ),
