@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/WelcomeText.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/LoginorSigninButton.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/FirstNameField.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/LastNameField.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/EmailAddressField.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/AddressField.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/ContactNumberField.dart';
+import 'package:bukidlink/widgets/auth/AuthLayout.dart';
+import 'package:bukidlink/widgets/auth/AuthTextField.dart';
+import 'package:bukidlink/widgets/auth/AuthButton.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
-import 'package:bukidlink/Widgets/CustomBackButton.dart';
 import 'package:bukidlink/Pages/SignUpContinuedPage.dart';
 import 'package:bukidlink/services/google_auth.dart';
 import 'package:bukidlink/Pages/LoadingPage.dart';
+import 'package:bukidlink/Pages/LoginPage.dart';
+import 'package:bukidlink/Utils/FormValidator.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -25,37 +22,29 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController emailAddressController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
   final TextEditingController contactNumberController = TextEditingController();
-  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final ValueNotifier<String> activeTab = ValueNotifier<String>('Consumer');
-  String? forceErrorText;
   bool isLoading = false;
 
+  final FormValidator formValidator = FormValidator();
+
+  @override
   void dispose() {
     firstNameController.dispose();
     lastNameController.dispose();
     emailAddressController.dispose();
     addressController.dispose();
     contactNumberController.dispose();
+    activeTab.dispose();
     super.dispose();
   }
 
-  void onChanged(String value) {
-    if (forceErrorText != null) {
-      setState(() {
-        forceErrorText = null;
-      });
-    }
-  }
-
-  // Handler for Google Sign-In using existing FirebaseService
-  void handleGoogleSignIn(BuildContext context) async {
+  void handleGoogleSignIn() async {
     setState(() => isLoading = true);
     try {
       final userCredential = await FirebaseService().signInWithGoogle();
-      if (context.mounted) {
-        setState(() => isLoading = false);
+      if (mounted) {
         if (userCredential != null) {
-          // Navigate to loading/main flow on successful sign-in
           PageNavigator().goTo(context, LoadingPage(userType: 'Consumer'));
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -64,300 +53,167 @@ class _SignUpPageState extends State<SignUpPage> {
         }
       }
     } catch (e) {
-      if (context.mounted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Google sign-in error: $e')));
+      }
+    } finally {
+      if (mounted) {
         setState(() => isLoading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Google sign-in error: $e')));
       }
     }
   }
 
-  void handleSignUp(BuildContext context) {
-    final bool isValid = formKey.currentState?.validate() ?? false;
-
-    if (!isValid) {
-      return;
+  void _handleSignUp() {
+    if (_formKey.currentState?.validate() ?? false) {
+      PageNavigator().goToAndKeep(
+        context,
+        SignUpContinuedPage(
+          firstName: firstNameController.text,
+          lastName: lastNameController.text,
+          emailAddress: emailAddressController.text,
+          address: addressController.text,
+          contactNumber: contactNumberController.text,
+          accountType: activeTab.value,
+        ),
+      );
     }
-
-    setState(() => isLoading = true);
-    // final String? errorText = await validateInputFromDatabase({
-    // });
-
-    // if(context.mounted) {
-    //   setState(() => isLoading = false);
-    //   if(errorText != null) {
-    //     setState(() {
-    //       forceErrorText = errorText;
-    //     });
-    //   }
-    // }
-    PageNavigator().goToAndKeep(
-      context,
-      SignUpContinuedPage(
-        firstName: firstNameController.text,
-        lastName: lastNameController.text,
-        emailAddress: emailAddressController.text,
-        address: addressController.text,
-        contactNumber: contactNumberController.text,
-        accountType: activeTab.value,
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      resizeToAvoidBottomInset: false,
-      body: _buildContent(context),
+    return AuthLayout(
+      title: 'Create Account',
+      subtitle: 'Let\'s get you started!',
+      form: _buildForm(),
+      showBackButton: true,
     );
   }
 
-  Widget _buildContent(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-
-    return SafeArea(
+  Widget _buildForm() {
+    return Form(
+      key: _formKey,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 24.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Top-left back button
-            Align(
-              alignment: Alignment.topLeft,
-              child: Padding(
-                padding: const EdgeInsets.only(left: 10.0, top: 20.0),
-                child: CustomBackButton(
-                  onPressed: () => PageNavigator().goBack(context),
-                ),
-              ),
-            ),
-
-            // Greeting area
             const SizedBox(height: 20.0),
-            const WelcomeText(text: 'Hello There!'),
-            const SizedBox(height: 20.0),
-
-            // The rounded form container. Removed fixed height so it can size naturally
-            Padding(
-              padding: const EdgeInsets.only(top: 10.0, bottom: 20.0),
-              child: Center(
-                child: Container(
-                  width: width * 0.90,
-                  // No fixed height to allow the container to grow and the SingleChildScrollView to scroll
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                    gradient: LinearGradient(
-                      begin:
-                          Alignment.topCenter, // Starting point of the gradient
-                      end: Alignment
-                          .bottomCenter, // Ending point of the gradient
-                      colors: [
-                        const Color.fromARGB(
-                          255,
-                          200,
-                          230,
-                          108,
-                        ), // First color in the gradient
-                        const Color.fromARGB(
-                          255,
-                          52,
-                          82,
-                          52,
-                        ), // Second color in the gradient
-                      ],
-                      stops: [0.0, 1.0], // Optional: Define color distribution
-                    ),
-                  ),
-                  child: Form(
-                    key: formKey,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 24.0,
-                      ),
-                      child: ValueListenableBuilder<String>(
-                        valueListenable: activeTab,
-                        builder: (context, tab, _) {
-                          return Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              const SizedBox(height: 10.0),
-
-                              // --- Input fields ---
-                              Row(
-                                children: [
-                                  Expanded(
-                                    flex: 1,
-                                    child: FirstNameField(
-                                      controller: firstNameController,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8.0),
-                                  Expanded(
-                                    flex: 1,
-                                    child: LastNameField(
-                                      controller: lastNameController,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8.0),
-                              EmailAddressField(
-                                controller: emailAddressController,
-                              ),
-                              const SizedBox(height: 8.0),
-                              AddressField(
-                                controller: addressController,
-                                onChanged: onChanged,
-                              ),
-                              const SizedBox(height: 8.0),
-                              ContactNumberField(
-                                controller: contactNumberController,
-                              ),
-                              const SizedBox(height: 12.0),
-
-                              Text(
-                                'Account Type',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 8.0),
-                              Container(
-                                width: 220,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade300,
-                                  borderRadius: BorderRadius.circular(50),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: () =>
-                                            activeTab.value = 'Consumer',
-                                        child: AnimatedContainer(
-                                          duration: const Duration(
-                                            milliseconds: 200,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: tab == 'Consumer'
-                                                ? const Color.fromARGB(
-                                                    255,
-                                                    202,
-                                                    232,
-                                                    109,
-                                                  )
-                                                : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(
-                                              50,
-                                            ),
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: Text(
-                                            'Consumer',
-                                            style: TextStyle(
-                                              color: tab == 'Consumer'
-                                                  ? Colors.black
-                                                  : Colors.grey[700],
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: () => activeTab.value = 'Farmer',
-                                        child: AnimatedContainer(
-                                          duration: const Duration(
-                                            milliseconds: 200,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: tab == 'Farmer'
-                                                ? const Color.fromARGB(
-                                                    255,
-                                                    202,
-                                                    232,
-                                                    109,
-                                                  )
-                                                : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(
-                                              50,
-                                            ),
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: Text(
-                                            'Farmer',
-                                            style: TextStyle(
-                                              color: tab == 'Farmer'
-                                                  ? Colors.black
-                                                  : Colors.grey[700],
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              const SizedBox(height: 20.0),
-                              // Google Sign-In button
-                              SizedBox(
-                                width: 220,
-                                child: ElevatedButton.icon(
-                                  icon: const Icon(Icons.login),
-                                  label: const Text('Continue with Google'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: Colors.black87,
-                                  ),
-                                  onPressed: () => handleGoogleSignIn(context),
-                                ),
-                              ),
-                              const SizedBox(height: 12.0),
-                              // --- Action button ---
-                              LoginorSigninButton(
-                                onPressed: () {
-                                  if (tab == 'Consumer') {
-                                    handleSignUp(context);
-                                  } else if (tab == 'Farmer') {
-                                    handleSignUp(context); // or go to LoginPage
-                                  }
-                                },
-                                mode: 'SignUp',
-                              ),
-
-                              const SizedBox(height: 30.0),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
+            Row(
+              children: [
+                Expanded(
+                  child: AuthTextField(
+                    controller: firstNameController,
+                    hintText: 'First Name',
+                    validator: formValidator.nameValidator,
                   ),
                 ),
-              ),
+                const SizedBox(width: 8.0),
+                Expanded(
+                  child: AuthTextField(
+                    controller: lastNameController,
+                    hintText: 'Last Name',
+                    validator: formValidator.nameValidator,
+                  ),
+                ),
+              ],
             ),
+            AuthTextField(
+              controller: emailAddressController,
+              hintText: 'Email Address',
+              validator: formValidator.emailValidator,
+            ),
+            AuthTextField(
+              controller: addressController,
+              hintText: 'Address',
+              validator: formValidator.tempAddressValidator,
+            ),
+            AuthTextField(
+              controller: contactNumberController,
+              hintText: 'Contact Number',
+              validator: formValidator.tempContactNumberValidator,
+            ),
+            const SizedBox(height: 16.0),
+            const Text('Account Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            _buildAccountTypeSelector(),
+            const SizedBox(height: 16.0),
+            AuthButton(onPressed: _handleSignUp, text: 'Continue'),
+            const SizedBox(height: 12.0),
+            _buildGoogleSignInButton(),
+            const SizedBox(height: 12.0),
+            _buildLoginLink(),
+            const SizedBox(height: 20.0),
           ],
         ),
       ),
     );
   }
 
-  void goBack(BuildContext context) {
-    PageNavigator().goBack(context);
+  Widget _buildAccountTypeSelector() {
+    return ValueListenableBuilder<String>(
+      valueListenable: activeTab,
+      builder: (context, value, child) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ChoiceChip(
+              label: const Text('Consumer'),
+              selected: value == 'Consumer',
+              onSelected: (selected) {
+                if (selected) activeTab.value = 'Consumer';
+              },
+            ),
+            const SizedBox(width: 8.0),
+            ChoiceChip(
+              label: const Text('Farmer'),
+              selected: value == 'Farmer',
+              onSelected: (selected) {
+                if (selected) activeTab.value = 'Farmer';
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
-  Future<String?> validateInputFromServer(
-    String emailAddress,
-    String address,
-    String contactNumber,
-  ) async {
-    // Not implemented yet — return null to indicate "no error" by default.
-    return null;
+  Widget _buildGoogleSignInButton() {
+    return SizedBox(
+      width: 260,
+      child: ElevatedButton.icon(
+        icon: Image.asset(
+          'assets/icons/google-logo.png',
+          height: 24.0,
+          width: 24.0,
+        ),
+        label: const Text('Continue with Google'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black87,
+          elevation: 2,
+        ),
+        onPressed: isLoading ? null : handleGoogleSignIn,
+      ),
+    );
+  }
+
+  Widget _buildLoginLink() {
+    return GestureDetector(
+      onTap: () => PageNavigator().goToAndKeep(context, const LoginPage()),
+      child: const Text.rich(
+        TextSpan(
+          text: 'Have an account? ',
+          children: [
+            TextSpan(
+              text: 'Log In',
+              style: TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/WelcomeText.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/LoginorSigninButton.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/UsernameField.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/PasswordField.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/ConfirmPasswordField.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/FarmAddress.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/FarmName.dart';
+import 'package:bukidlink/widgets/auth/AuthLayout.dart';
+import 'package:bukidlink/widgets/auth/AuthTextField.dart';
+import 'package:bukidlink/widgets/auth/AuthButton.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
-import 'package:bukidlink/Widgets/CustomBackButton.dart';
 import 'package:bukidlink/Pages/LoadingPage.dart';
 import 'package:bukidlink/models/User.dart';
 import 'package:bukidlink/models/Farm.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bukidlink/services/UserService.dart';
+import 'package:bukidlink/Utils/FormValidator.dart';
 
 class SignUpContinuedPage extends StatefulWidget {
   final String firstName;
@@ -38,70 +34,49 @@ class SignUpContinuedPage extends StatefulWidget {
 class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
   final TextEditingController farmAddressController = TextEditingController();
   final TextEditingController farmNameController = TextEditingController();
-  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  final ValueNotifier<String> accountType = ValueNotifier<String>('Sign Up');
-  String? forceErrorText;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool isLoading = false;
 
-  @override
-  void initState() {
-    super.initState();
-    accountType.value =
-        widget.accountType; // <-- set the value from the previous page
-  }
+  // Use an instance of FormValidator and call its instance methods
+  final FormValidator formValidator = FormValidator();
 
+  @override
   void dispose() {
     usernameController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
+    farmAddressController.dispose();
+    farmNameController.dispose();
     super.dispose();
   }
 
-  void onChanged(String value) {
-    if (forceErrorText != null) {
-      setState(() {
-        forceErrorText = null;
-      });
-    }
-  }
-
-  void handleSignUp(BuildContext context) async {
-    final bool isValid = formKey.currentState?.validate() ?? false;
-
-    if (!isValid) {
+  void _handleSignUp() async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
 
     setState(() => isLoading = true);
 
     try {
-      // Create User model with all collected data
       final user = User(
         id: '',
-        // Firebase will generate the UID, we'll use empty string for now
         username: usernameController.text,
         password: passwordController.text,
-        // Plain password - Firebase handles hashing
         firstName: widget.firstName,
         lastName: widget.lastName,
         emailAddress: widget.emailAddress,
         address: widget.address,
         contactNumber: widget.contactNumber,
         profilePic: '/images/default_profile.png',
-        // Default empty, can be set later
-        type: accountType
-            .value, // Use the selected account type (Consumer or Farmer)
+        type: widget.accountType,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
 
-      // Use UserService to create account and sign in. If registering a Farmer,
-      // create a Farm object from the controllers and call registerFarm.
-      final userCredential = accountType.value == 'Farmer'
+      final userCredential = widget.accountType == 'Farmer'
           ? await UserService().registerFarm(
               user,
               Farm(
@@ -115,169 +90,93 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
             )
           : await UserService().registerUser(user);
 
-      if (context.mounted) {
-        setState(() => isLoading = false);
-
+      if (mounted) {
         if (userCredential != null) {
-          // Successfully signed up and signed in
-          PageNavigator().goTo(
-            context,
-            LoadingPage(userType: widget.accountType),
-          );
+          PageNavigator().goTo(context, LoadingPage(userType: widget.accountType));
         } else {
-          // Sign-up failed
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Sign-up failed. Please try again.')),
           );
         }
       }
     } catch (e) {
-      if (context.mounted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+      }
+    } finally {
+      if (mounted) {
         setState(() => isLoading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      resizeToAvoidBottomInset: false,
-      body: _buildContent(context),
-    );
-  }
-
-  Widget _buildContent(BuildContext context) {
-    final height = MediaQuery.of(context).size.height;
-    final width = MediaQuery.of(context).size.width;
-
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 24.0),
-        child: Column(
-          children: [
-            // Top-left back button
-            Padding(
-              padding: const EdgeInsets.only(left: 10.0, top: 20.0),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: CustomBackButton(
-                  onPressed: () => PageNavigator().goBack(context),
-                ),
-              ),
-            ),
-
-            // Greeting text
-            const SizedBox(height: 30.0),
-            const WelcomeText(text: 'Almost Done!'),
-            const SizedBox(height: 20.0),
-
-            // Form container (extracted to helper)
-            _buildFormCard(width, height),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // --- Private builders ---
-
-  Widget _buildFormCard(double width, double height) {
-    return Center(
-      child: Container(
-        width: width * 0.90,
-        height: height * 0.70,
-        decoration: const BoxDecoration(
-          color: Color.fromARGB(255, 160, 190, 92),
-          borderRadius: BorderRadius.all(Radius.circular(20.0)),
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color.fromARGB(255, 200, 230, 108),
-              Color.fromARGB(255, 52, 82, 52),
-            ],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-          child: LayoutBuilder(
-            builder: (context, constraints) => _buildFormLayout(constraints),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFormLayout(BoxConstraints constraints) {
-    return SingleChildScrollView(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: constraints.maxHeight),
-        child: IntrinsicHeight(child: _buildForm()),
-      ),
+    return AuthLayout(
+      title: 'Almost Done!',
+      subtitle: 'Complete your profile',
+      form: _buildForm(),
+      showBackButton: true,
     );
   }
 
   Widget _buildForm() {
     return Form(
-      key: formKey,
-      child: ValueListenableBuilder<String>(
-        valueListenable: accountType,
-        builder: (context, tab, _) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 50.0),
-              _buildFields(tab),
-              const SizedBox(height: 16.0),
-              const Spacer(),
-              _buildSubmitButton(tab),
-              const SizedBox(height: 16.0),
+      key: _formKey,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(height: 20.0),
+            AuthTextField(
+              controller: usernameController,
+              hintText: 'Username',
+              validator: formValidator.signupUsernameValidator,
+            ),
+            AuthTextField(
+              controller: passwordController,
+              hintText: 'Password',
+              obscureText: true,
+              validator: formValidator.signupPasswordValidator,
+            ),
+            AuthTextField(
+              controller: confirmPasswordController,
+              hintText: 'Confirm Password',
+              obscureText: true,
+              validator: (value) {
+                final baseValidation = formValidator.confirmPasswordValidator(value);
+                if (baseValidation != null) return baseValidation;
+                if (value != passwordController.text) {
+                  return 'Value must be the same as Password field';
+                }
+                return null;
+              },
+            ),
+            if (widget.accountType == 'Farmer') ...[
+              AuthTextField(
+                controller: farmNameController,
+                hintText: 'Farm Name',
+                validator: formValidator.farmNameValidator,
+              ),
+              AuthTextField(
+                controller: farmAddressController,
+                hintText: 'Farm Address',
+                validator: formValidator.farmAddressValidator,
+              ),
             ],
-          );
-        },
+            AuthButton(
+              onPressed: () {
+                if (isLoading) return;
+                _handleSignUp();
+              },
+              text: isLoading ? 'Creating Account...' : 'Sign Up',
+            ),
+            const SizedBox(height: 20.0),
+          ],
+        ),
       ),
     );
-  }
-
-  Widget _buildFields(String tab) {
-    return Column(
-      children: [
-        EmailField(
-          controller: usernameController,
-          mode: 'SignUp',
-          forceErrorText: forceErrorText,
-          onChanged: onChanged,
-        ),
-        PasswordField(
-          controller: passwordController,
-          mode: 'SignUp',
-          forceErrorText: null,
-          onChanged: onChanged,
-        ),
-        ConfirmPasswordField(controller: confirmPasswordController),
-        if (tab == 'Farmer') ...[
-          FarmNameField(controller: farmNameController, onChanged: onChanged),
-          FarmAddressField(
-            controller: farmAddressController,
-            onChanged: onChanged,
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildSubmitButton(String tab) {
-    return LoginorSigninButton(
-      onPressed: () => handleSignUp(context),
-      mode: tab,
-    );
-  }
-
-  void goBack(BuildContext context) {
-    PageNavigator().goBack(context);
   }
 }

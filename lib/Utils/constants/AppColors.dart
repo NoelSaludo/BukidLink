@@ -46,4 +46,5 @@ class AppColors {
   static const Color LOGIN_BUTTON_END = Color(0xFF9BCF6F);
   static const Color LOGIN_TEXT_FIELD_BORDER = Color(0xFFBDBDBD);
   static const Color LOGIN_TEXT_FIELD_FILL = Color(0xFFF5F5F5);
+  static const Color DARK_GREEN = Color(0xFF0F3325);
 }
