@@ -7,6 +7,7 @@ class Farm {
   final DocumentReference ownerId;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final int followerCount;
   Farm({
     required this.id,
     required this.name,
@@ -14,6 +15,7 @@ class Farm {
     required this.ownerId,
     required this.createdAt,
     required this.updatedAt,
+    this.followerCount = 0,
   });
 
   factory Farm.fromDocument(DocumentSnapshot doc) {
@@ -29,6 +31,11 @@ class Farm {
       updatedAt: data['updated_at'] != null
           ? (data['updated_at'] as Timestamp).toDate()
           : DateTime.now(),
+      followerCount: (data['followerCount'] is int)
+          ? data['followerCount'] as int
+          : (data['followerCount'] != null
+                ? (data['followerCount'] as num).toInt()
+                : 0),
     );
   }
 
@@ -39,6 +46,7 @@ class Farm {
       'ownerId': ownerId,
       'created_at': createdAt,
       'updated_at': updatedAt,
+      'followerCount': followerCount,
     };
   }
 }
