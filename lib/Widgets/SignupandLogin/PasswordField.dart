@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/Utils/FormValidator.dart';
+import 'package:bukidlink/Utils/constants/AppColors.dart';
 
 class PasswordField extends StatelessWidget {
   final TextEditingController controller;
@@ -24,10 +25,27 @@ class PasswordField extends StatelessWidget {
           decoration: InputDecoration(
             labelText: 'Password',
             filled: true,
-            fillColor: Colors.grey[50],
+            fillColor: AppColors.LOGIN_TEXT_FIELD_FILL,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20.0),
-              borderSide: BorderSide(color: Colors.blue, width: 2.0),
+              borderRadius: BorderRadius.circular(15.0),
+              borderSide: const BorderSide(
+                color: AppColors.LOGIN_TEXT_FIELD_BORDER,
+                width: 1.0,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15.0),
+              borderSide: const BorderSide(
+                color: AppColors.LOGIN_TEXT_FIELD_BORDER,
+                width: 1.0,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15.0),
+              borderSide: const BorderSide(
+                color: AppColors.HEADER_GRADIENT_START,
+                width: 2.0,
+              ),
             ),
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(
@@ -35,9 +53,8 @@ class PasswordField extends StatelessWidget {
               horizontal: 16.0,
             ),
           ),
-          style: TextStyle(fontSize: 20.0),
+          style: const TextStyle(fontSize: 20.0),
           obscureText: true,
-          forceErrorText: forceErrorText,
           controller: controller,
           onChanged: onChanged,
           validator: FormValidator().loginPasswordValidator,

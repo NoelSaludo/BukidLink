@@ -11,7 +11,7 @@ class LoginLogo extends StatelessWidget {
       width: 350.0,
       height: 380.0,
       decoration: BoxDecoration(
-        color: AppColors.BACKGROUND_WHITE,
+        color: AppColors.LOGIN_LOGO_BACKGROUND,
         shape: BoxShape.circle,
       ),
       child: Column(
