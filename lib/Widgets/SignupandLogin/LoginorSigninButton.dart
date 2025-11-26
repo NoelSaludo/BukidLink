@@ -9,7 +9,7 @@ class LoginorSigninButton extends StatelessWidget {
   Widget build(BuildContext context) {
     if (mode == 'Login') {
       return Container(
-        width: 150,
+        width: 260,
         height: 55,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
@@ -21,6 +21,13 @@ class LoginorSigninButton extends StatelessWidget {
             end: Alignment.centerRight,
           ),
           borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: const Color.fromRGBO(0, 0, 0, 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: ElevatedButton(
           onPressed: onPressed,
@@ -30,11 +37,12 @@ class LoginorSigninButton extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(30),
             ),
+            minimumSize: const Size(260, 55), // enforce same minimum size
           ),
           child: const Text(
             "Log In",
             style: TextStyle(
-              fontSize: 24.0,
+              fontSize: 20.0, // slightly smaller for better balance
               color: Colors.white,
             ),
           ),
