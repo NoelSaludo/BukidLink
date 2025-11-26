@@ -71,9 +71,17 @@ class _InboxPageState extends State<InboxPage> {
             itemCount: convos.length,
             itemBuilder: (context, index) {
               final conv = convos[index];
-              final participants =
-                  (conv['participants'] as List<dynamic>?)?.cast<String>() ??
-                  [];
+              final partsRaw = (conv['participants'] as List<dynamic>?) ?? [];
+              final List<String> participants = partsRaw
+                  .map((p) {
+                    if (p == null) return '';
+                    if (p is String) return p;
+                    if (p is DocumentReference) return p.id;
+                    if (p is Map && p['id'] != null) return p['id'].toString();
+                    return p.toString();
+                  })
+                  .where((s) => s.isNotEmpty)
+                  .toList();
               String otherId = conv['id'] as String? ?? '';
               if (uid != null && participants.isNotEmpty) {
                 otherId = participants.firstWhere(

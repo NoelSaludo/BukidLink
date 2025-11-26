@@ -136,13 +136,40 @@ class ChatService {
         .where('participants', arrayContains: userId)
         .orderBy('updatedAt', descending: true);
 
-    return ref.snapshots().map(
-      (snap) => snap.docs.map((d) {
-        final data = d.data() as Map<String, dynamic>;
+    return ref.snapshots().map((snap) {
+      return snap.docs.map((d) {
+        final raw = d.data() as Map<String, dynamic>;
+        // Make a shallow copy so we can normalize without mutating Firestore data
+        final Map<String, dynamic> data = Map<String, dynamic>.from(raw);
         data['id'] = d.id;
+
+        // Normalize participants to List<String> (handle strings and DocumentReference)
+        try {
+          final partsRaw = raw['participants'] as List<dynamic>?;
+          if (partsRaw != null) {
+            final List<String> normalized = partsRaw
+                .map((p) {
+                  if (p == null) return '';
+                  if (p is String) return p;
+                  if (p is DocumentReference) return p.id;
+                  // If it's a map-like object containing an id field
+                  if (p is Map && p['id'] != null) return p['id'].toString();
+                  return p.toString();
+                })
+                .where((s) => s.isNotEmpty)
+                .toList();
+            data['participants'] = normalized;
+          }
+        } catch (e) {
+          // If normalization fails, leave participants as-is but log for debugging
+          print(
+            'ChatService: failed to normalize participants for convo ${d.id}: $e',
+          );
+        }
+
         return data;
-      }).toList(),
-    );
+      }).toList();
+    });
   }
 
   /// Returns the stored `lastMessage` string for a conversation.
