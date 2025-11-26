@@ -26,6 +26,7 @@ class _ChatPageState extends State<ChatPage> {
   StreamSubscription<List<Message>>? _messagesSub;
   String? _conversationId;
   String? _currentUid;
+  String? _senderName;
   bool _isLoadingMore = false;
   bool _hasMore = true;
   final int _pageSize = 50;
@@ -38,8 +39,26 @@ class _ChatPageState extends State<ChatPage> {
       _currentUid!,
       widget.sender,
     );
+    _fetchSenderName();
     _scrollController.addListener(_onScroll);
     _initConversation();
+  }
+
+  Future<void> _fetchSenderName() async {
+    try {
+      final user = await UserService().getUserById(widget.sender);
+      if (mounted) {
+        setState(() {
+          _senderName = user?.username ?? widget.sender;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _senderName = widget.sender;
+        });
+      }
+    }
   }
 
   void _onScroll() {
@@ -171,7 +190,7 @@ class _ChatPageState extends State<ChatPage> {
         backgroundColor: AppColors.HEADER_GRADIENT_START,
         centerTitle: true,
         title: Text(
-          widget.sender,
+          _senderName ?? widget.sender,
           style: GoogleFonts.outfit(
             color: Colors.white,
             fontWeight: FontWeight.w600,
