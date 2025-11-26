@@ -10,10 +10,12 @@ class FollowService {
     final followerRef = farmRef.collection('followers').doc(userId);
 
     final int newCount = await _firestore.runTransaction<int>((tx) async {
+      // Read both docs first to satisfy Firestore's transaction rule
       final followerSnap = await tx.get(followerRef);
+      final farmSnap = await tx.get(farmRef);
+
       if (followerSnap.exists) {
-        // already following; return current count
-        final farmSnap = await tx.get(farmRef);
+        // already following; return current count (from farmSnap if available)
         final curr = (farmSnap.data()?['followerCount'] is int)
             ? farmSnap.data()!['followerCount'] as int
             : (farmSnap.data()?['followerCount'] != null
@@ -22,12 +24,12 @@ class FollowService {
         return curr;
       }
 
+      // Now that all reads are done, perform writes
       tx.set(followerRef, {
         'followerId': userId,
         'followedAt': FieldValue.serverTimestamp(),
       });
 
-      final farmSnap = await tx.get(farmRef);
       if (!farmSnap.exists) {
         // create farm doc with followerCount = 1 to be safe
         tx.set(farmRef, {
@@ -61,10 +63,12 @@ class FollowService {
     final followerRef = farmRef.collection('followers').doc(userId);
 
     final int newCount = await _firestore.runTransaction<int>((tx) async {
+      // Read both docs first to satisfy Firestore's transaction rule
       final followerSnap = await tx.get(followerRef);
+      final farmSnap = await tx.get(farmRef);
+
       if (!followerSnap.exists) {
         // not following; return current count
-        final farmSnap = await tx.get(farmRef);
         final curr = (farmSnap.data()?['followerCount'] is int)
             ? farmSnap.data()!['followerCount'] as int
             : (farmSnap.data()?['followerCount'] != null
@@ -73,9 +77,9 @@ class FollowService {
         return curr;
       }
 
+      // Now that all reads are done, perform the delete and update
       tx.delete(followerRef);
 
-      final farmSnap = await tx.get(farmRef);
       if (!farmSnap.exists) {
         return 0;
       }
