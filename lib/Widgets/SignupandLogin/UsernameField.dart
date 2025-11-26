@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/Utils/FormValidator.dart';
+import 'package:bukidlink/Utils/constants/AppColors.dart';
 
 class EmailField extends StatelessWidget {
   final TextEditingController controller;
@@ -23,11 +24,28 @@ class EmailField extends StatelessWidget {
         child: TextFormField(
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.grey[50],
+            fillColor: AppColors.LOGIN_TEXT_FIELD_FILL,
             labelText: 'Email',
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20.0),
-              borderSide: BorderSide(color: Colors.blue, width: 2.0),
+              borderRadius: BorderRadius.circular(15.0),
+              borderSide: const BorderSide(
+                color: AppColors.LOGIN_TEXT_FIELD_BORDER,
+                width: 1.0,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15.0),
+              borderSide: const BorderSide(
+                color: AppColors.LOGIN_TEXT_FIELD_BORDER,
+                width: 1.0,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15.0),
+              borderSide: const BorderSide(
+                color: AppColors.HEADER_GRADIENT_START,
+                width: 2.0,
+              ),
             ),
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(
@@ -35,11 +53,10 @@ class EmailField extends StatelessWidget {
               horizontal: 16.0,
             ),
           ),
-          style: TextStyle(fontSize: 20.0),
+          style: const TextStyle(fontSize: 20.0),
           controller: controller,
           validator: FormValidator().loginEmailValildator,
           onChanged: onChanged,
-          forceErrorText: forceErrorText,
         ),
       );
     } else if (mode == 'SignUp') {
