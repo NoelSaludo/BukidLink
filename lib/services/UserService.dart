@@ -277,4 +277,19 @@ class UserService {
     }
     return null;
   }
+
+  // Fetch a user model by Firestore document id. Returns null if not found.
+  Future<User?> getUserById(String id) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(id)
+          .get();
+      if (!doc.exists) return null;
+      return User.fromDocument(doc);
+    } catch (e) {
+      debugPrint('Error fetching user by id: $e');
+      return null;
+    }
+  }
 }

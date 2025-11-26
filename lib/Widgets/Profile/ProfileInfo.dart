@@ -1,7 +1,8 @@
 import 'package:bukidlink/Widgets/CustomBackButton.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bukidlink/models/User.dart';
-import 'package:bukidlink/data/UserData.dart';
+import 'package:bukidlink/services/UserService.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileCoverPicture.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileIcon.dart';
 import 'package:bukidlink/Widgets/Profile/MessageButton.dart';
@@ -10,10 +11,65 @@ import 'package:bukidlink/Pages/MessagePage.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileUsername.dart';
 import 'package:bukidlink/Utils/PageNavigator.dart';
 
-class ProfileInfo extends StatelessWidget {
+class ProfileInfo extends StatefulWidget {
   final String profileID;
 
   const ProfileInfo({super.key, required this.profileID});
+
+  @override
+  State<ProfileInfo> createState() => _ProfileInfoState();
+}
+
+class _ProfileInfoState extends State<ProfileInfo> {
+  final UserService _userService = UserService();
+  User? _profile;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    debugPrint("Loading profile for ID: ${widget.profileID}");
+    try {
+      // Try to fetch a user directly by the passed id
+      User? u = await _userService.getUserById(widget.profileID);
+
+      // If no user found, the passed id might be a farm id — resolve farm -> owner user
+      if (u == null) {
+        debugPrint(
+          'No user found for id ${widget.profileID}, attempting to treat as farm id',
+        );
+        final farmDoc = await FirebaseFirestore.instance
+            .collection('farms')
+            .doc(widget.profileID)
+            .get();
+        if (farmDoc.exists) {
+          final data = farmDoc.data();
+          final ownerRef = data != null ? data['ownerId'] : null;
+          if (ownerRef != null && ownerRef is DocumentReference) {
+            final ownerId = ownerRef.id;
+            debugPrint('Resolved farm owner id: $ownerId — loading user');
+            u = await _userService.getUserById(ownerId);
+          } else {
+            debugPrint('Farm document missing ownerId or ownerId is invalid');
+          }
+        } else {
+          debugPrint('No farm found with id ${widget.profileID}');
+        }
+      }
+
+      setState(() {
+        _profile = u;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      debugPrint('Error loading profile: $e');
+    }
+  }
 
   void onMessagePress(BuildContext context) {
     PageNavigator().goToAndKeep(context, MessagePage());
@@ -21,9 +77,26 @@ class ProfileInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final User profile = UserData.getUserInfoById(profileID);
     final String coverImage = 'assets/images/profileCover1.png';
-    final String profileImage = 'assets/images/${profile.profilePic}';
+    if (_isLoading) {
+      return SizedBox(
+        height: 260,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // If no profile found, show a simple empty state
+    if (_profile == null) {
+      return Column(
+        children: [
+          const SizedBox(height: 40),
+          Center(child: Text('Profile not found')),
+        ],
+      );
+    }
+
+    final profile = _profile!;
+    final String profileImage = 'assets${profile.profilePic}';
     final String username = profile.username;
 
     return Column(
@@ -105,7 +178,9 @@ class ProfileInfo extends StatelessWidget {
               // --- Buttons Row ---
               Row(
                 children: [
-                  Expanded(child: FollowButton(farmId: profile.id)),
+                  Expanded(
+                    child: FollowButton(farmId: profile.farmId?.id ?? ''),
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: ElevatedButton(
