@@ -9,7 +9,7 @@ class AppTextStyles {
 
   static const TextStyle BUKIDLINK_LOGO = TextStyle(
     fontFamily: FONT_FAMILY,
-    color: AppColors.BACKGROUND_WHITE,
+    color: AppColors.HEADER_GRADIENT_START,
     fontSize: 32.0,
     fontWeight: FontWeight.bold,
   );

@@ -11,7 +11,7 @@ class LoginLogo extends StatelessWidget {
       width: 350.0,
       height: 380.0,
       decoration: BoxDecoration(
-        color: AppColors.ACCENT_LIME,
+        color: AppColors.BACKGROUND_WHITE,
         shape: BoxShape.circle,
       ),
       child: Column(
@@ -21,7 +21,7 @@ class LoginLogo extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(top: 40),
             child: Image.asset(
-              'assets/icons/bukidlink_white_logo.png',
+              'assets/icons/bukidlink-main-logo.png',
               width: 146.79,
               height: 109.18,
             ),
