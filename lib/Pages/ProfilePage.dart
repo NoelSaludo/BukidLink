@@ -7,12 +7,9 @@ import 'package:bukidlink/models/Post.dart';
 import 'package:bukidlink/data/PostData.dart';
 import 'package:bukidlink/Widgets/Posts/PostTile.dart';
 
-
 class ProfilePage extends StatelessWidget {
   final String profileID;
-  const ProfilePage({
-    super.key,
-    required this.profileID});
+  const ProfilePage({super.key, required this.profileID});
 
   @override
   Widget build(BuildContext context) {
@@ -22,36 +19,27 @@ class ProfilePage extends StatelessWidget {
       body: CustomScrollView(
         slivers: [
           // Sliver for user info section
-          SliverToBoxAdapter(
-            child: ProfileInfo(profileID: profileID),
-          ),
+          SliverToBoxAdapter(child: ProfileInfo(profileID: profileID)),
 
           // Divider or spacing
           const SliverToBoxAdapter(
-            child: Column(children: [
-              Divider(thickness: 1),
-              Text(
-              'Posts History',
-              style: AppTextStyles.PRODUCT_NAME_HEADER,
-              ),
-            ],
+            child: Column(
+              children: [
+                Divider(thickness: 1),
+                Text('Posts History', style: AppTextStyles.PRODUCT_NAME_HEADER),
+              ],
             ),
           ),
           // Sliver list for user posts
           SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final post = posts[index];
-                return PostTile(post: post);
-              },
-              childCount: posts.length,
-            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final post = posts[index];
+              return PostTile(post: post);
+            }, childCount: posts.length),
           ),
         ],
       ),
-      bottomNavigationBar: const CustomBottomNavBar(
-        currentIndex: 1,
-      ),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),
     );
   }
 }

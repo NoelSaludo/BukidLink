@@ -261,4 +261,20 @@ class UserService {
     if (user == null) return null;
     return await getFarmByReference(user.farmId);
   }
+
+  // Find a user id by username. Returns the Firestore doc id or null if not found.
+  Future<String?> getUserIdByUsername(String username) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final qs = await firestore
+          .collection('users')
+          .where('username', isEqualTo: username)
+          .limit(1)
+          .get();
+      if (qs.docs.isNotEmpty) return qs.docs.first.id;
+    } catch (e) {
+      debugPrint('Error finding user by username: $e');
+    }
+    return null;
+  }
 }
