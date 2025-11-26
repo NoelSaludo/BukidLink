@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:bukidlink/models/Product.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
 import 'package:bukidlink/utils/SnackBarHelper.dart';
-import 'package:bukidlink/data/ProductData.dart';
+import 'package:bukidlink/services/ProductService.dart';
 import 'package:bukidlink/services/CartService.dart';
 import 'package:bukidlink/pages/CartPage.dart';
 import 'package:bukidlink/pages/AllReviewsPage.dart';
@@ -14,9 +14,7 @@ import 'package:bukidlink/widgets/productinfo/ProductReviewsSection.dart';
 import 'package:bukidlink/widgets/productinfo/RecommendedProductsSection.dart';
 import 'package:bukidlink/widgets/productinfo/BottomActionBar.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
-import 'package:bukidlink/services/ProductService.dart';
-import 'package:bukidlink/data/UserData.dart';
-import 'package:bukidlink/models/User.dart' as ModelUser;
+import 'package:bukidlink/services/UserService.dart';
 
 class ProductInfoPage extends StatefulWidget {
   final Product product;
@@ -38,9 +36,13 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
 
   final CartService _cartService = CartService();
   final ProductService _productService = ProductService();
+  final UserService _userService = UserService();
   int _quantity = _minQuantity;
   late double _totalPrice;
   late Future<List<ProductReview>> _reviewsFuture = Future.value([]);
+  List<Product> _recommendedProducts = [];
+  bool _isRecommendedLoading = true;
+  String? _resolvedFarmId;
 
   @override
   void initState() {
@@ -52,6 +54,39 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
       _reviewsFuture = Future.value(widget.product.reviews);
     } else {
       debugPrint('No reviews found');
+    }
+    _loadRecommendedAndResolveFarm();
+  }
+
+  Future<void> _loadRecommendedAndResolveFarm() async {
+    try {
+      final all = await _productService.fetchProducts();
+      _recommendedProducts = all
+          .where(
+            (p) =>
+                p.category == widget.product.category &&
+                p.id != widget.product.id,
+          )
+          .take(_recommendedProductsLimit)
+          .toList();
+
+      // Resolve farm id: prefer product.farmId, otherwise try to find user by username
+      if (widget.product.farmId != null && widget.product.farmId!.isNotEmpty) {
+        _resolvedFarmId = widget.product.farmId;
+      } else {
+        try {
+          final uid = await _userService.getUserIdByUsername(
+            widget.product.farmName,
+          );
+          _resolvedFarmId = uid;
+        } catch (e) {
+          debugPrint('Error resolving farm id: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading recommended products: $e');
+    } finally {
+      setState(() => _isRecommendedLoading = false);
     }
   }
 
@@ -129,11 +164,7 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
 
   @override
   Widget build(BuildContext context) {
-    final recommendedProducts =
-        ProductData.getProductsByCategory(widget.product.category)
-            .where((p) => p.id != widget.product.id)
-            .take(_recommendedProductsLimit)
-            .toList();
+    final recommendedProducts = _recommendedProducts;
 
     return Scaffold(
       backgroundColor: AppColors.APP_BACKGROUND,
@@ -206,7 +237,7 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
                   widget.product.description ??
                   'Fresh and high-quality ${widget.product.name.toLowerCase()} sourced directly from local farms.',
               farmName: widget.product.farmName,
-              farmId: _resolveFarmId(),
+              farmId: _resolvedFarmId,
             ),
             FutureBuilder<List<ProductReview>>(
               future: _reviewsFuture,
@@ -228,7 +259,12 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
                 );
               },
             ),
-            RecommendedProductsSection(products: recommendedProducts),
+            _isRecommendedLoading
+                ? const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : RecommendedProductsSection(products: recommendedProducts),
             const SizedBox(height: 20),
           ],
         ),
@@ -241,37 +277,6 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
     );
   }
 
-  // Try to resolve a farmId for the product. Priority:
-  // 1) product.farmId if present
-  // 2) Look up a local user whose username matches the product.farmName (from ProductData fixtures)
-  // Returns null if no id could be resolved.
-  String? _resolveFarmId() {
-    if (widget.product.farmId != null && widget.product.farmId!.isNotEmpty) {
-      return widget.product.farmId;
-    }
-
-    try {
-      final List<ModelUser.User> users = UserData.getAllUsers();
-      final matches = users.where(
-        (u) =>
-            u.username.trim().toLowerCase() ==
-            widget.product.farmName.trim().toLowerCase(),
-      );
-      if (matches.isNotEmpty) {
-        final match = matches.first;
-        // Use the user's id as a fallback farmId. This maps the sample data (users list) to follow docs.
-        debugPrint(
-          'Resolved farmId from UserData: ${match.id} for farmName ${widget.product.farmName}',
-        );
-        return match.id;
-      }
-    } catch (e) {
-      debugPrint('Error resolving farmId: $e');
-    }
-
-    debugPrint(
-      'No farmId available for product ${widget.product.id} (${widget.product.name})',
-    );
-    return null;
-  }
+  // farm id resolution and recommended products are handled in initState via
+  // `_loadRecommendedAndResolveFarm` which sets `_resolvedFarmId`.
 }

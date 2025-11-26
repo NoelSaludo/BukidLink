@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
-import 'package:bukidlink/pages/StorePage.dart';
+import 'package:bukidlink/Pages/ProfilePage.dart';
 import 'package:bukidlink/Widgets/Profile/FollowButton.dart';
 
 class ProductDetailsCard extends StatelessWidget {
@@ -18,11 +18,11 @@ class ProductDetailsCard extends StatelessWidget {
     this.farmId,
   });
 
-  void _navigateToStore(BuildContext context) {
+  void _navigateToProfile(BuildContext context) {
     HapticFeedback.lightImpact();
     PageNavigator().goToAndKeepWithTransition(
       context,
-      StorePage(farmName: farmName),
+      ProfilePage(profileID: farmId ?? farmName),
       PageTransitionType.slideFromRight,
     );
   }
@@ -52,7 +52,7 @@ class ProductDetailsCard extends StatelessWidget {
           Text(description, style: AppTextStyles.DESCRIPTION_TEXT),
           const SizedBox(height: 16),
           GestureDetector(
-            onTap: () => _navigateToStore(context),
+            onTap: () => _navigateToProfile(context),
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
