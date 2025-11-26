@@ -7,9 +7,11 @@ import 'package:bukidlink/Widgets/Profile/ProfileCoverPicture.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileIcon.dart';
 import 'package:bukidlink/Widgets/Profile/MessageButton.dart';
 import 'package:bukidlink/Widgets/Profile/FollowButton.dart';
-import 'package:bukidlink/Pages/MessagePage.dart';
+import 'package:bukidlink/services/ChatService.dart';
+import 'package:bukidlink/Pages/ChatPage.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileUsername.dart';
-import 'package:bukidlink/Utils/PageNavigator.dart';
+// PageNavigator and MessagePage were used previously for navigation to a
+// legacy message page; we now navigate directly to `ChatPage`.
 
 class ProfileInfo extends StatefulWidget {
   final String profileID;
@@ -71,8 +73,32 @@ class _ProfileInfoState extends State<ProfileInfo> {
     }
   }
 
-  void onMessagePress(BuildContext context) {
-    PageNavigator().goToAndKeep(context, MessagePage());
+  Future<void> onMessagePress(BuildContext context) async {
+    final currentUid = UserService.currentUser?.id;
+    if (currentUid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please sign in to send messages')),
+      );
+      return;
+    }
+
+    final targetId = _profile?.id;
+    if (targetId == null || targetId.isEmpty) return;
+
+    if (currentUid == targetId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You cannot message yourself')),
+      );
+      return;
+    }
+
+    final chatService = ChatService();
+    await chatService.createConversation(currentUid, targetId);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ChatPage(sender: targetId)),
+    );
   }
 
   @override
@@ -98,6 +124,7 @@ class _ProfileInfoState extends State<ProfileInfo> {
     final profile = _profile!;
     final String profileImage = 'assets${profile.profilePic}';
     final String username = profile.username;
+    final String? currentUid = UserService.currentUser?.id;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,7 +211,10 @@ class _ProfileInfoState extends State<ProfileInfo> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => onMessagePress(context),
+                      onPressed:
+                          (currentUid != null && currentUid != profile.id)
+                          ? () => onMessagePress(context)
+                          : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(
                           0xFFD5FF6B,
