@@ -19,6 +19,7 @@ class App extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
       ),
       home: const LoginPage(),
+      //app
       // home:
       //     const FarmerStorePage(), // remove this line after testing or to access the farm store page directly
       routes: {
