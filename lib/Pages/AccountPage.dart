@@ -5,6 +5,7 @@ import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/common/ProfileImageWidget.dart';
 import 'package:bukidlink/models/User.dart';
 import 'package:bukidlink/services/ImagePickerService.dart';
+import 'package:bukidlink/services/UserService.dart';
 import 'package:bukidlink/pages/MyAddressPage.dart';
 import 'package:bukidlink/pages/AccountSecurityPage.dart';
 import 'package:bukidlink/pages/EditProfilePage.dart';
@@ -12,10 +13,7 @@ import 'package:bukidlink/pages/EditProfilePage.dart';
 class AccountPage extends StatefulWidget {
   final User? currentUser;
 
-  const AccountPage({
-    super.key,
-    this.currentUser,
-  });
+  const AccountPage({super.key, this.currentUser});
 
   @override
   State<AccountPage> createState() => _AccountPageState();
@@ -24,7 +22,7 @@ class AccountPage extends StatefulWidget {
 class _AccountPageState extends State<AccountPage> {
   final _formKey = GlobalKey<FormState>();
   final ImagePickerService _imagePickerService = ImagePickerService();
-  
+
   // Controllers for editable fields
   late TextEditingController _usernameController;
   late TextEditingController _firstNameController;
@@ -32,7 +30,7 @@ class _AccountPageState extends State<AccountPage> {
   late TextEditingController _passwordController;
   late TextEditingController _addressController;
   late TextEditingController _contactNumberController;
-  
+
   String? _profilePicUrl;
   bool _isImageUpdated = false;
 
@@ -49,7 +47,9 @@ class _AccountPageState extends State<AccountPage> {
     _lastNameController = TextEditingController(text: user?.lastName ?? '');
     _passwordController = TextEditingController(text: user?.password ?? '');
     _addressController = TextEditingController(text: user?.address ?? '');
-    _contactNumberController = TextEditingController(text: user?.contactNumber ?? '');
+    _contactNumberController = TextEditingController(
+      text: user?.contactNumber ?? '',
+    );
     _profilePicUrl = user?.profilePic;
   }
 
@@ -66,41 +66,82 @@ class _AccountPageState extends State<AccountPage> {
 
   Future<void> _handleImagePicker() async {
     HapticFeedback.lightImpact();
-    
-    final String? imagePath = await _imagePickerService.showImageSourceBottomSheet(context);
-    
+
+    final String? imagePath = await _imagePickerService
+        .showImageSourceBottomSheet(context);
+
     if (imagePath != null) {
-      // Save the image to app directory
-      final String? savedPath = await _imagePickerService.saveImageToAppDirectory(imagePath);
-      
-      if (savedPath != null) {
-        setState(() {
-          _profilePicUrl = savedPath;
-          _isImageUpdated = true;
-        });
-        
-        HapticFeedback.mediumImpact();
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Profile picture updated successfully!'),
-              backgroundColor: AppColors.primaryGreen,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 2),
-            ),
-          );
+      // If the picker returned a remote URL (Cloudinary), don't try to copy it locally.
+      if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+        // Persist remote URL to user profile and update UI
+        try {
+          final uid = UserService().getSafeUserId();
+          await UserService().updateUserProfile(uid, {'profilePic': imagePath});
+          setState(() {
+            _profilePicUrl = imagePath;
+            _isImageUpdated = true;
+          });
+
+          HapticFeedback.mediumImpact();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Profile picture updated successfully!'),
+                backgroundColor: AppColors.primaryGreen,
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        } catch (e) {
+          debugPrint('Failed to persist remote profile pic: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Failed to update profile picture. Please try again.',
+                ),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
         }
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to save image. Please try again.'),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-              duration: Duration(seconds: 2),
-            ),
-          );
+        // Local file path: copy into app directory as before
+        final String? savedPath = await _imagePickerService
+            .saveImageToAppDirectory(imagePath);
+
+        if (savedPath != null) {
+          setState(() {
+            _profilePicUrl = savedPath;
+            _isImageUpdated = true;
+          });
+
+          HapticFeedback.mediumImpact();
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Profile picture updated successfully!'),
+                backgroundColor: AppColors.primaryGreen,
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Failed to save image. Please try again.'),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
         }
       }
     }
@@ -111,12 +152,12 @@ class _AccountPageState extends State<AccountPage> {
       HapticFeedback.mediumImpact();
       // TODO: Save changes to backend/database
       // This would include saving the new profile picture path
-      
+
       if (_isImageUpdated) {
         // Profile picture was updated
         debugPrint('New profile picture path: $_profilePicUrl');
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -141,7 +182,7 @@ class _AccountPageState extends State<AccountPage> {
   Widget build(BuildContext context) {
     final user = widget.currentUser;
     debugPrint('User: $user');
-    
+
     return Scaffold(
       backgroundColor: AppColors.backgroundYellow,
       body: CustomScrollView(
@@ -154,7 +195,7 @@ class _AccountPageState extends State<AccountPage> {
   }
 
   Widget _buildProfileHeader(User? user) {
-    final String profileImage = user?.profilePic != null 
+    final String profileImage = user?.profilePic != null
         ? 'assets/images/${user!.profilePic}'
         : '';
 
@@ -196,7 +237,7 @@ class _AccountPageState extends State<AccountPage> {
                 ),
               ),
             ),
-            
+
             // Back Button
             Positioned(
               top: 40,
@@ -209,7 +250,7 @@ class _AccountPageState extends State<AccountPage> {
                 },
               ),
             ),
-            
+
             // Profile Content
             Positioned(
               bottom: 0,
@@ -228,7 +269,7 @@ class _AccountPageState extends State<AccountPage> {
                     onTap: _handleImagePicker,
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Username
                   Text(
                     '@${user?.username ?? 'User'}',
@@ -240,7 +281,7 @@ class _AccountPageState extends State<AccountPage> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  
+
                   // Email
                   Text(
                     user?.emailAddress ?? 'email@example.com',
@@ -309,31 +350,36 @@ class _AccountPageState extends State<AccountPage> {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           _buildSection(
             title: 'Settings',
             children: [
               _buildMenuItem(
                 icon: Icons.notifications_outlined,
                 title: 'Notifications',
-                onTap: () => _showInfoDialog('Notifications', 'Notification settings coming soon'),
+                onTap: () => _showInfoDialog(
+                  'Notifications',
+                  'Notification settings coming soon',
+                ),
               ),
               _buildDivider(),
               _buildMenuItem(
                 icon: Icons.privacy_tip_outlined,
                 title: 'Privacy Settings',
-                onTap: () => _showInfoDialog('Privacy', 'Privacy settings coming soon'),
+                onTap: () =>
+                    _showInfoDialog('Privacy', 'Privacy settings coming soon'),
               ),
               _buildDivider(),
               _buildMenuItem(
                 icon: Icons.payment_outlined,
                 title: 'Payment Settings',
-                onTap: () => _showInfoDialog('Payment', 'Payment settings coming soon'),
+                onTap: () =>
+                    _showInfoDialog('Payment', 'Payment settings coming soon'),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          
+
           _buildSection(
             title: 'Support',
             children: [
@@ -371,7 +417,10 @@ class _AccountPageState extends State<AccountPage> {
     );
   }
 
-  Widget _buildSection({required String title, required List<Widget> children}) {
+  Widget _buildSection({
+    required String title,
+    required List<Widget> children,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -607,9 +656,7 @@ class _AccountPageState extends State<AccountPage> {
             const Text('Logout'),
           ],
         ),
-        content: const Text(
-          'Are you sure you want to logout?',
-        ),
+        content: const Text('Are you sure you want to logout?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -675,10 +722,7 @@ class _AccountPageState extends State<AccountPage> {
           children: [
             const Text(
               'Are you sure you want to delete your account?',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
             Container(
@@ -705,7 +749,9 @@ class _AccountPageState extends State<AccountPage> {
                   const SizedBox(height: 8),
                   _buildWarningItem('All your personal data will be deleted'),
                   _buildWarningItem('Your order history will be lost'),
-                  _buildWarningItem('You will lose access to all saved addresses'),
+                  _buildWarningItem(
+                    'You will lose access to all saved addresses',
+                  ),
                   _buildWarningItem('Your account cannot be recovered'),
                 ],
               ),
@@ -768,19 +814,12 @@ class _AccountPageState extends State<AccountPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.close,
-            size: 16,
-            color: AppColors.ERROR_RED,
-          ),
+          Icon(Icons.close, size: 16, color: AppColors.ERROR_RED),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
-                fontSize: 12,
-                height: 1.3,
-              ),
+              style: const TextStyle(fontSize: 12, height: 1.3),
             ),
           ),
         ],

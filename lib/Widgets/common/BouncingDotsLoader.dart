@@ -31,18 +31,25 @@ class _BouncingDotsLoaderState extends State<BouncingDotsLoader>
     });
 
     _animations = _controllers.map((controller) {
-      return Tween<double>(begin: 0.0, end: -10.0).animate(
-        CurvedAnimation(parent: controller, curve: Curves.easeInOut),
-      );
+      return Tween<double>(
+        begin: 0.0,
+        end: -10.0,
+      ).animate(CurvedAnimation(parent: controller, curve: Curves.easeInOut));
     }).toList();
 
     _startAnimations();
   }
 
-  void _startAnimations() async {
+  Future<void> _startAnimations() async {
     for (int i = 0; i < 3; i++) {
       await Future.delayed(const Duration(milliseconds: 150));
-      _controllers[i].repeat(reverse: true);
+      if (!mounted) return; // prevent using controllers after dispose
+      try {
+        _controllers[i].repeat(reverse: true);
+      } catch (_) {
+        // If the controller was disposed concurrently, just stop starting further animations.
+        return;
+      }
     }
   }
 

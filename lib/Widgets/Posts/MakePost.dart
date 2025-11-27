@@ -1,6 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:bukidlink/services/ImagePickerService.dart';
 import 'package:bukidlink/Utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/models/Post.dart';
 import 'package:bukidlink/services/PostService.dart';
@@ -10,7 +9,11 @@ class MakePost extends StatefulWidget {
   final String text; // Text shown in the tappable container
   final VoidCallback? onPostCreated;
 
-  const MakePost({Key? key, this.text = "This is the single scrollable container", this.onPostCreated}) : super(key: key);
+  const MakePost({
+    Key? key,
+    this.text = "This is the single scrollable container",
+    this.onPostCreated,
+  }) : super(key: key);
 
   @override
   _MakePostState createState() => _MakePostState();
@@ -19,37 +22,29 @@ class MakePost extends StatefulWidget {
 class _MakePostState extends State<MakePost> {
   final _formKey = GlobalKey<FormState>();
   final _textController = TextEditingController();
-  final _imageUrlController = TextEditingController();
 
-  File? _imageFile;
-  final ImagePicker _picker = ImagePicker();
+  String? _imageUrl;
+  final ImagePickerService _imagePickerService = ImagePickerService();
 
   final user = UserService().getCurrentUser();
 
   Future<void> _pickImage() async {
-    final XFile? pickedFile = await _picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 600,
+    // Use ImagePickerService which uploads to Cloudinary and returns the secure URL
+    final String? uploadedUrl = await _imagePickerService.pickFromGallery(
+      imageQuality: 85,
+      maxWidth: 1024,
+      maxHeight: 1024,
     );
 
-    if (pickedFile != null) {
+    if (uploadedUrl != null) {
       setState(() {
-        _imageFile = File(pickedFile.path);
-        _imageUrlController.clear(); // Clear URL if a file is picked
+        _imageUrl = uploadedUrl;
       });
     }
   }
 
   Post _createNewPost() {
-    String imageContent;
-
-    if (_imageUrlController.text.isNotEmpty) {
-      imageContent = _imageUrlController.text;
-    } else if (_imageFile != null) {
-      imageContent = ''; // Replace with actual upload path if needed
-    } else {
-      imageContent = '';
-    }
+    final imageContent = _imageUrl ?? 'post1.png';
 
     return Post(
       id: '',
@@ -87,7 +82,10 @@ class _MakePostState extends State<MakePost> {
                         const Center(
                           child: Text(
                             "Create Post",
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 15),
@@ -110,47 +108,26 @@ class _MakePostState extends State<MakePost> {
                         ),
                         const SizedBox(height: 15),
 
-                        // Image URL input
-                        TextFormField(
-                          controller: _imageUrlController,
-                          decoration: const InputDecoration(
-                            hintText: "Enter image URL (optional)",
-                            border: OutlineInputBorder(),
-                          ),
-                          onChanged: (value) {
-                            if (value.isNotEmpty) {
-                              modalSetState(() {
-                                _imageFile = null; // Clear picked file
-                              });
-                            }
-                          },
-                        ),
                         const SizedBox(height: 12),
 
-                        // Preview
-                        if (_imageFile != null)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.file(
-                              _imageFile!,
-                              height: 180,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                        else if (_imageUrlController.text.isNotEmpty)
+                        // Preview (shows uploaded Cloudinary image URL)
+                        if (_imageUrl != null && _imageUrl!.isNotEmpty)
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: Image.network(
-                              _imageUrlController.text,
+                              _imageUrl!,
                               height: 180,
                               width: double.infinity,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.broken_image),
                             ),
                           )
                         else
-                          const Text('No image selected', textAlign: TextAlign.center),
+                          const Text(
+                            'No image selected',
+                            textAlign: TextAlign.center,
+                          ),
 
                         const SizedBox(height: 15),
 
@@ -186,7 +163,7 @@ class _MakePostState extends State<MakePost> {
                               child: const Text("Submit"),
                             ),
                           ],
-                        )
+                        ),
                       ],
                     ),
                   ),
@@ -202,61 +179,48 @@ class _MakePostState extends State<MakePost> {
   @override
   void dispose() {
     _textController.dispose();
-    _imageUrlController.dispose();
     super.dispose();
   }
 
- @override
-Widget build(BuildContext context) {
-  final profileImage = user?.profilePic;
-
-  return GestureDetector(
-    onTap: _showModal,
-    child: Container(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 240, 244, 230),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15), // more visible shadow
-            blurRadius: 12,
-            spreadRadius: 1,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // --- Profile Image ---
-          CircleAvatar(
-            radius: 22,
-            backgroundImage: (profileImage != null && profileImage.isNotEmpty)
-            ? (profileImage.toLowerCase().startsWith('http')
-            ? NetworkImage(profileImage)
-            : AssetImage('assets' + profileImage) as ImageProvider)
-            : const AssetImage('assets/images/default_profile.png'),
-          ),
-
-          const SizedBox(width: 16),
-
-          // --- Text ---
-          Expanded(
-            child: Text(
-              widget.text,
-              style: AppTextStyles.FORM_LABEL.copyWith(
-                fontSize: 14,       // slightly smaller than username
-                color: Colors.black87,
-                height: 1.4,
-              ),
+  @override
+  Widget build(BuildContext context) {
+    final profileImage = user?.profilePic;
+    return GestureDetector(
+      onTap: _showModal,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(255, 240, 244, 230),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
             ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
+          ],
+        ),
 
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // --- Profile Image ---
+            CircleAvatar(
+              radius: 22,
+              backgroundImage: (profileImage != null && profileImage.isNotEmpty)
+                  ? NetworkImage(profileImage)
+                  : const AssetImage('assets/images/default_profile.png')
+                        as ImageProvider,
+            ),
+
+            const SizedBox(width: 16),
+
+            // --- Text ---
+            Expanded(child: Text(widget.text, style: AppTextStyles.FORM_LABEL)),
+          ],
+        ),
+      ),
+    );
+  }
 }
