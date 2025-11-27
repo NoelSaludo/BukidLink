@@ -133,16 +133,61 @@ class ChatService {
   Stream<List<Map<String, dynamic>>> streamConversationsForUser(String userId) {
     final Query ref = _firestore
         .collection('conversations')
-        .where('participants', arrayContains: userId)
-        .orderBy('updatedAt', descending: true);
+        .where('participants', arrayContains: userId);
 
-    return ref.snapshots().map(
-      (snap) => snap.docs.map((d) {
-        final data = d.data() as Map<String, dynamic>;
+    return ref.snapshots().map((snap) {
+      final List<Map<String, dynamic>> mapped = snap.docs.map((d) {
+        final raw = d.data() as Map<String, dynamic>;
+        final Map<String, dynamic> data = Map<String, dynamic>.from(raw);
         data['id'] = d.id;
+
+        try {
+          final partsRaw = raw['participants'] as List<dynamic>?;
+          if (partsRaw != null) {
+            final List<String> normalized = partsRaw
+                .map((p) {
+                  if (p == null) return '';
+                  if (p is String) return p;
+                  if (p is DocumentReference) return p.id;
+                  if (p is Map && p['id'] != null) return p['id'].toString();
+                  return p.toString();
+                })
+                .where((s) => s.isNotEmpty)
+                .toList();
+            data['participants'] = normalized;
+          }
+        } catch (e) {
+          print(
+            'ChatService: failed to normalize participants for convo ${d.id}: $e',
+          );
+        }
+
         return data;
-      }).toList(),
-    );
+      }).toList();
+
+      // Sort client-side by updatedAt (newest first). If updatedAt missing, treat as epoch.
+      mapped.sort((a, b) {
+        final aTs = a['updatedAt'];
+        final bTs = b['updatedAt'];
+        int aMillis = 0;
+        int bMillis = 0;
+        try {
+          if (aTs is Timestamp)
+            aMillis = aTs.millisecondsSinceEpoch;
+          else if (aTs is DateTime)
+            aMillis = aTs.millisecondsSinceEpoch;
+        } catch (_) {}
+        try {
+          if (bTs is Timestamp)
+            bMillis = bTs.millisecondsSinceEpoch;
+          else if (bTs is DateTime)
+            bMillis = bTs.millisecondsSinceEpoch;
+        } catch (_) {}
+        return bMillis.compareTo(aMillis);
+      });
+
+      return mapped;
+    });
   }
 
   /// Returns the stored `lastMessage` string for a conversation.

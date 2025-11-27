@@ -5,6 +5,8 @@ import 'package:bukidlink/Pages/ProfilePage.dart';
 import 'package:bukidlink/Pages/farmer/FarmerProfilePage.dart';
 import 'package:bukidlink/Pages/MessagePage.dart';
 import 'package:bukidlink/pages/farmer/FarmerStorePage.dart';
+import 'package:bukidlink/Pages/farmer/FarmerProfilePage.dart';
+
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -42,6 +44,27 @@ class App extends StatelessWidget {
           }
         }
 
+        
+        if (settings.name == '/farmerProfile') {
+          final args = settings.arguments;
+          if (args is String) {
+            return MaterialPageRoute(
+              builder: (context) => FarmerProfilePage(profileID: args),
+            );
+          } else {
+            // Fallback for missing or invalid arguments
+            return MaterialPageRoute(
+              builder: (context) => const Scaffold(
+                body: Center(child: Text('Invalid or missing profile ID')),
+              ),
+            );
+          }
+        }
+
+<<<<<<< HEAD
+=======
+        
+>>>>>>> firebase
         if (settings.name == '/farmerProfile') {
           final args = settings.arguments;
           if (args is String) {

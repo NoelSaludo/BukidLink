@@ -5,6 +5,7 @@ import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/cart/CartQuantityControls.dart';
 import 'package:bukidlink/widgets/common/PesoText.dart';
+import 'package:bukidlink/widgets/common/BouncingDotsLoader.dart';
 
 class CartItemCard extends StatefulWidget {
   final CartItem cartItem;
@@ -106,15 +107,47 @@ class _CartItemCardState extends State<CartItemCard>
         width: 80,
         height: 80,
         color: AppColors.INACTIVE_GREY,
-        child: Image.asset(
-          imagePath,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => const Icon(
-            Icons.image_not_supported,
-            size: 40,
-            color: AppColors.TEXT_SECONDARY,
-          ),
-        ),
+        child: (() {
+          if (imagePath.isEmpty) {
+            return const Icon(
+              Icons.image_not_supported,
+              size: 40,
+              color: AppColors.TEXT_SECONDARY,
+            );
+          }
+
+          final uri = Uri.tryParse(imagePath);
+          final isNetwork = uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
+
+          if (isNetwork) {
+            return Image.network(
+              imagePath,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(
+                  child: BouncingDotsLoader(size: 8.0),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.image_not_supported,
+                size: 40,
+                color: AppColors.TEXT_SECONDARY,
+              ),
+            );
+          }
+
+          // Treat as asset path by default
+          return Image.asset(
+            imagePath,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => const Icon(
+              Icons.image_not_supported,
+              size: 40,
+              color: AppColors.TEXT_SECONDARY,
+            ),
+          );
+        })(),
       ),
     );
   }

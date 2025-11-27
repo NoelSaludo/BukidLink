@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:bukidlink/models/Product.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
 import 'package:bukidlink/utils/SnackBarHelper.dart';
-import 'package:bukidlink/data/ProductData.dart';
+import 'package:bukidlink/services/ProductService.dart';
 import 'package:bukidlink/services/CartService.dart';
 import 'package:bukidlink/pages/CartPage.dart';
 import 'package:bukidlink/pages/AllReviewsPage.dart';
@@ -14,7 +14,7 @@ import 'package:bukidlink/widgets/productinfo/ProductReviewsSection.dart';
 import 'package:bukidlink/widgets/productinfo/RecommendedProductsSection.dart';
 import 'package:bukidlink/widgets/productinfo/BottomActionBar.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
-import 'package:bukidlink/services/ProductService.dart';
+import 'package:bukidlink/services/UserService.dart';
 
 class ProductInfoPage extends StatefulWidget {
   final Product product;
@@ -36,9 +36,13 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
 
   final CartService _cartService = CartService();
   final ProductService _productService = ProductService();
+  final UserService _userService = UserService();
   int _quantity = _minQuantity;
   late double _totalPrice;
   late Future<List<ProductReview>> _reviewsFuture = Future.value([]);
+  List<Product> _recommendedProducts = [];
+  bool _isRecommendedLoading = true;
+  String? _resolvedFarmId;
 
   @override
   void initState() {
@@ -51,10 +55,48 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
     } else {
       debugPrint('No reviews found');
     }
+    _loadRecommendedAndResolveFarm();
+  }
+
+  Future<void> _loadRecommendedAndResolveFarm() async {
+    try {
+      final all = await _productService.fetchProducts();
+      _recommendedProducts = all
+          .where(
+            (p) =>
+                p.category == widget.product.category &&
+                p.id != widget.product.id,
+          )
+          .take(_recommendedProductsLimit)
+          .toList();
+
+      // Resolve farm id: prefer product.farmId, otherwise try to find user by username
+      if (widget.product.farmId != null && widget.product.farmId!.isNotEmpty) {
+        _resolvedFarmId = widget.product.farmId;
+      } else {
+        try {
+          final uid = await _userService.getUserIdByUsername(
+            widget.product.farmName,
+          );
+          _resolvedFarmId = uid;
+        } catch (e) {
+          debugPrint('Error resolving farm id: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading recommended products: $e');
+    } finally {
+      setState(() => _isRecommendedLoading = false);
+    }
   }
 
   // Helper that returns a network image when path is a URL, otherwise an asset image.
-  Widget _buildImage(String path, {BoxFit? fit, double? width, double? height}) {
+  Widget _buildImage(
+    String path, {
+    BoxFit? fit,
+    double? width,
+    double? height,
+  }) {
     final lower = path.toLowerCase();
     if (lower.startsWith('http://') || lower.startsWith('https://')) {
       return Image.network(
@@ -122,11 +164,7 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
 
   @override
   Widget build(BuildContext context) {
-    final recommendedProducts =
-        ProductData.getProductsByCategory(widget.product.category)
-            .where((p) => p.id != widget.product.id)
-            .take(_recommendedProductsLimit)
-            .toList();
+    final recommendedProducts = _recommendedProducts;
 
     return Scaffold(
       backgroundColor: AppColors.APP_BACKGROUND,
@@ -165,7 +203,10 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
                   children: [
                     AspectRatio(
                       aspectRatio: 1,
-                      child: _buildImage(widget.product.imagePath, fit: BoxFit.cover),
+                      child: _buildImage(
+                        widget.product.imagePath,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                     Positioned.fill(
                       child: Container(
@@ -196,6 +237,7 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
                   widget.product.description ??
                   'Fresh and high-quality ${widget.product.name.toLowerCase()} sourced directly from local farms.',
               farmName: widget.product.farmName,
+              farmId: _resolvedFarmId,
             ),
             FutureBuilder<List<ProductReview>>(
               future: _reviewsFuture,
@@ -211,16 +253,18 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
                   reviews: reviews,
                   onViewAll: () => PageNavigator().goToAndKeepWithTransition(
                     context,
-                    AllReviewsPage(
-                      reviews: reviews,
-                      product: widget.product,
-                    ),
+                    AllReviewsPage(reviews: reviews, product: widget.product),
                     PageTransitionType.slideFromRight,
                   ),
                 );
               },
             ),
-            RecommendedProductsSection(products: recommendedProducts),
+            _isRecommendedLoading
+                ? const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : RecommendedProductsSection(products: recommendedProducts),
             const SizedBox(height: 20),
           ],
         ),
@@ -232,4 +276,7 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
       ),
     );
   }
+
+  // farm id resolution and recommended products are handled in initState via
+  // `_loadRecommendedAndResolveFarm` which sets `_resolvedFarmId`.
 }

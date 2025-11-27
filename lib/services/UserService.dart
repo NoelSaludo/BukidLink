@@ -266,37 +266,37 @@ class UserService {
     return await getFarmByReference(user.farmId);
   }
 
-  Future<User?> getUserById(String uid) async {
+  // Find a user id by username. Returns the Firestore doc id or null if not found.
+  Future<String?> getUserIdByUsername(String username) async {
     try {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-
-      if (!doc.exists) return null;
-
-      final data = doc.data() as Map<String, dynamic>;
-      return User(
-        id: uid,
-        username: data['username'] ?? '',
-        password: '', // leave empty; don't fetch stored password
-        firstName: data['firstName'] ?? '',
-        lastName: data['lastName'] ?? '',
-        emailAddress: data['email'] ?? '',
-        address: data['address'] ?? '',
-        contactNumber: data['contactNumber'] ?? '',
-        profilePic: data['profilePic'] ?? 'default_image.png',
-        createdAt: data['created_at'] != null
-            ? (data['created_at'] as Timestamp).toDate()
-            : DateTime.now(),
-        updatedAt: data['updated_at'] != null
-            ? (data['updated_at'] as Timestamp).toDate()
-            : DateTime.now(),
-        type: data['type'] ?? 'Consumer',
-        farmId: data['farmId'] as DocumentReference?,
-      );
+      final firestore = FirebaseFirestore.instance;
+      final qs = await firestore
+          .collection('users')
+          .where('username', isEqualTo: username)
+          .limit(1)
+          .get();
+      if (qs.docs.isNotEmpty) return qs.docs.first.id;
     } catch (e) {
-      debugPrint('Error fetching user by ID: $e');
+      debugPrint('Error finding user by username: $e');
+    }
+    return null;
+  }
+
+  // Fetch a user model by Firestore document id. Returns null if not found.
+  Future<User?> getUserById(String id) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(id)
+          .get();
+      if (!doc.exists) return null;
+      return User.fromDocument(doc);
+    } catch (e) {
+      debugPrint('Error fetching user by id: $e');
       return null;
     }
   }
+
   
   Future<User> getUserWithFallback(String id) async {
   return await UserService().getUserById(id) ??
@@ -314,5 +314,4 @@ class UserService {
         updatedAt: DateTime.now(),
       );
 }
-
 }
