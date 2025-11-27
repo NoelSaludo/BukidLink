@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/models/Product.dart';
+import 'package:bukidlink/widgets/common/ProductImage.dart';
 
 class SoldOutProductCard extends StatelessWidget {
   final Product product;
@@ -30,9 +31,10 @@ class SoldOutProductCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            spreadRadius: 1,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -44,26 +46,11 @@ class SoldOutProductCard extends StatelessWidget {
             // Product Image
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.asset(
-                product.imagePath,
+              child: ProductImage(
+                imagePath: product.imagePath,
                 width: 70,
                 height: 70,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      color: AppColors.ACCENT_LIME.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.image_not_supported,
-                      color: AppColors.ACCENT_LIME,
-                      size: 32,
-                    ),
-                  );
-                },
               ),
             ),
             const SizedBox(width: 16),
@@ -72,10 +59,43 @@ class SoldOutProductCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product Name
-                  Text(
-                    product.name,
-                    style: AppTextStyles.STORE_PRODUCT_NAME,
+                  // Header Row with Name and Sold Out Badge
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          product.name,
+                          style: AppTextStyles.STORE_PRODUCT_NAME,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.ERROR_RED.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.remove_shopping_cart,
+                              size: 12,
+                              color: AppColors.ERROR_RED,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Sold Out',
+                              style: AppTextStyles.CAPTION.copyWith(
+                                color: AppColors.ERROR_RED,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   // Price per unit

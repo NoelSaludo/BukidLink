@@ -113,6 +113,7 @@ class OrderDetailsPage extends StatelessWidget {
             _sectionBox(
               title: 'Order Items',
               children: order.items
+                  .where((item) => item.product != null)
                   .map(
                     (item) => Container(
                   margin: const EdgeInsets.only(bottom: 10),
@@ -124,7 +125,7 @@ class OrderDetailsPage extends StatelessWidget {
                   child: Row(
                     children: [
                       Image.asset(
-                        item.product.imagePath,
+                        item.product!.imagePath,
                         width: 60,
                         height: 60,
                         fit: BoxFit.cover,
@@ -135,7 +136,7 @@ class OrderDetailsPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              item.product.name,
+                              item.product!.name,
                               style: const TextStyle(
                                 fontFamily: 'Outfit',
                                 fontSize: 16,
@@ -144,14 +145,14 @@ class OrderDetailsPage extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '₱${item.product.price.toStringAsFixed(2)} x${item.quantity}',
+                              '₱${item.product!.price.toStringAsFixed(2)} x${item.amount}',
                               style: const TextStyle(fontFamily: 'Outfit', fontSize: 14),
                             ),
                           ],
                         ),
                       ),
                       Text(
-                        '₱${(item.product.price * item.quantity).toStringAsFixed(2)}',
+                        '₱${(item.product!.price * item.amount).toStringAsFixed(2)}',
                         style: const TextStyle(
                           fontFamily: 'Outfit',
                           fontWeight: FontWeight.bold,
