@@ -207,28 +207,48 @@ class _MakePostState extends State<MakePost> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _showModal,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 240, 244, 230),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Text(
-          widget.text,
-          style: AppTextStyles.FORM_LABEL,
-        ),
+Widget build(BuildContext context) {
+  final profileImage = user?.profilePic;
+  return GestureDetector(
+    onTap: _showModal,
+    child: Container(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 240, 244, 230),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-    );
-  }
+
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // --- Profile Image ---
+          CircleAvatar(
+            radius: 22,
+            backgroundImage: (profileImage != null && profileImage.isNotEmpty)
+            ? NetworkImage(profileImage)
+            : const AssetImage('assets/images/default_profile.png') as ImageProvider,
+            ),
+
+          const SizedBox(width: 16),
+
+          // --- Text ---
+          Expanded(
+            child: Text(
+              widget.text,
+              style: AppTextStyles.FORM_LABEL,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 }
