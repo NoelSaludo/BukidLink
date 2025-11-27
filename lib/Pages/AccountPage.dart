@@ -9,6 +9,7 @@ import 'package:bukidlink/services/UserService.dart';
 import 'package:bukidlink/pages/MyAddressPage.dart';
 import 'package:bukidlink/pages/AccountSecurityPage.dart';
 import 'package:bukidlink/pages/EditProfilePage.dart';
+import 'package:bukidlink/Pages/LoginPage.dart';
 
 class AccountPage extends StatefulWidget {
   final User? currentUser;
@@ -195,9 +196,18 @@ class _AccountPageState extends State<AccountPage> {
   }
 
   Widget _buildProfileHeader(User? user) {
-    final String profileImage = user?.profilePic != null
-        ? 'assets/images/${user!.profilePic}'
-        : '';
+    // Determine the correct image source: network URL vs local asset
+    String? profileImage;
+    if (user != null && user.profilePic.isNotEmpty) {
+      final pic = user.profilePic;
+      if (pic.startsWith('http://') || pic.startsWith('https://')) {
+        profileImage = pic; // remote URL (Cloudinary)
+      } else {
+        profileImage = 'assets/images/$pic'; // local asset filename
+      }
+    } else {
+      profileImage = null;
+    }
 
     return SliverToBoxAdapter(
       child: Container(
@@ -260,7 +270,9 @@ class _AccountPageState extends State<AccountPage> {
                 children: [
                   // Profile Image with new ProfileImageWidget
                   ProfileImageWidget(
-                    imageUrl: _isImageUpdated ? _profilePicUrl : profileImage,
+                    imageUrl: _isImageUpdated
+                        ? _profilePicUrl
+                        : (profileImage ?? ''),
                     size: 100,
                     showBorder: true,
                     borderColor: Colors.white,
@@ -669,26 +681,51 @@ class _AccountPageState extends State<AccountPage> {
             ),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              // TODO: Implement logout logic
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: const [
-                      Icon(Icons.check_circle, color: Colors.white),
-                      SizedBox(width: 8),
-                      Text('Logged out successfully'),
-                    ],
-                  ),
-                  backgroundColor: AppColors.SUCCESS_GREEN,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  margin: const EdgeInsets.all(16),
-                ),
-              );
+              try {
+                await UserService().signOut();
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: const [
+                          Icon(Icons.check_circle, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text('Logged out successfully'),
+                        ],
+                      ),
+                      backgroundColor: AppColors.SUCCESS_GREEN,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      margin: const EdgeInsets.all(16),
+                    ),
+                  );
+
+                  // Clear local current user and navigate to the LoginPage,
+                  // removing all other routes so the user cannot go back.
+                  UserService.currentUser = null;
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (route) => false,
+                  );
+                }
+              } catch (e) {
+                debugPrint('Logout failed: $e');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Logout failed. Please try again.'),
+                      backgroundColor: AppColors.ERROR_RED,
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              }
             },
             child: Text(
               'Logout',
