@@ -144,7 +144,10 @@ class _StorePreviewState extends State<StorePreview> {
             ],
           ),
           const SizedBox(height: 8),
-          SizedBox(height: 200, child: _buildContent()),
+          // Increase height to accommodate ProductCard (compact layout)
+          // ProductCard compact uses a 140px image plus content; 260 gives
+          // enough room to avoid the 54px bottom overflow previously observed.
+          SizedBox(height: 260, child: _buildContent()),
         ],
       ),
     );
