@@ -79,7 +79,6 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                             text: "What's on your mind?",
                           );
                         }
-
                         final post = posts[index - 1];
                         return PostTile(post: post);
                       },
