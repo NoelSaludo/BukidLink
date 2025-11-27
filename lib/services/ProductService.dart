@@ -28,6 +28,46 @@ class ProductService {
     return products;
   }
 
+  /// Fetches up to [limit] visible products for the given [farmName],
+  /// ordered by `created_at` descending when available.
+  Future<List<Product>> fetchProductsByFarm({
+    required String farmName,
+    int limit = 5,
+  }) async {
+    List<Product> products = [];
+    try {
+      Query query = _firestore
+          .collection('products')
+          .where('farm_name', isEqualTo: farmName)
+          .where('isVisible', isEqualTo: true);
+
+      // Order by created_at if present; Firestore will allow ordering even
+      // if some docs omit the field. This helps return the most recent items.
+      query = query.orderBy('created_at', descending: true).limit(limit);
+
+      QuerySnapshot snapshot = await query.get();
+
+      for (var doc in snapshot.docs) {
+        final product = Product.fromDocument(doc);
+        products.add(product);
+      }
+
+      // Merge results into cache: replace existing entries or append.
+      for (var p in products) {
+        final index = _productsCache.indexWhere((c) => c.id == p.id);
+        if (index != -1) {
+          _productsCache[index] = p;
+        } else {
+          _productsCache.add(p);
+        }
+      }
+    } catch (e) {
+      print('Error fetching products by farm: $e');
+    }
+
+    return products;
+  }
+
   // Accept a ProductReview and persist it as a Map to Firestore.
   Future<void> addReviewToProduct(
     String productId,
