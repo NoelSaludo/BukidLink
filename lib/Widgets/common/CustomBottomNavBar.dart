@@ -4,7 +4,7 @@ import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
 import 'package:bukidlink/pages/HomePage.dart';
 import 'package:bukidlink/pages/NewsFeedPage.dart';
-import 'package:bukidlink/pages/InboxPage.dart';
+import 'package:bukidlink/pages/NotificationPage.dart';
 import 'package:bukidlink/pages/OrdersPage.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
@@ -25,10 +25,10 @@ class CustomBottomNavBar extends StatelessWidget {
         page = const HomePage();
         break;
       case 1:
-        page = NewsFeedPage();
+        page = const NewsFeedPage();
         break;
       case 2:
-        page = InboxPage();
+        page = const NotificationPage();
         break;
       case 3:
         page = const OrdersPage();
@@ -78,9 +78,9 @@ class CustomBottomNavBar extends StatelessWidget {
               _buildNavItem(context, Icons.article_outlined, Icons.article, 'Feed', 1),
               _buildNavItem(
                 context,
-                Icons.mail_outline,
-                Icons.mail,
-                'Messages',
+                Icons.notifications_outlined,
+                Icons.notifications,
+                'Notification',
                 2,
               ),
               _buildNavItem(

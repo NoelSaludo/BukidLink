@@ -43,53 +43,6 @@ class _AddToCartDialogState extends State<AddToCartDialog> {
     super.dispose();
   }
 
-  // Helper to decide whether to use network image or asset image
-  Widget _buildImage(String path, {double? width, double? height, BoxFit? fit}) {
-    final lower = path.toLowerCase();
-    if (lower.startsWith('http://') || lower.startsWith('https://')) {
-      return Image.network(
-        path,
-        width: width,
-        height: height,
-        fit: fit ?? BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            width: width,
-            height: height,
-            alignment: Alignment.center,
-            child: const CircularProgressIndicator(),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            width: width,
-            height: height,
-            color: Colors.grey[200],
-            alignment: Alignment.center,
-            child: const Icon(Icons.broken_image, size: 40, color: Colors.grey),
-          );
-        },
-      );
-    }
-
-    return Image.asset(
-      path,
-      width: width,
-      height: height,
-      fit: fit ?? BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          width: width,
-          height: height,
-          color: Colors.grey[200],
-          alignment: Alignment.center,
-          child: const Icon(Icons.broken_image, size: 40, color: Colors.grey),
-        );
-      },
-    );
-  }
-
   void _updateQuantity(int newQuantity) {
     setState(() {
       _quantity = newQuantity.clamp(_minQuantity, _maxQuantity);
@@ -152,7 +105,7 @@ class _AddToCartDialogState extends State<AddToCartDialog> {
               ),
               child: Stack(
                 children: [
-                  _buildImage(
+                  Image.asset(
                     widget.product.imagePath,
                     width: double.infinity,
                     height: 200,

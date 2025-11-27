@@ -9,12 +9,10 @@ import 'package:bukidlink/widgets/common/AddToCartDialog.dart';
 import 'package:bukidlink/services/CartService.dart';
 import 'package:bukidlink/utils/SnackBarHelper.dart';
 import 'package:bukidlink/widgets/common/PesoText.dart';
-import 'package:bukidlink/widgets/common/ProductImage.dart';
-// Follow button removed from product cards — follow actions remain on profile/details
 
 enum ProductCardLayout {
   compact, // Compact layout for recommended products (horizontal scroll)
-  grid, // Grid layout for product grids (vertical scroll)
+  grid,   // Grid layout for product grids (vertical scroll)
 }
 
 class ProductCard extends StatelessWidget {
@@ -95,9 +93,8 @@ class ProductCard extends StatelessWidget {
             ),
             child: Stack(
               children: [
-                // Use helper to render network or asset image
-                ProductImage(
-                  imagePath: product.imagePath,
+                Image.asset(
+                  product.imagePath,
                   width: 180,
                   height: 140,
                   fit: BoxFit.cover,
@@ -206,8 +203,9 @@ class ProductCard extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(8),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColors.primaryGreen
-                                            .withValues(alpha: 0.3),
+                                        color: AppColors.primaryGreen.withValues(
+                                          alpha: 0.3,
+                                        ),
                                         blurRadius: 6,
                                         offset: const Offset(0, 2),
                                       ),
@@ -260,8 +258,8 @@ class ProductCard extends StatelessWidget {
               ),
               child: Stack(
                 children: [
-                  ProductImage(
-                    imagePath: product.imagePath,
+                  Image.asset(
+                    product.imagePath,
                     width: double.infinity,
                     fit: BoxFit.cover,
                   ),

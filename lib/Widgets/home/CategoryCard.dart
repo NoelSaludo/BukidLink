@@ -37,7 +37,7 @@ class CategoryCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(iconPath, width: 54, height: 54, fit: BoxFit.contain),
+            Image.asset(iconPath, width: 48, height: 48, fit: BoxFit.contain),
             const SizedBox(height: 6),
             Text(
               label,

@@ -3,26 +3,23 @@ import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
-import 'package:bukidlink/Pages/ProfilePage.dart';
-import 'package:bukidlink/Widgets/Profile/FollowButton.dart';
+import 'package:bukidlink/pages/StorePage.dart';
 
 class ProductDetailsCard extends StatelessWidget {
   final String description;
   final String farmName;
-  final String? farmId;
 
   const ProductDetailsCard({
     super.key,
     required this.description,
     required this.farmName,
-    this.farmId,
   });
 
-  void _navigateToProfile(BuildContext context) {
+  void _navigateToStore(BuildContext context) {
     HapticFeedback.lightImpact();
     PageNavigator().goToAndKeepWithTransition(
       context,
-      ProfilePage(profileID: farmId ?? farmName),
+      StorePage(farmName: farmName),
       PageTransitionType.slideFromRight,
     );
   }
@@ -52,7 +49,7 @@ class ProductDetailsCard extends StatelessWidget {
           Text(description, style: AppTextStyles.DESCRIPTION_TEXT),
           const SizedBox(height: 16),
           GestureDetector(
-            onTap: () => _navigateToProfile(context),
+            onTap: () => _navigateToStore(context),
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -92,18 +89,7 @@ class ProductDetailsCard extends StatelessWidget {
                           style: AppTextStyles.SELLER_LABEL_MEDIUM,
                         ),
                         const SizedBox(height: 2),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              farmName,
-                              style: AppTextStyles.SELLER_NAME_LARGE,
-                            ),
-                            const SizedBox(height: 8),
-                            if (farmId != null)
-                              FollowButton(farmId: farmId!, width: 120),
-                          ],
-                        ),
+                        Text(farmName, style: AppTextStyles.SELLER_NAME_LARGE),
                       ],
                     ),
                   ),

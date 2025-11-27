@@ -1,31 +1,18 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 class Post {
   final String id;
   final String textContent;
   final String imageContent;
-  final DateTime createdAt;
+  final DateTime timestamp;
   final String posterID;
 
   Post({
     required this.id,
     required this.textContent,
     required this.imageContent,
-    required this.createdAt,
+    DateTime? timestamp,
     required this.posterID,
-  });
+  }) : timestamp = timestamp ?? DateTime.now();
 
-factory Post.fromDocument(DocumentSnapshot doc) {
-  final data = doc.data() as Map<String, dynamic>;
-  return Post(
-    id: doc.id,
-    textContent: data['textContent'] ?? '',
-    imageContent: data['imageContent'] ?? '',
-    createdAt: data['created_at'] != null
-          ? (data['created_at'] as Timestamp).toDate()
-          : DateTime.now(),
-    posterID : data['posterID'] ?? '',
-  );
-}
 
   /// Convert model to JSON (for saving or sending)
   Map<String, dynamic> toJson() {
@@ -34,7 +21,7 @@ factory Post.fromDocument(DocumentSnapshot doc) {
       'textContent': textContent,
       'imageContent': imageContent,
       'posterID': posterID,
-      'createdAt': createdAt.toIso8601String(),
+      'timestamp': timestamp.toIso8601String(),
     };
   }
 
@@ -43,14 +30,14 @@ factory Post.fromDocument(DocumentSnapshot doc) {
     String? textContent,
     String? imageContent,
     String? posterID,
-    DateTime? createdAt,
+    DateTime? timestamp,
   }) {
     return Post(
       id: id,
       textContent: textContent ?? this.textContent,
       imageContent: imageContent ?? this.imageContent,
       posterID : posterID ?? this.posterID,
-      createdAt: createdAt ?? this.createdAt,
+      timestamp: timestamp ?? this.timestamp,
     );
   }
 }

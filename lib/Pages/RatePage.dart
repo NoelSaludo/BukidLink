@@ -38,11 +38,12 @@ class _RatePageState extends State<RatePage> {
     }
 
     final newReview = ProductReview(
+      id: const Uuid().v4(),
       userName: 'Anonymous',
       userAvatar: 'A',
       rating: _rating.toDouble(),
       comment: _reviewController.text.trim(),
-      date: DateTime.now(),
+      date: 'Just now',
       isVerifiedPurchase: true,
     );
 
@@ -51,7 +52,7 @@ class _RatePageState extends State<RatePage> {
 
     final orderService = OrderService.shared;
     for (final order in orderService.orders) {
-      if (order.items.any((i) => i.product?.id == widget.product.id)) {
+      if (order.items.any((i) => i.product.id == widget.product.id)) {
         orderService.checkAndMarkCompleted(order);
         break;
       }
