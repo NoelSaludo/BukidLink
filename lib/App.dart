@@ -7,7 +7,6 @@ import 'package:bukidlink/Pages/MessagePage.dart';
 import 'package:bukidlink/pages/farmer/FarmerStorePage.dart';
 import 'package:bukidlink/Pages/farmer/FarmerProfilePage.dart';
 
-
 class App extends StatelessWidget {
   const App({super.key});
 
@@ -18,9 +17,9 @@ class App extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
       ),
-      home: const LoginPage(),
-      // home:
-      //     const FarmerStorePage(), // remove this line after testing or to access the farm store page directly
+      // home: const LoginPage(),
+      home:
+          const FarmerStorePage(), // remove this line after testing or to access the farm store page directly
       routes: {
         // Add any simple, argument-free routes here
         // '/message': (context) => const MessagePage(),
@@ -43,7 +42,7 @@ class App extends StatelessWidget {
             );
           }
         }
-        
+
         if (settings.name == '/farmerProfile') {
           final args = settings.arguments;
           if (args is String) {
