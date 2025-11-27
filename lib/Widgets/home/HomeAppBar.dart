@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/common/CartIconWithBadge.dart';
-// Inbox page removed from appbar - chat icon removed
 import 'package:bukidlink/Pages/AccountPage.dart';
 import 'package:bukidlink/data/UserData.dart';
 
