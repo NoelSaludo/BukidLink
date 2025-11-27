@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/widgets/common/BouncingDotsLoader.dart';
@@ -41,6 +43,23 @@ class ProductImage extends StatelessWidget {
           );
         },
       );
+    }
+
+    // Check for local file paths (starts with file:// or actual file exists)
+    try {
+      final normalized = imagePath.startsWith('file://') ? imagePath.replaceFirst('file://', '') : imagePath;
+      final file = File(normalized);
+      if (normalized.isNotEmpty && file.existsSync()) {
+        return Image.file(
+          file,
+          width: width,
+          height: height,
+          fit: fit,
+          errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
+        );
+      }
+    } catch (_) {
+      // ignore file access errors and fall back to asset
     }
 
     // Fallback to asset image
