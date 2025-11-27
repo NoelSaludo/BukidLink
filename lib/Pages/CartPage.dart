@@ -130,6 +130,18 @@ class _CartPageState extends State<CartPage> {
 
   void _back() => PageNavigator().goBack(context);
 
+  Future<void> _clearCart() async {
+    setState(() => processing = true);
+    try {
+      await cartService.clearCart();
+      SnackBarHelper.showSuccess(context, 'Cart cleared');
+    } catch (_) {
+      SnackBarHelper.showError(context, 'Failed to clear cart');
+    } finally {
+      if (mounted) setState(() => processing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (loading) {
@@ -141,7 +153,7 @@ class _CartPageState extends State<CartPage> {
     }
     return Scaffold(
       backgroundColor: AppColors.APP_BACKGROUND,
-      appBar: CartAppBar(onBackPressed: _back, itemCount: cartService.itemCount),
+      appBar: CartAppBar(onBackPressed: _back, itemCount: cartService.itemCount, onClear: _clearCart),
       body: cartService.isEmpty ? EmptyCartWidget(onStartShopping: _back) : _list(),
       bottomNavigationBar: cartService.isEmpty ? null : CartSummaryCard(
         subtotal: cartService.subtotal,

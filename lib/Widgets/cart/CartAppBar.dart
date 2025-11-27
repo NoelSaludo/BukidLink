@@ -5,11 +5,13 @@ import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 class CartAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onBackPressed;
   final int itemCount;
+  final VoidCallback? onClear;
 
   const CartAppBar({
     super.key,
     required this.onBackPressed,
     required this.itemCount,
+    this.onClear,
   });
 
   @override
@@ -88,7 +90,7 @@ class CartAppBar extends StatelessWidget implements PreferredSizeWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // Clear cart logic will be handled in CartPage
+              if (onClear != null) onClear!();
             },
             child: const Text(
               'Clear',
