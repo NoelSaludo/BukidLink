@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileInfo.dart';
+import 'package:bukidlink/Widgets/Profile/StorePreview.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/common/CustomBottomNavBar.dart';
@@ -20,6 +21,9 @@ class ProfilePage extends StatelessWidget {
         slivers: [
           // Sliver for user info section
           SliverToBoxAdapter(child: ProfileInfo(profileID: profileID)),
+
+          // Store preview section
+          SliverToBoxAdapter(child: StorePreview(profileID: profileID)),
 
           // Divider or spacing
           const SliverToBoxAdapter(
