@@ -36,21 +36,50 @@ class ProductService {
   }) async {
     List<Product> products = [];
     try {
-      Query query = _firestore
+      // Perform a simple single-field query to avoid requiring a composite index.
+      // We'll query by `farm_id` only, then filter `isVisible` and sort by
+      // `created_at` on the client side.
+      QuerySnapshot snapshot = await _firestore
           .collection('products')
           .where('farm_id', isEqualTo: farmId)
-          .where('isVisible', isEqualTo: true);
+          .get();
 
-      // Order by created_at if present; Firestore will allow ordering even
-      // if some docs omit the field. This helps return the most recent items.
-      query = query.orderBy('created_at', descending: true).limit(limit);
-
-      QuerySnapshot snapshot = await query.get();
-
-      for (var doc in snapshot.docs) {
-        final product = Product.fromDocument(doc);
-        products.add(product);
+      // If no results, it's possible `farm_id` is stored as a DocumentReference.
+      // Try that as a fallback.
+      if (snapshot.docs.isEmpty && farmId.isNotEmpty) {
+        final farmRef = _firestore.collection('farms').doc(farmId);
+        final altSnapshot = await _firestore
+            .collection('products')
+            .where('farm_id', isEqualTo: farmRef)
+            .get();
+        snapshot = altSnapshot;
       }
+
+      // Map docs to Product + created_at timestamp for client-side filtering/sorting
+      final List<MapEntry<Product, DateTime>> withDates = [];
+      for (var doc in snapshot.docs) {
+        final prod = Product.fromDocument(doc);
+        final data = doc.data() as Map<String, dynamic>;
+        final rawCreated = data['created_at'];
+        DateTime created;
+        if (rawCreated is Timestamp) {
+          created = rawCreated.toDate();
+        } else if (rawCreated is String) {
+          created =
+              DateTime.tryParse(rawCreated) ??
+              DateTime.fromMillisecondsSinceEpoch(0);
+        } else {
+          created = DateTime.fromMillisecondsSinceEpoch(0);
+        }
+
+        if (prod.isVisible) {
+          withDates.add(MapEntry(prod, created));
+        }
+      }
+
+      // Sort descending by created date and apply the requested limit
+      withDates.sort((a, b) => b.value.compareTo(a.value));
+      products = withDates.take(limit).map((e) => e.key).toList();
 
       // Merge results into cache: replace existing entries or append.
       for (var p in products) {
