@@ -5,6 +5,10 @@ import '../../models/TradeModels.dart';
 import 'MakeTradePage.dart'; // Required for Edit Navigation
 
 class MyTradesPage extends StatefulWidget {
+  final bool embeddedInTab;
+
+  MyTradesPage({this.embeddedInTab = false});
+
   @override
   _MyTradesPageState createState() => _MyTradesPageState();
 }
@@ -16,6 +20,82 @@ class _MyTradesPageState extends State<MyTradesPage> {
 
   @override
   Widget build(BuildContext context) {
+    // When embedded in a tab, we should not render a Scaffold or AppBar.
+    final content = Column(
+      children: [
+        // Search Bar
+        Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: TextField(
+            controller: searchController,
+            onChanged: (val) => setState(() => searchText = val),
+            decoration: InputDecoration(
+              hintText: 'Search my items...',
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+
+        // List of My Trades
+        Expanded(
+          child: StreamBuilder<List<TradeListing>>(
+            stream: _tradeService.getMyTrades(searchText),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) return Center(child: Text('Error loading data'));
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
+
+              final docs = snapshot.data ?? [];
+
+              if (docs.isEmpty) {
+                return Center(
+                  child: Text("You haven't posted any trades yet."),
+                );
+              }
+
+              return SingleChildScrollView(
+                padding: EdgeInsets.all(12),
+                child: Column(
+                  children: List.generate(docs.length, (index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: MyTradeItemCard(
+                        listing: docs[index],
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => TradeIncomingOffersPage(
+                                listing: docs[index],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  }),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+
+    if (widget.embeddedInTab) {
+      return Container(
+        color: Colors.white,
+        child: SafeArea(
+          top: false,
+          child: content,
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -28,71 +108,7 @@ class _MyTradesPageState extends State<MyTradesPage> {
         title: Text('My Trades', style: TextStyle(color: Colors.black)),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: TextField(
-              controller: searchController,
-              onChanged: (val) => setState(() => searchText = val),
-              decoration: InputDecoration(
-                hintText: 'Search my items...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-
-          // List of My Trades
-          Expanded(
-            child: StreamBuilder<List<TradeListing>>(
-              stream: _tradeService.getMyTrades(searchText),
-              builder: (context, snapshot) {
-                if (snapshot.hasError)
-                  return Center(child: Text('Error loading data'));
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
-
-                final docs = snapshot.data ?? [];
-
-                if (docs.isEmpty) {
-                  return Center(
-                    child: Text("You haven't posted any trades yet."),
-                  );
-                }
-
-                return SingleChildScrollView(
-                  padding: EdgeInsets.all(12),
-                  child: Column(
-                    children: List.generate(docs.length, (index) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: MyTradeItemCard(
-                          listing: docs[index],
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => TradeIncomingOffersPage(
-                                  listing: docs[index],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    }),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+      body: content,
     );
   }
 }
