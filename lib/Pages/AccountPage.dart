@@ -196,9 +196,18 @@ class _AccountPageState extends State<AccountPage> {
   }
 
   Widget _buildProfileHeader(User? user) {
-    final String profileImage = user?.profilePic != null
-        ? 'assets/images/${user!.profilePic}'
-        : '';
+    // Determine the correct image source: network URL vs local asset
+    String? profileImage;
+    if (user != null && user.profilePic.isNotEmpty) {
+      final pic = user.profilePic;
+      if (pic.startsWith('http://') || pic.startsWith('https://')) {
+        profileImage = pic; // remote URL (Cloudinary)
+      } else {
+        profileImage = 'assets/images/$pic'; // local asset filename
+      }
+    } else {
+      profileImage = null;
+    }
 
     return SliverToBoxAdapter(
       child: Container(
@@ -261,7 +270,9 @@ class _AccountPageState extends State<AccountPage> {
                 children: [
                   // Profile Image with new ProfileImageWidget
                   ProfileImageWidget(
-                    imageUrl: _isImageUpdated ? _profilePicUrl : profileImage,
+                    imageUrl: _isImageUpdated
+                        ? _profilePicUrl
+                        : (profileImage ?? ''),
                     size: 100,
                     showBorder: true,
                     borderColor: Colors.white,
