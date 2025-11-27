@@ -243,6 +243,10 @@ class UserService {
     return currentUser;
   }
 
+  String getSafeUserId() {
+    return currentUser?.id ?? "unknown-user";
+  }
+
   // Fetch a Farm document given its DocumentReference. Returns null on error or if not found.
   Future<Farm?> getFarmByReference(DocumentReference? farmRef) async {
     if (farmRef == null) return null;
@@ -278,18 +282,55 @@ class UserService {
     return null;
   }
 
-  // Fetch a user model by Firestore document id. Returns null if not found.
-  Future<User?> getUserById(String id) async {
+  Future<User?> getUserById(String uid) async {
     try {
       final doc = await FirebaseFirestore.instance
           .collection('users')
-          .doc(id)
+          .doc(uid)
           .get();
+
       if (!doc.exists) return null;
-      return User.fromDocument(doc);
+
+      final data = doc.data() as Map<String, dynamic>;
+      return User(
+        id: uid,
+        username: data['username'] ?? '',
+        password: '', // leave empty; don't fetch stored password
+        firstName: data['firstName'] ?? '',
+        lastName: data['lastName'] ?? '',
+        emailAddress: data['email'] ?? '',
+        address: data['address'] ?? '',
+        contactNumber: data['contactNumber'] ?? '',
+        profilePic: data['profilePic'] ?? 'default_image.png',
+        createdAt: data['created_at'] != null
+            ? (data['created_at'] as Timestamp).toDate()
+            : DateTime.now(),
+        updatedAt: data['updated_at'] != null
+            ? (data['updated_at'] as Timestamp).toDate()
+            : DateTime.now(),
+        type: data['type'] ?? 'Consumer',
+        farmId: data['farmId'] as DocumentReference?,
+      );
     } catch (e) {
-      debugPrint('Error fetching user by id: $e');
+      debugPrint('Error fetching user by ID: $e');
       return null;
     }
+  }
+
+  Future<User> getUserWithFallback(String id) async {
+    return await UserService().getUserById(id) ??
+        User(
+          id: 'unknown',
+          username: 'Unknown User',
+          password: '',
+          firstName: '',
+          lastName: '',
+          emailAddress: '',
+          address: '',
+          contactNumber: '',
+          profilePic: '',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
   }
 }

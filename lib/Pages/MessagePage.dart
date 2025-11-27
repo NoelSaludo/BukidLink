@@ -4,40 +4,99 @@ import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/common/CustomBottomNavBar.dart';
 import 'package:bukidlink/models/Post.dart';
-import 'package:bukidlink/data/PostData.dart';
 import 'package:bukidlink/Widgets/Posts/PostTile.dart';
+import 'package:bukidlink/services/PostService.dart';
 
+class MessagePage extends StatefulWidget {
+  final String profileID;
 
-class MessagePage extends StatelessWidget {
-  const MessagePage({super.key});
+  const MessagePage({
+    super.key,
+    required this.profileID,
+  });
+
+  @override
+  _MessagePageState createState() => _MessagePageState();
+}
+
+class _MessagePageState extends State<MessagePage> {
+  List<Post> posts = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadUserPosts();
+  }
+
+  Future<void> loadUserPosts() async {
+    final fetchedPosts =
+        await PostService().fetchPostsByUser(widget.profileID);
+
+    setState(() {
+      posts = fetchedPosts;
+      isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    List<Post> posts = PostData.getAllPosts();
     return Scaffold(
       backgroundColor: AppColors.backgroundYellow,
       body: CustomScrollView(
         slivers: [
-          // Sliver for user info section
+          // Profile header
           SliverToBoxAdapter(
-            child: ProfileInfo(profileID: ''),
+            child: ProfileInfo(profileID: widget.profileID),
           ),
 
-          // Divider or spacing
+          // Title section
           const SliverToBoxAdapter(
-            child: Divider(thickness: 1),
-          ),
-
-          // Sliver list for user posts
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final post = posts[index];
-                return PostTile(post: post);
-              },
-              childCount: posts.length,
+            child: Column(
+              children: [
+                Divider(thickness: 1),
+                Text(
+                  'Posts History',
+                  style: AppTextStyles.PRODUCT_NAME_HEADER,
+                ),
+              ],
             ),
           ),
+
+          // Loading indicator
+          if (isLoading)
+            const SliverToBoxAdapter(
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            )
+          else if (posts.isEmpty)
+            // No posts found
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Center(
+                  child: Text(
+                    'No posts yet',
+                    style: AppTextStyles.sectionTitle,
+                  ),
+                ),
+              ),
+            )
+          else
+            // List of posts
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final post = posts[index];
+                  return PostTile(post: post);
+                },
+                childCount: posts.length,
+              ),
+            ),
         ],
       ),
       bottomNavigationBar: const CustomBottomNavBar(

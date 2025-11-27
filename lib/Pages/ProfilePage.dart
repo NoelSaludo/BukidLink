@@ -5,27 +5,50 @@ import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/common/CustomBottomNavBar.dart';
 import 'package:bukidlink/models/Post.dart';
-import 'package:bukidlink/data/PostData.dart';
 import 'package:bukidlink/Widgets/Posts/PostTile.dart';
+import 'package:bukidlink/services/PostService.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   final String profileID;
+
   const ProfilePage({super.key, required this.profileID});
 
   @override
+  _ProfilePageState createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  List<Post> posts = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadUserPosts();
+  }
+
+  Future<void> loadUserPosts() async {
+    final fetchedPosts = await PostService().fetchPostsByUser(widget.profileID);
+
+    setState(() {
+      posts = fetchedPosts;
+      isLoading = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    List<Post> posts = PostData.getAllPosts();
     return Scaffold(
       backgroundColor: AppColors.backgroundYellow,
       body: CustomScrollView(
         slivers: [
-          // Sliver for user info section
-          SliverToBoxAdapter(child: ProfileInfo(profileID: profileID)),
+          // Profile header
+          SliverToBoxAdapter(child: ProfileInfo(profileID: widget.profileID)),
 
           // Store preview section
-          SliverToBoxAdapter(child: StorePreview(profileID: profileID)),
+          SliverToBoxAdapter(child: StorePreview(profileID: widget.profileID)),
 
-          // Divider or spacing
+          // Title section
           const SliverToBoxAdapter(
             child: Column(
               children: [
@@ -34,13 +57,36 @@ class ProfilePage extends StatelessWidget {
               ],
             ),
           ),
-          // Sliver list for user posts
-          SliverList(
-            delegate: SliverChildBuilderDelegate((context, index) {
-              final post = posts[index];
-              return PostTile(post: post);
-            }, childCount: posts.length),
-          ),
+
+          // Loading indicator / posts list
+          if (isLoading)
+            const SliverToBoxAdapter(
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            )
+          else if (posts.isEmpty)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Center(
+                  child: Text(
+                    'No posts yet',
+                    style: AppTextStyles.sectionTitle,
+                  ),
+                ),
+              ),
+            )
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final post = posts[index];
+                return PostTile(post: post);
+              }, childCount: posts.length),
+            ),
         ],
       ),
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),

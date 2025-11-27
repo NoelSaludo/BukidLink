@@ -72,7 +72,7 @@ class AppTextStyles {
   static const TextStyle sectionTitle = TextStyle(
     fontFamily: FONT_FAMILY,
     fontWeight: FontWeight.w800,
-    fontSize: 30,
+    fontSize: 25,
     color: AppColors.DARK_TEXT,
   );
 
@@ -247,7 +247,7 @@ class AppTextStyles {
 
   static const TextStyle PRICE_LARGE = TextStyle(
     fontFamily: FONT_FAMILY,
-    fontSize: 15.0,
+    fontSize: 14.0,
     fontWeight: FontWeight.w700,
     color: AppColors.primaryGreen,
   );
@@ -514,6 +514,20 @@ class AppTextStyles {
   static const TextStyle BODY_TEXT = TextStyle(
     fontFamily: FONT_FAMILY,
     color: AppColors.BLACK_TEXT,
+    fontSize: 16.0,
+    fontWeight: FontWeight.normal,
+  );
+
+  static const TextStyle AUTH_TITLE = TextStyle(
+    fontFamily: FONT_FAMILY,
+    color: AppColors.BACKGROUND_WHITE,
+    fontSize: 24.0,
+    fontWeight: FontWeight.bold,
+  );
+
+  static const TextStyle AUTH_SUBTITLE = TextStyle(
+    fontFamily: FONT_FAMILY,
+    color: AppColors.BACKGROUND_WHITE,
     fontSize: 16.0,
     fontWeight: FontWeight.normal,
   );
