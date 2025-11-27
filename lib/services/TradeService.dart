@@ -68,7 +68,10 @@ class TradeService {
       // Return a single-subscription stream that immediately emits mock data
       final controller = StreamController<List<TradeListing>>();
       final filtered = _mockListings
-          .where((item) => item.name.toLowerCase().contains(searchText.toLowerCase()))
+          .where(
+            (item) =>
+                item.name.toLowerCase().contains(searchText.toLowerCase()),
+          )
           .toList();
       // Delay to mimic async behavior
       Future.microtask(() {
@@ -90,20 +93,25 @@ class TradeService {
           .collection('trade_listings')
           .orderBy('created_at', descending: true)
           .snapshots()
-          .listen((snapshot) {
-        final results = snapshot.docs
-            .map((doc) => TradeListing.fromMap(doc.data(), doc.id))
-            .where((item) {
-              final matchesSearch = item.name.toLowerCase().contains(searchText.toLowerCase());
-              final isNotMe = item.farmerId != currentFarmerId;
-              return matchesSearch && isNotMe;
-            })
-            .toList();
+          .listen(
+            (snapshot) {
+              final results = snapshot.docs
+                  .map((doc) => TradeListing.fromMap(doc.data(), doc.id))
+                  .where((item) {
+                    final matchesSearch = item.name.toLowerCase().contains(
+                      searchText.toLowerCase(),
+                    );
+                    final isNotMe = item.farmerId != currentFarmerId;
+                    return matchesSearch && isNotMe;
+                  })
+                  .toList();
 
-        controller.add(results);
-      }, onError: (err, stack) {
-        controller.addError(err, stack);
-      });
+              controller.add(results);
+            },
+            onError: (err, stack) {
+              controller.addError(err, stack);
+            },
+          );
     };
 
     controller.onCancel = () async {
@@ -135,16 +143,23 @@ class TradeService {
           .collection('trade_listings')
           .where('farmer_id', isEqualTo: currentFarmerId)
           .snapshots()
-          .listen((snapshot) {
-        final results = snapshot.docs
-            .map((doc) => TradeListing.fromMap(doc.data(), doc.id))
-            .where((item) => item.name.toLowerCase().contains(searchText.toLowerCase()))
-            .toList();
+          .listen(
+            (snapshot) {
+              final results = snapshot.docs
+                  .map((doc) => TradeListing.fromMap(doc.data(), doc.id))
+                  .where(
+                    (item) => item.name.toLowerCase().contains(
+                      searchText.toLowerCase(),
+                    ),
+                  )
+                  .toList();
 
-        controller.add(results);
-      }, onError: (err, stack) {
-        controller.addError(err, stack);
-      });
+              controller.add(results);
+            },
+            onError: (err, stack) {
+              controller.addError(err, stack);
+            },
+          );
     };
 
     controller.onCancel = () async {
@@ -153,6 +168,77 @@ class TradeService {
     };
 
     return controller.stream;
+  }
+
+  // --- NEW: FETCH MY LISTINGS (Future) ---
+  Future<List<TradeListing>> fetchMyListingsFuture() async {
+    if (isTesting) return [];
+
+    try {
+      final currentFarmerId = await _getCurrentFarmerId();
+      final snapshot = await _db
+          .collection('trade_listings')
+          .where('farmer_id', isEqualTo: currentFarmerId)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => TradeListing.fromMap(doc.data(), doc.id))
+          .toList();
+    } catch (e) {
+      print("Error fetching my listings: $e");
+      return [];
+    }
+  }
+
+  // --- NEW: FETCH OFFERS FOR A LISTING (Future) ---
+  Future<List<TradeOfferRequest>> fetchOffersForListingFuture(
+    String listingId,
+  ) async {
+    if (isTesting) return [];
+
+    try {
+      final snapshot = await _db
+          .collection('trade_offers')
+          .where('listing_id', isEqualTo: listingId)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => TradeOfferRequest.fromMap(doc.data(), doc.id))
+          .toList();
+    } catch (e) {
+      print("Error fetching offers for listing $listingId: $e");
+      return [];
+    }
+  }
+
+  // --- NEW: DECLINE OFFER (Delete Offer & Decrement Count) ---
+  Future<void> declineOffer(String offerId, String listingId) async {
+    if (isTesting) return;
+
+    WriteBatch batch = _db.batch();
+
+    // 1. Delete the offer
+    DocumentReference offerRef = _db.collection('trade_offers').doc(offerId);
+    batch.delete(offerRef);
+
+    // 2. Decrement offers_count on the listing
+    DocumentReference listingRef = _db
+        .collection('trade_listings')
+        .doc(listingId);
+    batch.update(listingRef, {'offers_count': FieldValue.increment(-1)});
+
+    await batch.commit();
+  }
+
+  // --- NEW: ACCEPT OFFER (Update Status) ---
+  Future<void> acceptOffer(String offerId) async {
+    if (isTesting) return;
+
+    // For now, just update the status to 'accepted'.
+    // Logic for inventory deduction or messaging can be added here.
+    await _db.collection('trade_offers').doc(offerId).update({
+      'status': 'accepted',
+    });
   }
 
   // --- 3. CREATE LISTING (Uses Farmer ID) ---
