@@ -428,6 +428,7 @@ class _TradeRequestPageState extends State<TradeRequestPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         elevation: 0,
         flexibleSpace: Container(
@@ -460,136 +461,232 @@ class _TradeRequestPageState extends State<TradeRequestPage> {
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 100.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Trading for: ${widget.listing.name}",
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color(0xFFF5F5F5),
+                  const Color(0xFFE8F5E9).withOpacity(0.2),
+                ],
               ),
-              SizedBox(height: 18),
+            ),
+            child: Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader('Offer Details', Icons.info_outline),
+                    const SizedBox(height: 16),
 
-              Text('Your Item Name', style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              TextFormField(
-                controller: _itemNameController,
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter an item name' : null,
-                decoration: InputDecoration(
-                  hintText: 'e.g. Apples',
-                  filled: true,
-                  fillColor: AppColors.BACKGROUND_WHITE,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.BORDER_GREY.withOpacity(0.2), width: 1.2)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                ),
-              ),
-
-              SizedBox(height: 16),
-
-              Text('Your Item Quantity', style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              TextFormField(
-                controller: _quantityController,
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter quantity' : null,
-                decoration: InputDecoration(
-                  hintText: 'e.g. 1 kg',
-                  filled: true,
-                  fillColor: AppColors.BACKGROUND_WHITE,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.BORDER_GREY.withOpacity(0.2), width: 1.2)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                ),
-              ),
-
-              SizedBox(height: 16),
-
-              Text('Add Image', style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              GestureDetector(
-                onTap: _showImageOptions,
-                child: Container(
-                  height: 150,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.BORDER_GREY.withOpacity(0.6)),
-                    borderRadius: BorderRadius.circular(12),
-                    color: Colors.white,
-                    boxShadow: [BoxShadow(color: AppColors.primaryGreen.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 4))],
-                  ),
-                  child: _pickedImage == null
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.add_a_photo, size: 36, color: Colors.grey),
-                              SizedBox(height: 6),
-                              Text('Tap to upload photo', style: TextStyle(color: Colors.grey[600])),
-                            ],
+                    _buildCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Trading for: ${widget.listing.name}', style: AppTextStyles.BODY_MEDIUM.copyWith(color: AppColors.TEXT_SECONDARY)),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _itemNameController,
+                            validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter an item name' : null,
+                            decoration: InputDecoration(
+                              labelText: 'Your Item Name',
+                              hintText: 'e.g. Apples',
+                              filled: true,
+                              fillColor: AppColors.BACKGROUND_WHITE,
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.BORDER_GREY.withOpacity(0.2), width: 1.2)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            ),
                           ),
-                        )
-                      : Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: ImageWithLoader(
-                                image: FileImage(File(_pickedImage!.path)),
-                                fit: BoxFit.cover,
-                              ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _quantityController,
+                            validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter quantity' : null,
+                            decoration: InputDecoration(
+                              labelText: 'Your Item Quantity',
+                              hintText: 'e.g. 1 kg',
+                              filled: true,
+                              fillColor: AppColors.BACKGROUND_WHITE,
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.BORDER_GREY.withOpacity(0.2), width: 1.2)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             ),
-                            Positioned(
-                              right: 8,
-                              top: 8,
-                              child: GestureDetector(
-                                onTap: () => setState(() => _pickedImage = null),
-                                child: Container(
-                                  decoration: BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
-                                  padding: EdgeInsets.all(6),
-                                  child: Icon(Icons.close, color: Colors.white, size: 18),
-                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+                    _buildSectionHeader('Offer Image', Icons.image_outlined),
+                    const SizedBox(height: 16),
+                    _buildCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Add an image of your offered item', style: AppTextStyles.BODY_MEDIUM.copyWith(color: AppColors.TEXT_SECONDARY, fontSize: 13)),
+                          const SizedBox(height: 12),
+                          GestureDetector(
+                            onTap: _showImageOptions,
+                            child: Container(
+                              height: 150,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: AppColors.BORDER_GREY.withOpacity(0.6)),
+                                borderRadius: BorderRadius.circular(12),
+                                color: Colors.white,
+                                boxShadow: [BoxShadow(color: AppColors.primaryGreen.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 4))],
                               ),
+                              child: _pickedImage == null
+                                  ? Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.add_a_photo, size: 36, color: Colors.grey),
+                                          const SizedBox(height: 6),
+                                          Text('Tap to upload photo', style: AppTextStyles.BODY_MEDIUM.copyWith(color: Colors.grey[600])),
+                                        ],
+                                      ),
+                                    )
+                                  : Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: ImageWithLoader(
+                                            image: FileImage(File(_pickedImage!.path)),
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                        Positioned(
+                                          right: 8,
+                                          top: 8,
+                                          child: GestureDetector(
+                                            onTap: () => setState(() => _pickedImage = null),
+                                            child: Container(
+                                              decoration: BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
+                                              padding: const EdgeInsets.all(6),
+                                              child: const Icon(Icons.close, color: Colors.white, size: 18),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // Submit Button
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(50),
+                        boxShadow: [BoxShadow(color: AppColors.ACCENT_LIME.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 6))],
+                      ),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _isLoading
+                              ? null
+                              : () async {
+                                  if (_formKey.currentState?.validate() ?? false) {
+                                    await _submitOffer();
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.ACCENT_LIME,
+                            foregroundColor: AppColors.DARK_TEXT,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                            elevation: 0,
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.black))
+                              : Row(mainAxisAlignment: MainAxisAlignment.center, children: const [Icon(Icons.send, size: 18), SizedBox(width: 10), Text('Submit Offer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800))]),
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(50),
-            boxShadow: [BoxShadow(color: AppColors.ACCENT_LIME.withOpacity(0.36), blurRadius: 12, offset: const Offset(0, 6))],
-          ),
-          child: SizedBox(
-            height: 56,
-            child: ElevatedButton(
-              onPressed: _isLoading
-                  ? null
-                  : () async {
-                      if (_formKey.currentState?.validate() ?? false) {
-                        await _submitOffer();
-                      }
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.ACCENT_LIME,
-                foregroundColor: AppColors.DARK_TEXT,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                elevation: 0,
-              ),
-              child: _isLoading
-                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.black))
-                  : Row(mainAxisAlignment: MainAxisAlignment.center, children: const [Icon(Icons.send, size: 18), SizedBox(width: 10), Text('Submit Offer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800))]),
             ),
           ),
-        ),
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.3),
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+        ],
       ),
+    );
+  }
+
+  // Helper method to build section headers
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.primaryGreen.withOpacity(0.15),
+                AppColors.HEADER_GRADIENT_END.withOpacity(0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            icon,
+            size: 22,
+            color: AppColors.primaryGreen,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: AppTextStyles.FORM_LABEL.copyWith(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF2E7D32),
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Helper method to build card containers
+  Widget _buildCard({required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.primaryGreen.withOpacity(0.06),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryGreen.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: child,
     );
   }
 }
