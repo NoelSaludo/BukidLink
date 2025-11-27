@@ -89,14 +89,20 @@ class _BottomActionBarState extends State<BottomActionBar>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Left side - Total Price
-              PesoText(
-                amount: widget.totalPrice,
-                decimalPlaces: 2,
-                style: AppTextStyles.PRODUCT_NAME_LARGE.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 28,
+              // Left side - Total Price (responsive)
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: PesoText(
+                    amount: widget.totalPrice,
+                    decimalPlaces: 2,
+                    style: AppTextStyles.PRODUCT_NAME_LARGE.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 28,
+                    ),
+                  ),
                 ),
               ),
               // Right side - Add to Basket Button
@@ -112,12 +118,12 @@ class _BottomActionBarState extends State<BottomActionBar>
                   scale: _scaleAnimation,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 24,
+                      vertical: 10,
+                      horizontal: 14,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.15),
@@ -140,14 +146,17 @@ class _BottomActionBarState extends State<BottomActionBar>
                         const Icon(
                           Icons.shopping_cart_outlined,
                           color: AppColors.DARK_TEXT,
-                          size: 20,
+                          size: 18,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Add to Basket',
-                          style: AppTextStyles.BUTTON_TEXT.copyWith(
-                            color: AppColors.DARK_TEXT,
-                            fontWeight: FontWeight.w600,
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'Add to Basket',
+                            style: AppTextStyles.BUTTON_TEXT.copyWith(
+                              color: AppColors.DARK_TEXT,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],

@@ -135,11 +135,35 @@ class _StorePreviewState extends State<StorePreview> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Store', style: AppTextStyles.PRODUCT_NAME_HEADER),
-              IconButton(
-                tooltip: 'Open Store',
+              // Title + optional farm subtitle
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Store', style: AppTextStyles.PRODUCT_NAME_HEADER),
+                    const SizedBox(height: 4),
+                    if (_farmName != null)
+                      Text(
+                        _farmName!,
+                        style: AppTextStyles.farmName,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
+              ),
+              // Primary store action as a compact elevated button
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 2,
+                ),
                 onPressed: _openStore,
-                icon: const Icon(Icons.storefront_rounded),
+                icon: const Icon(Icons.storefront_rounded, size: 18),
+                label: const Text('View Store', style: AppTextStyles.BUTTON_TEXT),
               ),
             ],
           ),
@@ -147,7 +171,7 @@ class _StorePreviewState extends State<StorePreview> {
           // Increase height to accommodate ProductCard (compact layout)
           // ProductCard compact uses a 140px image plus content; 260 gives
           // enough room to avoid the 54px bottom overflow previously observed.
-          SizedBox(height: 260, child: _buildContent()),
+          SizedBox(height: 280, child: _buildContent()),
         ],
       ),
     );
@@ -163,14 +187,31 @@ class _StorePreviewState extends State<StorePreview> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 36, color: Colors.red),
-            const SizedBox(height: 8),
-            Text(
-              'Unable to load store',
-              style: AppTextStyles.PRODUCT_NAME_HEADER,
+            const Icon(Icons.error_outline, size: 40, color: AppColors.ERROR_RED),
+            const SizedBox(height: 12),
+            Text('Couldn\'t load store', style: AppTextStyles.SECTION_TITLE),
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Text(
+                'We\'re having trouble fetching the products. Please check your connection and try again.',
+                style: AppTextStyles.EMPTY_STATE_SUBTITLE,
+                textAlign: TextAlign.center,
+              ),
             ),
-            const SizedBox(height: 8),
-            TextButton(onPressed: _loadPreview, child: const Text('Retry')),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: _loadPreview,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 2,
+              ),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry', style: AppTextStyles.BUTTON_TEXT),
+            ),
           ],
         ),
       );
@@ -183,13 +224,37 @@ class _StorePreviewState extends State<StorePreview> {
           children: [
             Icon(
               Icons.storefront_outlined,
-              size: 48,
-              color: AppColors.TEXT_SECONDARY.withValues(alpha: 0.4),
+              size: 56,
+              color: AppColors.TEXT_SECONDARY.withOpacity(0.35),
             ),
-            const SizedBox(height: 8),
-            const Text('No products yet'),
+            const SizedBox(height: 12),
+            Text(
+              _farmName != null ? 'No products from $_farmName yet' : 'No products yet',
+              style: AppTextStyles.EMPTY_STATE_TITLE,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 6),
-            TextButton(onPressed: _openStore, child: const Text('View Store')),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 28.0),
+              child: Text(
+                'The seller hasn\'t listed items in the store. Tap below to view the full storefront.',
+                style: AppTextStyles.EMPTY_STATE_SUBTITLE,
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _openStore,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 2,
+              ),
+              child: const Text('Visit Store', style: AppTextStyles.BUTTON_TEXT),
+            ),
           ],
         ),
       );
