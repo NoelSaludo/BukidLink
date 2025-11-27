@@ -28,6 +28,75 @@ class ProductService {
     return products;
   }
 
+  /// Fetches up to [limit] visible products for the given [farmId],
+  /// ordered by `created_at` descending when available.
+  Future<List<Product>> fetchProductsByFarm({
+    required String farmId,
+    int limit = 5,
+  }) async {
+    List<Product> products = [];
+    try {
+      // Perform a simple single-field query to avoid requiring a composite index.
+      // We'll query by `farm_id` only, then filter `isVisible` and sort by
+      // `created_at` on the client side.
+      QuerySnapshot snapshot = await _firestore
+          .collection('products')
+          .where('farm_id', isEqualTo: farmId)
+          .get();
+
+      // If no results, it's possible `farm_id` is stored as a DocumentReference.
+      // Try that as a fallback.
+      if (snapshot.docs.isEmpty && farmId.isNotEmpty) {
+        final farmRef = _firestore.collection('farms').doc(farmId);
+        final altSnapshot = await _firestore
+            .collection('products')
+            .where('farm_id', isEqualTo: farmRef)
+            .get();
+        snapshot = altSnapshot;
+      }
+
+      // Map docs to Product + created_at timestamp for client-side filtering/sorting
+      final List<MapEntry<Product, DateTime>> withDates = [];
+      for (var doc in snapshot.docs) {
+        final prod = Product.fromDocument(doc);
+        final data = doc.data() as Map<String, dynamic>;
+        final rawCreated = data['created_at'];
+        DateTime created;
+        if (rawCreated is Timestamp) {
+          created = rawCreated.toDate();
+        } else if (rawCreated is String) {
+          created =
+              DateTime.tryParse(rawCreated) ??
+              DateTime.fromMillisecondsSinceEpoch(0);
+        } else {
+          created = DateTime.fromMillisecondsSinceEpoch(0);
+        }
+
+        if (prod.isVisible) {
+          withDates.add(MapEntry(prod, created));
+        }
+      }
+
+      // Sort descending by created date and apply the requested limit
+      withDates.sort((a, b) => b.value.compareTo(a.value));
+      products = withDates.take(limit).map((e) => e.key).toList();
+
+      // Merge results into cache: replace existing entries or append.
+      for (var p in products) {
+        final index = _productsCache.indexWhere((c) => c.id == p.id);
+        if (index != -1) {
+          _productsCache[index] = p;
+        } else {
+          _productsCache.add(p);
+        }
+      }
+    } catch (e) {
+      print('Error fetching products by farm: $e');
+    }
+
+    return products;
+  }
+
   // Accept a ProductReview and persist it as a Map to Firestore.
   Future<void> addReviewToProduct(
     String productId,

@@ -21,7 +21,6 @@ class _InboxPageState extends State<InboxPage> {
   final Map<String, String> _usernameCache = {};
   final Set<String> _loadingUsernames = {};
 
-
   String formatTime(DateTime time) {
     final now = DateTime.now();
     if (now.difference(time).inDays == 0) {
@@ -223,7 +222,8 @@ class _InboxPageState extends State<InboxPage> {
           );
         },
       ),
-      bottomNavigationBar: (UserService.currentUser?.type ?? 'Consumer') == 'Consumer'
+      bottomNavigationBar:
+          (UserService.currentUser?.type ?? 'Consumer') == 'Consumer'
           ? const CustomBottomNavBar(currentIndex: 2)
           : null,
     );

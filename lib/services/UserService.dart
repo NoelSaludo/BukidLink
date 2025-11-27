@@ -244,8 +244,8 @@ class UserService {
   }
 
   String getSafeUserId() {
-  return currentUser?.id ?? "unknown-user";
-}
+    return currentUser?.id ?? "unknown-user";
+  }
 
   // Fetch a Farm document given its DocumentReference. Returns null on error or if not found.
   Future<Farm?> getFarmByReference(DocumentReference? farmRef) async {
@@ -284,7 +284,10 @@ class UserService {
 
   Future<User?> getUserById(String uid) async {
     try {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
 
       if (!doc.exists) return null;
 
@@ -313,22 +316,21 @@ class UserService {
       return null;
     }
   }
-  
-  Future<User> getUserWithFallback(String id) async {
-  return await UserService().getUserById(id) ??
-      User(
-        id: 'unknown',
-        username: 'Unknown User',
-        password: '',
-        firstName: '',
-        lastName: '',
-        emailAddress: '',
-        address: '',
-        contactNumber: '',
-        profilePic: '',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-}
 
+  Future<User> getUserWithFallback(String id) async {
+    return await UserService().getUserById(id) ??
+        User(
+          id: 'unknown',
+          username: 'Unknown User',
+          password: '',
+          firstName: '',
+          lastName: '',
+          emailAddress: '',
+          address: '',
+          contactNumber: '',
+          profilePic: '',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+  }
 }

@@ -1,14 +1,15 @@
 import 'package:bukidlink/Widgets/CustomBackButton.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bukidlink/models/User.dart';
-import 'package:bukidlink/data/UserData.dart';
+import 'package:bukidlink/services/UserService.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileCoverPicture.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileIcon.dart';
 import 'package:bukidlink/Widgets/Profile/MessageButton.dart';
 import 'package:bukidlink/Widgets/Profile/FollowButton.dart';
-import 'package:bukidlink/Pages/MessagePage.dart';
+import 'package:bukidlink/services/ChatService.dart';
+import 'package:bukidlink/Pages/ChatPage.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileUsername.dart';
-import
 // PageNavigator and MessagePage were used previously for navigation to a
 // legacy message page; we now navigate directly to `ChatPage`.
 

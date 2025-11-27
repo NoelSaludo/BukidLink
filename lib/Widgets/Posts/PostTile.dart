@@ -62,7 +62,9 @@ class PostTile extends StatelessWidget {
 
         if (poster == null) return const SizedBox();
 
-        final imageUrl = (poster.profilePic.isEmpty) ? 'default_profile.png' : poster.profilePic;
+        final imageUrl = (poster.profilePic.isEmpty)
+            ? 'default_profile.png'
+            : poster.profilePic;
         final farmName = farm?.name ?? '';
 
         return Container(
@@ -109,9 +111,14 @@ class PostTile extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        PostUsername(username: poster.username, farmName: farmName),
+                        PostUsername(
+                          username: poster.username,
+                          farmName: farmName,
+                        ),
                         const SizedBox(height: 2),
-                        PostTimestamp(timestamp: formatter.format(post.createdAt)),
+                        PostTimestamp(
+                          timestamp: formatter.format(post.createdAt),
+                        ),
                       ],
                     ),
                   ),
@@ -119,7 +126,10 @@ class PostTile extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               const Divider(thickness: 1),
-              PostContent(textContent: post.textContent, imageUrl: post.imageContent),
+              PostContent(
+                textContent: post.textContent,
+                imageUrl: post.imageContent,
+              ),
             ],
           ),
         );
