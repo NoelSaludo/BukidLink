@@ -9,11 +9,13 @@ import 'package:bukidlink/Widgets/Posts/PostImage.dart';
 class PostContent extends StatelessWidget {
   final String textContent;
   final String imageUrl;
-  
+  final String? heroTag;
+
   const PostContent({
     super.key,
     required this.textContent,
-    required this. imageUrl,
+    required this.imageUrl,
+    this.heroTag,
   });
 
   @override
@@ -35,7 +37,7 @@ class PostContent extends StatelessWidget {
 ),),
           const SizedBox(height: 20.0),
           if(imageUrl.isNotEmpty) 
-          PostImage(imagePath:imageUrl)
+          PostImage(imagePath: imageUrl, heroTag: heroTag)
         ]),
     );
   }

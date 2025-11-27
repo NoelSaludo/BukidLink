@@ -12,13 +12,21 @@ import 'package:bukidlink/Pages/ProfilePage.dart';
 import 'package:bukidlink/Pages/farmer/FarmerProfilePage.dart'; // <-- Only if needed
 import 'package:bukidlink/utils/constants/AppColors.dart';
 
-class PostTile extends StatelessWidget {
+class PostTile extends StatefulWidget {
   final Post post;
 
-  PostTile({super.key, required this.post});
+  PostTile({Key? key, required this.post}) : super(key: key);
+
+  @override
+  State<PostTile> createState() => _PostTileState();
+}
+
+class _PostTileState extends State<PostTile> {
+  double _scale = 1.0;
+  final Duration _duration = const Duration(milliseconds: 120);
 
   Future<Map<String, dynamic>> _fetchData() async {
-    final poster = await UserService().getUserById(post.posterID);
+    final poster = await UserService().getUserById(widget.post.posterID);
     Farm? farm;
 
     if (poster != null && poster.farmId != null) {
@@ -32,6 +40,14 @@ class PostTile extends StatelessWidget {
       'farm': farm,
       'currentUser': currentUser,
     };
+  }
+
+  void _onPointerDown(_) {
+    setState(() => _scale = 0.985);
+  }
+
+  void _onPointerUp(_) {
+    setState(() => _scale = 1.0);
   }
 
   @override
@@ -73,7 +89,7 @@ class PostTile extends StatelessWidget {
         final farmName = farm?.name ?? '';
         final currentType = currentUser?.type?.trim().toLowerCase() ?? 'user';
 
-        return Container(
+        final card = Container(
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -81,9 +97,9 @@ class PostTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 12,
-                spreadRadius: 1,
+                color: Colors.black.withOpacity(0.12),
+                blurRadius: 10,
+                spreadRadius: 0,
                 offset: const Offset(0, 6),
               ),
             ],
@@ -94,7 +110,6 @@ class PostTile extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Use Navigator.push instead of pushNamed
                   PostIcon(
                     imageUrl: imageUrl,
                     onTapped: () {
@@ -130,7 +145,7 @@ class PostTile extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         PostTimestamp(
-                          timestamp: formatter.format(post.createdAt),
+                          timestamp: formatter.format(widget.post.createdAt),
                         ),
                       ],
                     ),
@@ -143,10 +158,23 @@ class PostTile extends StatelessWidget {
               const SizedBox(height: 8),
 
               PostContent(
-                textContent: post.textContent,
-                imageUrl: post.imageContent,
+                textContent: widget.post.textContent,
+                imageUrl: widget.post.imageContent,
+                heroTag: widget.post.id,
               ),
             ],
+          ),
+        );
+
+        return Listener(
+          onPointerDown: _onPointerDown,
+          onPointerUp: _onPointerUp,
+          onPointerCancel: _onPointerUp,
+          child: AnimatedScale(
+            scale: _scale,
+            duration: _duration,
+            curve: Curves.easeOut,
+            child: card,
           ),
         );
       },
