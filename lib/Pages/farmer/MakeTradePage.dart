@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:io';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/farmer/CustomTextField.dart';
 import 'package:bukidlink/widgets/farmer/ImagePickerCard.dart';
 import 'package:bukidlink/services/ImagePickerService.dart';
 import '../../services/TradeService.dart';
+import '../../services/cloudinary_service.dart';
 import '../../models/TradeModels.dart';
 
 class MakeTradePage extends StatefulWidget {
@@ -43,13 +45,17 @@ class _MakeTradePageState extends State<MakeTradePage> {
       _quantityController.text = widget.listing!.quantity;
       _descController.text = widget.listing!.description;
       _preferredTrades = List.from(widget.listing!.preferredTrades);
-      _imagePath = widget.listing!.image.isNotEmpty ? widget.listing!.image : null;
+      _imagePath = widget.listing!.image.isNotEmpty
+          ? widget.listing!.image
+          : null;
     }
   }
 
   Future<void> _handleImagePicker() async {
     HapticFeedback.lightImpact();
-    final String? path = await _imagePickerService.showImageSourceBottomSheet(context);
+    final String? path = await _imagePickerService.showImageSourceBottomSheet(
+      context,
+    );
     if (path != null) setState(() => _imagePath = path);
   }
 
@@ -69,12 +75,20 @@ class _MakeTradePageState extends State<MakeTradePage> {
       context: context,
       builder: (_) => AlertDialog(
         title: Text(_isEditing ? 'Confirm update' : 'Confirm post'),
-        content: Text(_isEditing
-            ? 'Update this trade listing? Changes will be saved.'
-            : 'Post this trade listing? Other farmers will see it.'),
+        content: Text(
+          _isEditing
+              ? 'Update this trade listing? Changes will be saved.'
+              : 'Post this trade listing? Other farmers will see it.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: Text('Continue')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('Continue'),
+          ),
         ],
       ),
     );
@@ -84,8 +98,26 @@ class _MakeTradePageState extends State<MakeTradePage> {
     setState(() => _isLoading = true);
 
     try {
-        // Determine Image Path (New selection ?? Existing listing image ?? Empty)
-        String imagePath = _imagePath ?? (widget.listing?.image ?? '');
+      // Determine Image Path (New selection ?? Existing listing image ?? Empty)
+      String imagePath = _imagePath ?? (widget.listing?.image ?? '');
+
+      // If a local file path was chosen (not a remote URL), upload it to Cloudinary
+      if (imagePath.isNotEmpty && !imagePath.startsWith('http')) {
+        try {
+          final uploadedUrl = await CloudinaryService().uploadFile(
+            File(imagePath),
+          );
+          if (uploadedUrl != null && uploadedUrl.isNotEmpty) {
+            imagePath = uploadedUrl;
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Image upload failed: $e')));
+          if (mounted) setState(() => _isLoading = false);
+          return;
+        }
+      }
 
       final listingData = TradeListing(
         id: _isEditing ? widget.listing!.id : '', // Use existing ID if editing
@@ -104,12 +136,18 @@ class _MakeTradePageState extends State<MakeTradePage> {
       if (_isEditing) {
         await _tradeService.updateListing(listingData);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Trade updated'), backgroundColor: Colors.green[600]),
+          SnackBar(
+            content: Text('Trade updated'),
+            backgroundColor: Colors.green[600],
+          ),
         );
       } else {
         await _tradeService.createListing(listingData);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Trade posted'), backgroundColor: Colors.green[600]),
+          SnackBar(
+            content: Text('Trade posted'),
+            backgroundColor: Colors.green[600],
+          ),
         );
       }
 
@@ -193,11 +231,17 @@ class _MakeTradePageState extends State<MakeTradePage> {
                     key: _formKey,
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 24,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildSectionHeader('Basic Information', Icons.info_outline),
+                          _buildSectionHeader(
+                            'Basic Information',
+                            Icons.info_outline,
+                          ),
                           const SizedBox(height: 16),
 
                           _buildCard(
@@ -207,7 +251,10 @@ class _MakeTradePageState extends State<MakeTradePage> {
                                   label: 'Item Name',
                                   hint: 'e.g., Fresh Mango',
                                   controller: _nameController,
-                                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter item name' : null,
+                                  validator: (v) =>
+                                      (v == null || v.trim().isEmpty)
+                                      ? 'Please enter item name'
+                                      : null,
                                 ),
                                 const SizedBox(height: 20),
                                 CustomTextField(
@@ -216,8 +263,10 @@ class _MakeTradePageState extends State<MakeTradePage> {
                                   controller: _quantityController,
                                   keyboardType: TextInputType.number,
                                   validator: (v) {
-                                    if (v == null || v.trim().isEmpty) return 'Please enter quantity';
-                                    if (int.tryParse(v.trim()) == null) return 'Enter a valid number';
+                                    if (v == null || v.trim().isEmpty)
+                                      return 'Please enter quantity';
+                                    if (int.tryParse(v.trim()) == null)
+                                      return 'Enter a valid number';
                                     return null;
                                   },
                                 ),
@@ -234,7 +283,10 @@ class _MakeTradePageState extends State<MakeTradePage> {
                           ),
                           const SizedBox(height: 24),
 
-                          _buildSectionHeader('Product Image', Icons.image_outlined),
+                          _buildSectionHeader(
+                            'Product Image',
+                            Icons.image_outlined,
+                          ),
                           const SizedBox(height: 12),
                           _buildCard(
                             child: Column(
@@ -251,14 +303,19 @@ class _MakeTradePageState extends State<MakeTradePage> {
                                 ImagePickerCard(
                                   imagePath: _imagePath,
                                   onTap: _handleImagePicker,
-                                  onRemove: _imagePath != null ? () => setState(() => _imagePath = null) : null,
+                                  onRemove: _imagePath != null
+                                      ? () => setState(() => _imagePath = null)
+                                      : null,
                                 ),
                               ],
                             ),
                           ),
                           const SizedBox(height: 24),
 
-                          _buildSectionHeader('Preferred Trades', Icons.favorite_border),
+                          _buildSectionHeader(
+                            'Preferred Trades',
+                            Icons.favorite_border,
+                          ),
                           const SizedBox(height: 12),
                           _buildCard(
                             child: Column(
@@ -283,17 +340,37 @@ class _MakeTradePageState extends State<MakeTradePage> {
                                         controller: _prefController,
                                         decoration: InputDecoration(
                                           hintText: 'e.g., Rice, Eggs',
-                                          hintStyle: AppTextStyles.TEXT_FIELD_HINT.copyWith(fontSize: 14, color: AppColors.HINT_TEXT_GREY.withOpacity(0.7)),
+                                          hintStyle: AppTextStyles
+                                              .TEXT_FIELD_HINT
+                                              .copyWith(
+                                                fontSize: 14,
+                                                color: AppColors.HINT_TEXT_GREY
+                                                    .withOpacity(0.7),
+                                              ),
                                           filled: true,
                                           fillColor: AppColors.BACKGROUND_WHITE,
                                           border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                            borderSide: BorderSide(color: AppColors.BORDER_GREY.withOpacity(0.2), width: 1.5),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            borderSide: BorderSide(
+                                              color: AppColors.BORDER_GREY
+                                                  .withOpacity(0.2),
+                                              width: 1.5,
+                                            ),
                                           ),
-                                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 16,
+                                                vertical: 14,
+                                              ),
                                           counterText: '',
                                         ),
-                                        style: AppTextStyles.BODY_MEDIUM.copyWith(fontSize: 15, fontWeight: FontWeight.w500),
+                                        style: AppTextStyles.BODY_MEDIUM
+                                            .copyWith(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                       ),
                                     ),
                                     const SizedBox(width: 12),
@@ -303,10 +380,15 @@ class _MakeTradePageState extends State<MakeTradePage> {
                                       child: ElevatedButton(
                                         onPressed: _addPref,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppColors.ACCENT_LIME,
+                                          backgroundColor:
+                                              AppColors.ACCENT_LIME,
                                           foregroundColor: AppColors.DARK_TEXT,
                                           padding: EdgeInsets.zero,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
                                         ),
                                         child: const Icon(Icons.add, size: 28),
                                       ),
@@ -318,7 +400,16 @@ class _MakeTradePageState extends State<MakeTradePage> {
                                   alignment: Alignment.centerLeft,
                                   child: Wrap(
                                     spacing: 8,
-                                    children: _preferredTrades.map((t) => Chip(label: Text(t), onDeleted: () => setState(() => _preferredTrades.remove(t)))).toList(),
+                                    children: _preferredTrades
+                                        .map(
+                                          (t) => Chip(
+                                            label: Text(t),
+                                            onDeleted: () => setState(
+                                              () => _preferredTrades.remove(t),
+                                            ),
+                                          ),
+                                        )
+                                        .toList(),
                                   ),
                                 ),
                                 const SizedBox(height: 8),
@@ -352,18 +443,33 @@ class _MakeTradePageState extends State<MakeTradePage> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.ACCENT_LIME,
                                   foregroundColor: AppColors.DARK_TEXT,
-                                  padding: const EdgeInsets.symmetric(vertical: 18),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 18,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(50),
+                                  ),
                                   elevation: 0,
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(_isEditing ? Icons.edit : Icons.check_circle_outline, size: 26),
+                                    Icon(
+                                      _isEditing
+                                          ? Icons.edit
+                                          : Icons.check_circle_outline,
+                                      size: 26,
+                                    ),
                                     const SizedBox(width: 12),
                                     Text(
-                                      _isEditing ? 'Update Trade' : 'Post Trade',
-                                      style: AppTextStyles.PRIMARY_BUTTON_TEXT.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+                                      _isEditing
+                                          ? 'Update Trade'
+                                          : 'Post Trade',
+                                      style: AppTextStyles.PRIMARY_BUTTON_TEXT
+                                          .copyWith(
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -429,9 +535,16 @@ class _MakeTradePageState extends State<MakeTradePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primaryGreen.withOpacity(0.1), width: 1),
+        border: Border.all(
+          color: AppColors.primaryGreen.withOpacity(0.1),
+          width: 1,
+        ),
         boxShadow: [
-          BoxShadow(color: AppColors.primaryGreen.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: AppColors.primaryGreen.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: child,
