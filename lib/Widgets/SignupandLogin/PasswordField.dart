@@ -7,12 +7,14 @@ class PasswordField extends StatelessWidget {
   final String mode;
   final String? forceErrorText;
   final ValueChanged<String> onChanged;
+  final FocusNode? focusNode;
   const PasswordField({
     super.key,
     required this.controller,
     required this.mode,
     required this.forceErrorText,
     required this.onChanged,
+    this.focusNode,
   });
 
   @override
@@ -22,6 +24,7 @@ class PasswordField extends StatelessWidget {
         width: 332.0,
         height: 90.0,
         child: TextFormField(
+          focusNode: focusNode,
           decoration: InputDecoration(
             labelText: 'Password',
             filled: true,
@@ -78,6 +81,7 @@ class PasswordField extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4.0),
               child: TextFormField(
+                focusNode: focusNode,
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Colors.grey[50],
@@ -106,6 +110,7 @@ class PasswordField extends StatelessWidget {
         width: 332.0,
         height: 90.0,
         child: TextFormField(
+          focusNode: focusNode,
           decoration: InputDecoration(
             labelText: 'Password',
             filled: true,
