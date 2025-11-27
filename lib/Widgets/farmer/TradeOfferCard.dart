@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/models/Product.dart';
+import 'package:bukidlink/widgets/common/ProductImage.dart';
 
 class TradeOfferCard extends StatelessWidget {
   final Product myProduct;
@@ -180,29 +181,14 @@ class TradeOfferCard extends StatelessWidget {
           ),
           child: Column(
             children: [
-              // Product Image
+              // Product Image (handles asset/network/file + loading indicator)
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.asset(
-                  product.imagePath,
+                child: ProductImage(
+                  imagePath: product.imagePath,
                   width: double.infinity,
                   height: 80,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: double.infinity,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: AppColors.ACCENT_LIME.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.image_not_supported,
-                        color: AppColors.ACCENT_LIME,
-                        size: 28,
-                      ),
-                    );
-                  },
                 ),
               ),
               const SizedBox(height: 8),
