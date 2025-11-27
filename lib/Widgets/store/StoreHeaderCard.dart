@@ -6,12 +6,14 @@ class StoreHeaderCard extends StatelessWidget {
   final String farmName;
   final int totalProducts;
   final int categories;
+  final double? averageRating;
 
   const StoreHeaderCard({
     super.key,
     required this.farmName,
     required this.totalProducts,
     required this.categories,
+    this.averageRating,
   });
 
   @override
@@ -110,8 +112,12 @@ class StoreHeaderCard extends StatelessWidget {
               _buildStatItem(
                 icon: Icons.star_rounded,
                 label: 'Rating',
-                value: '4.7',
-                valueColor: AppColors.STAR_RATING,
+                value: averageRating != null
+                    ? averageRating!.toStringAsFixed(1)
+                    : '-',
+                valueColor: averageRating != null
+                    ? AppColors.STAR_RATING
+                    : null,
               ),
             ],
           ),
@@ -129,11 +135,7 @@ class StoreHeaderCard extends StatelessWidget {
     return Expanded(
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 20,
-            color: AppColors.primaryGreen,
-          ),
+          Icon(icon, size: 20, color: AppColors.primaryGreen),
           const SizedBox(width: 8),
           Expanded(
             child: Column(

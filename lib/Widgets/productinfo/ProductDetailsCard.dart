@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
-import 'package:bukidlink/utils/PageNavigator.dart';
-import 'package:bukidlink/Pages/ProfilePage.dart';
+// Navigation now uses named routes; PageNavigator/ProfilePage import not required here.
 import 'package:bukidlink/Widgets/Profile/FollowButton.dart';
+import 'package:bukidlink/services/FarmService.dart';
 
 class ProductDetailsCard extends StatelessWidget {
   final String description;
@@ -18,13 +18,21 @@ class ProductDetailsCard extends StatelessWidget {
     this.farmId,
   });
 
-  void _navigateToProfile(BuildContext context) {
+  Future<void> _navigateToProfile(BuildContext context) async {
     HapticFeedback.lightImpact();
-    PageNavigator().goToAndKeepWithTransition(
+    // Resolve the farm owner (user) id when we have a farmId and pass
+    // the userId to the named route so navigation remains consistent.
+    String? argumentToPass;
+    if (farmId != null && farmId!.isNotEmpty) {
+      final userId = await FarmService().getUserIdForFarmId(farmId!);
+      argumentToPass = userId ?? farmId;
+    } else {
+      argumentToPass = farmName;
+    }
+
+    Navigator.of(
       context,
-      ProfilePage(profileID: farmId ?? farmName),
-      PageTransitionType.slideFromRight,
-    );
+    ).pushNamed('/farmerProfile', arguments: argumentToPass);
   }
 
   @override

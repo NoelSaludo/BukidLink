@@ -36,7 +36,9 @@ class FarmService {
   // Add a new product to the farm (and global products collection)
   Future<void> addProductToFarm(Product product) async {
     try {
-      final CollectionReference productsColl = _firestore.collection('products');
+      final CollectionReference productsColl = _firestore.collection(
+        'products',
+      );
 
       DocumentReference docRef;
       if (product.id.isNotEmpty) {
@@ -58,10 +60,9 @@ class FarmService {
   Future<void> archiveProduct(String productId) async {
     if (productId.isEmpty) return;
     try {
-      await _firestore
-          .collection('products')
-          .doc(productId)
-          .update({'isVisible': false});
+      await _firestore.collection('products').doc(productId).update({
+        'isVisible': false,
+      });
     } catch (e) {
       debugPrint('Error archiving product: $e');
       rethrow;
@@ -72,10 +73,9 @@ class FarmService {
   Future<void> restoreProduct(String productId) async {
     if (productId.isEmpty) return;
     try {
-      await _firestore
-          .collection('products')
-          .doc(productId)
-          .update({'isVisible': true});
+      await _firestore.collection('products').doc(productId).update({
+        'isVisible': true,
+      });
     } catch (e) {
       debugPrint('Error restoring product: $e');
       rethrow;
@@ -133,5 +133,26 @@ class FarmService {
   Future<Farm?> getFarmForUser(User? user) async {
     if (user == null) return null;
     return await getFarmByReference(user.farmId);
+  }
+
+  // Given a farm document ID, return the owning user's ID (string) if available.
+  // Returns null when the farm or owner reference is not found.
+  Future<String?> getUserIdForFarmId(String farmId) async {
+    if (farmId.isEmpty) return null;
+    try {
+      final doc = await _firestore.collection('farms').doc(farmId).get();
+      if (!doc.exists) return null;
+      final data = doc.data() as Map<String, dynamic>?;
+      if (data == null) return null;
+      final ownerRef = data['ownerId'];
+      if (ownerRef == null) return null;
+      // ownerId may be stored as a DocumentReference or a raw string id
+      if (ownerRef is DocumentReference) return ownerRef.id;
+      if (ownerRef is String && ownerRef.isNotEmpty) return ownerRef;
+      return null;
+    } catch (e) {
+      debugPrint('Error fetching ownerId for farm $farmId: $e');
+      return null;
+    }
   }
 }

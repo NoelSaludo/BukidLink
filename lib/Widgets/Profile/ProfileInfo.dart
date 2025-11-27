@@ -1,4 +1,4 @@
-import 'package:bukidlink/Widgets/CustomBackButton.dart';
+// Using Flutter's default BackButton in place of the custom one
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bukidlink/models/User.dart';
@@ -7,6 +7,8 @@ import 'package:bukidlink/Widgets/Profile/ProfileCoverPicture.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileIcon.dart';
 import 'package:bukidlink/Widgets/Profile/MessageButton.dart';
 import 'package:bukidlink/Widgets/Profile/FollowButton.dart';
+import 'package:bukidlink/Utils/constants/AppColors.dart';
+
 import 'package:bukidlink/services/ChatService.dart';
 import 'package:bukidlink/Pages/ChatPage.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileUsername.dart';
@@ -155,8 +157,8 @@ class _ProfileInfoState extends State<ProfileInfo> {
                     Positioned(
                       top: 30,
                       left: 10,
-                      child: CustomBackButton(
-                        onPressed: () => Navigator.pop(context),
+                      child: BackButton(
+                        color: Colors.white,
                       ),
                     ),
                   ],
@@ -216,9 +218,8 @@ class _ProfileInfoState extends State<ProfileInfo> {
                           ? () => onMessagePress(context)
                           : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(
-                          0xFFD5FF6B,
-                        ), // your green theme
+                        backgroundColor: AppColors.primaryGreen,
+                        foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -228,7 +229,7 @@ class _ProfileInfoState extends State<ProfileInfo> {
                       child: const Text(
                         "Message",
                         style: TextStyle(
-                          color: Colors.black,
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

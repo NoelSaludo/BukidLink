@@ -28,6 +28,54 @@ class ProductService {
     return products;
   }
 
+  /// Returns a stream of visible products from Firestore that updates in
+  /// real-time when the `products` collection changes.
+  Stream<List<Product>> streamProducts() {
+    return _firestore.collection('products').snapshots().map((snapshot) {
+      final products = <Product>[];
+      for (var doc in snapshot.docs) {
+        final product = Product.fromDocument(doc);
+        if (product.isVisible) products.add(product);
+      }
+      // update cache on each snapshot
+      _productsCache = products;
+      return products;
+    });
+  }
+
+  /// Fetches the average rating for visible products belonging to the
+  /// farm identified by [farmName]. Returns `null` when no ratings are
+  /// available or an error occurs.
+  Future<double?> fetchAverageRatingForFarm({required String farmName}) async {
+    try {
+      QuerySnapshot snapshot = await _firestore
+          .collection('products')
+          .where('farm_name', isEqualTo: farmName)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        return null;
+      }
+
+      double sum = 0.0;
+      int count = 0;
+
+      for (var doc in snapshot.docs) {
+        final prod = Product.fromDocument(doc);
+        if (prod.isVisible && prod.rating != null) {
+          sum += prod.rating!;
+          count += 1;
+        }
+      }
+
+      if (count == 0) return null;
+      return sum / count;
+    } catch (e) {
+      print('Error fetching average rating for farm: $e');
+      return null;
+    }
+  }
+
   /// Fetches up to [limit] visible products for the given [farmId],
   /// ordered by `created_at` descending when available.
   Future<List<Product>> fetchProductsByFarm({

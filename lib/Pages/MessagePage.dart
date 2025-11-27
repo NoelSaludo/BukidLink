@@ -1,335 +1,248 @@
 import 'package:flutter/material.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/LoginorSigninButton.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/UsernameField.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/PasswordField.dart';
-import 'package:bukidlink/utils/PageNavigator.dart';
-import 'package:bukidlink/Pages/LoadingPage.dart';
-import 'package:bukidlink/Pages/SignUpPage.dart';
-import 'package:bukidlink/Widgets/ForgotPassword.dart';
-import 'package:bukidlink/Widgets/SignUpAndLogin/LoginLogo.dart';
-import 'package:bukidlink/Widgets/SignUpAndLogin/GoToSignUp.dart';
-import 'package:bukidlink/services/google_auth.dart';
-import 'package:bukidlink/services/UserService.dart';
-import 'package:bukidlink/Utils/constants/AppColors.dart';
+import 'package:flutter/services.dart';
+import 'package:bukidlink/utils/constants/AppColors.dart';
+import 'package:bukidlink/utils/constants/AppTextStyles.dart';
+import 'package:bukidlink/widgets/account/EditableTextField.dart';
+import 'package:bukidlink/utils/FormValidator.dart';
 
-class MessagePage extends StatefulWidget {
-  const MessagePage({super.key});
+class MyAddressPage extends StatefulWidget {
+  final String? currentAddress;
+
+  const MyAddressPage({
+    super.key,
+    this.currentAddress,
+  });
 
   @override
-  State<MessagePage> createState() => _MessagePageState();
+  State<MyAddressPage> createState() => _MyAddressPageState();
 }
 
-class _MessagePageState extends State<MessagePage> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  // Controller and focus nodes for auto-scrolling when inputs gain focus
-  final ScrollController _scrollController = ScrollController();
-  final FocusNode _emailFocusNode = FocusNode();
-  final FocusNode _passwordFocusNode = FocusNode();
-  // Keys to locate fields in the scroll view
-  final GlobalKey _emailFieldKey = GlobalKey();
-  final GlobalKey _passwordFieldKey = GlobalKey();
-  bool isLoading = false;
+class _MyAddressPageState extends State<MyAddressPage> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _addressController;
 
   @override
   void initState() {
     super.initState();
-    // Add listeners that will only trigger auto-scroll when the keyboard is visible.
-    _emailFocusNode.addListener(() {
-      if (_emailFocusNode.hasFocus && mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
-          if (keyboardVisible) _scrollToField(_emailFieldKey);
-        });
-      }
-    });
-
-    _passwordFocusNode.addListener(() {
-      if (_passwordFocusNode.hasFocus && mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
-          if (keyboardVisible) _scrollToField(_passwordFieldKey);
-        });
-      }
-    });
+    _addressController = TextEditingController(text: widget.currentAddress ?? '');
   }
 
   @override
   void dispose() {
-    emailController.dispose();
-    passwordController.dispose();
-    _scrollController.dispose();
-    _emailFocusNode.dispose();
-    _passwordFocusNode.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
-  Future<void> _scrollToField(GlobalKey key) async {
-    // Small delay to allow layout/keyboard animation to settle
-    await Future.delayed(const Duration(milliseconds: 50));
-    if (!mounted || !_scrollController.hasClients) return;
-
-    final BuildContext? fieldContext = key.currentContext;
-    if (fieldContext == null) return;
-
-    try {
-      final RenderBox fieldBox = fieldContext.findRenderObject() as RenderBox;
-      final scrollBox = _scrollController.position.context.storageContext.findRenderObject() as RenderBox;
-      final fieldOffset = fieldBox.localToGlobal(Offset.zero, ancestor: scrollBox);
-      final target = _scrollController.offset + fieldOffset.dy - 20.0;
-
-      final clamped = target.clamp(0.0, _scrollController.position.maxScrollExtent);
-      await _scrollController.animateTo(
-        clamped,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-      );
-    } catch (_) {
-      // ignore measurement/animation errors
-    }
-  }
-
-  // Handler for signing in with Google using the existing FirebaseService
-  void handleGoogleSignIn(BuildContext context) async {
-    setState(() => isLoading = true);
-    try {
-      final userCredential = await FirebaseService().signInWithGoogle();
-      if (context.mounted) {
-        setState(() => isLoading = false);
-        if (userCredential != null) {
-          // Proceed to loading / main flow on successful Google sign-in
-          PageNavigator().goTo(
-              context,
-              LoadingPage(
-                userType: UserService().getCurrentUser()!.type ?? "Consumer",
-              ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Google sign-in failed')),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        setState(() => isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Google sign-in error: $e')),
-        );
-      }
-    }
-  }
-
-  void handleLogin(BuildContext context) async {
-    final bool isValid = formKey.currentState?.validate() ?? false;
-
-    if (!isValid) {
-      return;
-    }
-
-    setState(() => isLoading = true);
-
-    try {
-      // Use UserService to login with username (it will look up the email)
-      await UserService().loginUser(
-        emailController.text.trim(),
-        passwordController.text,
-      );
-
-      if (context.mounted) {
-        setState(() => isLoading = false);
-        PageNavigator().goTo(
-          context,
-          LoadingPage(
-            userType: UserService().getCurrentUser()!.type ?? "Consumer",
+  void _handleSave() {
+    if (_formKey.currentState?.validate() ?? false) {
+      HapticFeedback.mediumImpact();
+      // TODO: Save address to backend/database
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: const [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Address updated successfully!'),
+            ],
           ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        setState(() => isLoading = false);
-
-        // Extract the error message from the exception
-        String errorMessage = 'Login failed. Please try again.';
-        if (e is Exception) {
-          // Get the message after "Exception: "
-          errorMessage = e.toString().replaceFirst('Exception: ', '');
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
+          backgroundColor: AppColors.SUCCESS_GREEN,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
           ),
-        );
-      }
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+      Navigator.pop(context);
+    } else {
+      HapticFeedback.heavyImpact();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Allow the scaffold to resize when the keyboard appears so focused fields
-      // can be scrolled into view.
-      resizeToAvoidBottomInset: true,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.LOGIN_BACKGROUND_START,
-              AppColors.LOGIN_BACKGROUND_END,
-            ],
-          ),
+      backgroundColor: AppColors.backgroundYellow,
+      body: Form(
+        key: _formKey,
+        child: CustomScrollView(
+          slivers: [
+            // Header
+            SliverToBoxAdapter(
+              child: Container(
+                height: 180,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      AppColors.HEADER_GRADIENT_START,
+                      AppColors.HEADER_GRADIENT_END,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(24),
+                    bottomRight: Radius.circular(24),
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: 40,
+                      left: 8,
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ),
+                    Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 40),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Icon(
+                              Icons.location_on,
+                              size: 48,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'My Address',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontFamily: 'Outfit',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Form Content
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Delivery Address',
+                            style: AppTextStyles.SECTION_TITLE.copyWith(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Please enter your complete delivery address',
+                            style: AppTextStyles.CAPTION.copyWith(
+                              fontSize: 13,
+                              color: AppColors.TEXT_SECONDARY,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          EditableTextField(
+                            label: 'Address',
+                            controller: _addressController,
+                            validator: FormValidator().nameValidator,
+                            maxLines: 5,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    
+                    // Save Button
+                    ElevatedButton(
+                      onPressed: _handleSave,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGreen,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.check_circle_outline, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Save Address',
+                            style: AppTextStyles.BUTTON_TEXT.copyWith(fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    // Cancel Button
+                    OutlinedButton(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.pop(context);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.DARK_TEXT,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        side: BorderSide(
+                          color: AppColors.BORDER_GREY.withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-        child: _buildContent(context),
       ),
     );
-  }
-
-  Widget _buildContent(BuildContext context) {
-    final height = MediaQuery.of(context).size.height;
-
-    return Stack(
-      alignment: Alignment.bottomCenter,
-      children: <Widget>[
-        Positioned(bottom: height * 0.55 - 140, child: const LoginLogo()),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: Container(
-            width: double.infinity,
-            height: height * 0.55,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(40.0),
-                topRight: Radius.circular(40.0),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color.fromRGBO(0, 0, 0, 0.1),
-                  spreadRadius: 1,
-                  blurRadius: 10,
-                  offset: const Offset(0, -5),
-                ),
-              ],
-            ),
-            child: Form(
-              key: formKey,
-              child: Builder(
-                builder: (context) {
-                  final bool keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
-                  return SingleChildScrollView(
-                    controller: _scrollController,
-                    padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-                    physics: keyboardVisible ? const BouncingScrollPhysics() : const NeverScrollableScrollPhysics(),
-                    keyboardDismissBehavior: keyboardVisible
-                        ? ScrollViewKeyboardDismissBehavior.onDrag
-                        : ScrollViewKeyboardDismissBehavior.manual,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: <Widget>[
-                        const SizedBox(height: 20.0),
-                        Container(
-                          key: _emailFieldKey,
-                          child: EmailField(
-                            controller: emailController,
-                            mode: 'Login',
-                            forceErrorText: null,
-                            onChanged: (_) {},
-                            focusNode: _emailFocusNode,
-                          ),
-                        ),
-                        Container(
-                          key: _passwordFieldKey,
-                          child: PasswordField(
-                            controller: passwordController,
-                            mode: 'Login',
-                            forceErrorText: null,
-                            onChanged: (_) {},
-                            focusNode: _passwordFocusNode,
-                          ),
-                        ),
-                        ForgotPassword(onPressed: () => handleLogin(context)),
-                        const SizedBox(height: 12.0),
-                        LoginorSigninButton(
-                          onPressed: () => handleLogin(context),
-                          mode: 'Login',
-                        ),
-                        const SizedBox(height: 10.0),
-                        // Google Sign-In button
-                        Container(
-                          width: 260,
-                          height: 55,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Color.fromRGBO(0, 0, 0, 0.08),
-                                spreadRadius: 1,
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: ElevatedButton(
-                            onPressed: () => handleGoogleSignIn(context),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              minimumSize: const Size(260, 55),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Image.asset(
-                                  'assets/icons/google-logo.png',
-                                  height: 24.0,
-                                  width: 24.0,
-                                ),
-                                const SizedBox(width: 12.0),
-                                const Text(
-                                  'Continue with Google',
-                                  style: TextStyle(
-                                    fontSize: 18.0,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        GoToSignUp(onPressed: () => goToSignUp(context)),
-                        const SizedBox(height: 17.0),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void goToSignUp(BuildContext context) {
-    PageNavigator().goToAndKeep(context, SignUpPage());
-  }
-
-  void goBack(BuildContext context) {
-    PageNavigator().goBack(context);
   }
 }

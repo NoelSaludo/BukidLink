@@ -21,14 +21,14 @@ class RecommendedProductsSection extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 4, vertical: 12),
             child: Text(
               'You May Also Like',
-              style: AppTextStyles.SECTION_TITLE_LARGE,
+              style: AppTextStyles.SECTION_TITLE,
             ),
           ),
 
           const SizedBox(height: 8),
 
           SizedBox(
-            height: 260,
+            height: 280,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 4),
