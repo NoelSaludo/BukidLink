@@ -5,6 +5,7 @@ import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/cart/CartQuantityControls.dart';
 import 'package:bukidlink/widgets/common/PesoText.dart';
+import 'package:bukidlink/widgets/common/BouncingDotsLoader.dart';
 
 class CartItemCard extends StatefulWidget {
   final CartItem cartItem;
@@ -54,6 +55,11 @@ class _CartItemCardState extends State<CartItemCard>
 
   @override
   Widget build(BuildContext context) {
+    // Return early if product is null
+    if (widget.cartItem.product == null) {
+      return const SizedBox.shrink();
+    }
+
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Container(
@@ -94,26 +100,61 @@ class _CartItemCardState extends State<CartItemCard>
   }
 
   Widget _buildProductImage() {
+    final imagePath = widget.cartItem.product?.imagePath ?? '';
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: Container(
         width: 80,
         height: 80,
         color: AppColors.INACTIVE_GREY,
-        child: Image.asset(
-          widget.cartItem.product.imagePath,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => const Icon(
-            Icons.image_not_supported,
-            size: 40,
-            color: AppColors.TEXT_SECONDARY,
-          ),
-        ),
+        child: (() {
+          if (imagePath.isEmpty) {
+            return const Icon(
+              Icons.image_not_supported,
+              size: 40,
+              color: AppColors.TEXT_SECONDARY,
+            );
+          }
+
+          final uri = Uri.tryParse(imagePath);
+          final isNetwork = uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
+
+          if (isNetwork) {
+            return Image.network(
+              imagePath,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(
+                  child: BouncingDotsLoader(size: 8.0),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.image_not_supported,
+                size: 40,
+                color: AppColors.TEXT_SECONDARY,
+              ),
+            );
+          }
+
+          // Treat as asset path by default
+          return Image.asset(
+            imagePath,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => const Icon(
+              Icons.image_not_supported,
+              size: 40,
+              color: AppColors.TEXT_SECONDARY,
+            ),
+          );
+        })(),
       ),
     );
   }
 
   Widget _buildProductInfo() {
+    final product = widget.cartItem.product!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -125,7 +166,7 @@ class _CartItemCardState extends State<CartItemCard>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.cartItem.product.name,
+                    product.name,
                     style: const TextStyle(
                       fontFamily: AppTextStyles.FONT_FAMILY,
                       fontSize: 16,
@@ -137,7 +178,7 @@ class _CartItemCardState extends State<CartItemCard>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    widget.cartItem.product.farmName,
+                    product.farmName,
                     style: const TextStyle(
                       fontFamily: AppTextStyles.FONT_FAMILY,
                       fontSize: 13,
@@ -172,7 +213,7 @@ class _CartItemCardState extends State<CartItemCard>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             PesoText(
-              amount: widget.cartItem.product.price,
+              amount: product.price,
               decimalPlaces: 2,
               style: const TextStyle(
                 fontFamily: AppTextStyles.FONT_FAMILY,
@@ -182,7 +223,7 @@ class _CartItemCardState extends State<CartItemCard>
               ),
             ),
             CartQuantityControls(
-              quantity: widget.cartItem.quantity,
+              quantity: widget.cartItem.amount,
               onQuantityChanged: widget.onQuantityChanged,
             ),
           ],

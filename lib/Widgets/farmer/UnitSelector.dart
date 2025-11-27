@@ -9,6 +9,7 @@ class UnitSelector extends StatelessWidget {
   final Function(String) onUnitSelected;
   final String? customUnit;
   final Function(String)? onCustomUnitChanged;
+  final TextEditingController? customUnitController;
 
   const UnitSelector({
     super.key,
@@ -16,6 +17,7 @@ class UnitSelector extends StatelessWidget {
     required this.onUnitSelected,
     this.customUnit,
     this.onCustomUnitChanged,
+    this.customUnitController,
   });
 
   static const List<String> units = [
@@ -32,7 +34,7 @@ class UnitSelector extends StatelessWidget {
       children: [
         ...units.map((unit) {
           final isSelected = selectedUnit == unit;
-          
+
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: GestureDetector(
@@ -76,10 +78,10 @@ class UnitSelector extends StatelessWidget {
                           ),
                           child: isSelected
                               ? const Icon(
-                                  Icons.circle,
-                                  size: 12,
-                                  color: Colors.white,
-                                )
+                            Icons.circle,
+                            size: 12,
+                            color: Colors.white,
+                          )
                               : null,
                         ),
                         const SizedBox(width: 12),
@@ -103,9 +105,10 @@ class UnitSelector extends StatelessWidget {
                           ),
                       ],
                     ),
-                    if (unit == 'Other' && isSelected && onCustomUnitChanged != null) ...[
+                    if (unit == 'Other' && isSelected) ...[
                       const SizedBox(height: 12),
                       TextField(
+                        controller: customUnitController,
                         onChanged: onCustomUnitChanged,
                         decoration: InputDecoration(
                           hintText: 'Enter unit',

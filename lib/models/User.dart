@@ -1,4 +1,6 @@
-class User{
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class User {
   final String id;
   final String username;
   final String password;
@@ -11,8 +13,7 @@ class User{
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? type;
-  final String? farm;
-  
+  final DocumentReference? farmId;
   User({
     required this.id,
     required this.username,
@@ -26,7 +27,7 @@ class User{
     required this.createdAt,
     required this.updatedAt,
     this.type,
-    this.farm,
+    this.farmId,
   });
 
   Map<String, dynamic> toJson() {
@@ -41,7 +42,30 @@ class User{
       'contactNumber': contactNumber,
       'profilePic': profilePic,
       'type': type,
-      'farm': farm,
+      'farmId': farmId,
     };
+  }
+
+  factory User.fromDocument(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+    return User(
+      id: doc.id,
+      username: data['username'] ?? '',
+      password: data['password'] ?? '',
+      firstName: data['firstName'] ?? '',
+      lastName: data['lastName'] ?? '',
+      emailAddress: data['emailAddress'] ?? '',
+      address: data['address'] ?? '',
+      contactNumber: data['contactNumber'] ?? '',
+      profilePic: data['profilePic'] ?? '',
+      createdAt: data['createdAt'] != null
+          ? (data['createdAt'] as Timestamp).toDate()
+          : DateTime.now(),
+      updatedAt: data['updatedAt'] != null
+          ? (data['updatedAt'] as Timestamp).toDate()
+          : DateTime.now(),
+      type: data['type'],
+      farmId: data['farmId'],
+    );
   }
 }

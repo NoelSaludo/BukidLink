@@ -36,8 +36,9 @@ class AppTextStyles {
 
   static const TextStyle FORGOT_PASSWORD = TextStyle(
     fontFamily: FONT_FAMILY,
-    color: AppColors.BORDER_GREY,
+    color: AppColors.HEADER_GRADIENT_START,
     fontSize: 14.0,
+    fontWeight: FontWeight.w600,
   );
 
   static const TextStyle PRIMARY_BUTTON_TEXT = TextStyle(
@@ -71,7 +72,7 @@ class AppTextStyles {
   static const TextStyle sectionTitle = TextStyle(
     fontFamily: FONT_FAMILY,
     fontWeight: FontWeight.w800,
-    fontSize: 30,
+    fontSize: 25,
     color: AppColors.DARK_TEXT,
   );
 
@@ -246,7 +247,7 @@ class AppTextStyles {
 
   static const TextStyle PRICE_LARGE = TextStyle(
     fontFamily: FONT_FAMILY,
-    fontSize: 15.0,
+    fontSize: 14.0,
     fontWeight: FontWeight.w700,
     color: AppColors.primaryGreen,
   );
@@ -420,7 +421,7 @@ class AppTextStyles {
   // ----------------------------
   // Farmer Store Page Text Styles
   // ----------------------------
-  
+
   // Bottom Navigation
   static const TextStyle FARMER_NAV_SELECTED = TextStyle(
     fontFamily: FONT_FAMILY,
@@ -503,7 +504,33 @@ class AppTextStyles {
     color: AppColors.TEXT_SECONDARY,
   );
 
-}
+  static const TextStyle DIALOG_TITLE = TextStyle(
+    fontFamily: FONT_FAMILY,
+    fontSize: 20.0,
+    fontWeight: FontWeight.w700,
+    color: AppColors.DARK_TEXT,
+  );
 
+  static const TextStyle BODY_TEXT = TextStyle(
+    fontFamily: FONT_FAMILY,
+    color: AppColors.BLACK_TEXT,
+    fontSize: 16.0,
+    fontWeight: FontWeight.normal,
+  );
+
+  static const TextStyle AUTH_TITLE = TextStyle(
+    fontFamily: FONT_FAMILY,
+    color: AppColors.BACKGROUND_WHITE,
+    fontSize: 24.0,
+    fontWeight: FontWeight.bold,
+  );
+
+  static const TextStyle AUTH_SUBTITLE = TextStyle(
+    fontFamily: FONT_FAMILY,
+    color: AppColors.BACKGROUND_WHITE,
+    fontSize: 16.0,
+    fontWeight: FontWeight.normal,
+  );
+}
 
 

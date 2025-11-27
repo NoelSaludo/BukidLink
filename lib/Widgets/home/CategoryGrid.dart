@@ -7,12 +7,12 @@ class CategoryGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final categories = [
-      {'icon': 'assets/icons/fruits.png', 'label': 'Fruits'},
-      {'icon': 'assets/icons/vegetables.png', 'label': 'Vegetables'},
-      {'icon': 'assets/icons/grains.png', 'label': 'Grains'},
-      {'icon': 'assets/icons/livestock.png', 'label': 'Livestock'},
-      {'icon': 'assets/icons/dairy.png', 'label': 'Dairy'},
-      {'icon': 'assets/icons/more.png', 'label': 'More'},
+      {'icon': 'assets/icons/fruits-3d.png', 'label': 'Fruits'},
+      {'icon': 'assets/icons/vegetables-3d.png', 'label': 'Vegetables'},
+      {'icon': 'assets/icons/grains-3d.png', 'label': 'Grains'},
+      {'icon': 'assets/icons/livestock-3d.png', 'label': 'Livestock'},
+      {'icon': 'assets/icons/dairy-3d.png', 'label': 'Dairy'},
+      {'icon': 'assets/icons/more-3d.png', 'label': 'More'},
     ];
 
     return GridView.count(
