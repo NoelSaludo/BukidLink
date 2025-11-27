@@ -63,7 +63,7 @@ class _FarmerProfilePageState extends State<FarmerProfilePage> {
                   Divider(thickness: 1),
                   SizedBox(height: 5),
                   Text(
-                    'Posts History',
+                    'Posts History-',
                     style: AppTextStyles.PRODUCT_NAME_HEADER,
                   ),
                 ],
@@ -103,7 +103,6 @@ class _FarmerProfilePageState extends State<FarmerProfilePage> {
             ),
         ],
       ),
-      bottomNavigationBar: const FarmerBottomNavBar(currentIndex: 2),
     );
   }
 }

@@ -5,13 +5,11 @@ import 'package:bukidlink/widgets/common/BouncingDotsLoader.dart';
 class PostIcon extends StatelessWidget {
   final String? imageUrl; // nullable to handle missing profile images
   final VoidCallback onTapped;
-  final double radius;
 
   const PostIcon({
     super.key,
     required this.onTapped,
     this.imageUrl,
-    this.radius = 24.0, // default radius
   });
 
   @override
@@ -21,12 +19,12 @@ class PostIcon extends StatelessWidget {
 
     return InkWell(
       onTap: onTapped,
-      borderRadius: BorderRadius.circular(radius),
+      borderRadius: BorderRadius.circular(24),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
+        borderRadius: BorderRadius.circular(24),
         child: Container(
-          width: radius * 2,
-          height: radius * 2,
+          width: 24 * 2,
+          height: 24 * 2,
           color: Colors.grey.withOpacity(0.05),
           child: isValidUrl
               ? _buildNetworkImage(imageUrl!)
@@ -39,8 +37,8 @@ class PostIcon extends StatelessWidget {
   Widget _buildNetworkImage(String url) {
     return Image.network(
       url,
-      width: radius * 2,
-      height: radius * 2,
+      width: 24 * 2,
+      height: 24 * 2,
       fit: BoxFit.cover,
       loadingBuilder: (context, child, progress) {
         if (progress == null) return child;
@@ -57,8 +55,8 @@ class PostIcon extends StatelessWidget {
 
   Widget _buildPlaceholder() {
     return Container(
-      width: radius * 2,
-      height: radius * 2,
+      width: 24 * 2,
+      height: 24 * 2,
       decoration: BoxDecoration(
         color: AppColors.ACCENT_LIME.withOpacity(0.2),
       ),

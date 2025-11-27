@@ -206,26 +206,27 @@ class _MakePostState extends State<MakePost> {
     super.dispose();
   }
 
-  @override
+ @override
 Widget build(BuildContext context) {
   final profileImage = user?.profilePic;
+
   return GestureDetector(
     onTap: _showModal,
     child: Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       decoration: BoxDecoration(
         color: const Color.fromARGB(255, 240, 244, 230),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
+            color: Colors.black.withOpacity(0.15), // more visible shadow
+            blurRadius: 12,
+            spreadRadius: 1,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -239,14 +240,17 @@ Widget build(BuildContext context) {
             : const AssetImage('assets/images/default_profile.png'),
           ),
 
-
           const SizedBox(width: 16),
 
           // --- Text ---
           Expanded(
             child: Text(
               widget.text,
-              style: AppTextStyles.FORM_LABEL,
+              style: AppTextStyles.FORM_LABEL.copyWith(
+                fontSize: 14,       // slightly smaller than username
+                color: Colors.black87,
+                height: 1.4,
+              ),
             ),
           ),
         ],
@@ -254,4 +258,5 @@ Widget build(BuildContext context) {
     ),
   );
 }
+
 }
