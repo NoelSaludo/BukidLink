@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/services/ProductService.dart';
+import 'package:bukidlink/services/UserService.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bukidlink/models/Product.dart';
 import 'package:bukidlink/Widgets/common/ProductCard.dart';
 import 'package:bukidlink/Pages/StorePage.dart';
@@ -35,19 +37,77 @@ class _StorePreviewState extends State<StorePreview> {
     });
 
     try {
-      // Attempt to use profileID as farmName. If your app exposes a UserService
-      // to resolve farm details, replace this with that resolution.
-      final farmName = widget.profileID;
-      _farmName = farmName;
+      // Resolve the incoming profileID into an actual farm id string.
+      // profileID may be a user id, a farm id, or a farm name depending on
+      // where the navigation originated. Try to resolve in this order:
+      // 1. Treat as a user id -> fetch user -> use user's farmId
+      // 2. Treat as a farm document id -> check farms collection
+      // 3. Treat as a farm name -> query farms by name
+      String? resolvedFarmId;
+      String? displayFarmName;
+
+      // 1) Try as user id
+      final user = await UserService().getUserById(widget.profileID);
+      if (user != null) {
+        resolvedFarmId = user.farmId?.id;
+        displayFarmName = user.farmId?.id ?? widget.profileID;
+        debugPrint(
+          'StorePreview: resolved profileID as user -> farmId=$resolvedFarmId',
+        );
+      }
+
+      // 2) If still null, try as farm document id
+      if (resolvedFarmId == null) {
+        final farmDoc = await FirebaseFirestore.instance
+            .collection('farms')
+            .doc(widget.profileID)
+            .get();
+        if (farmDoc.exists) {
+          resolvedFarmId = farmDoc.id;
+          final data = farmDoc.data();
+          displayFarmName = data != null
+              ? (data['name']?.toString() ?? farmDoc.id)
+              : farmDoc.id;
+          debugPrint(
+            'StorePreview: resolved profileID as farm doc -> farmId=$resolvedFarmId',
+          );
+        }
+      }
+
+      // 3) If still null, try to find farm by name
+      if (resolvedFarmId == null) {
+        final qs = await FirebaseFirestore.instance
+            .collection('farms')
+            .where('name', isEqualTo: widget.profileID)
+            .limit(1)
+            .get();
+        if (qs.docs.isNotEmpty) {
+          resolvedFarmId = qs.docs.first.id;
+          final data = qs.docs.first.data();
+          displayFarmName = data['name']?.toString() ?? resolvedFarmId;
+          debugPrint(
+            'StorePreview: resolved profileID by farm name -> farmId=$resolvedFarmId',
+          );
+        }
+      }
+
+      // Fallback: use the raw profileID as farm id (may be incorrect but keeps behavior)
+      final farmId = resolvedFarmId ?? widget.profileID;
+      _farmName = displayFarmName ?? widget.profileID;
+
+      debugPrint(
+        'StorePreview: querying products with farmId=$farmId (displayName=$_farmName)',
+      );
 
       final products = await _productService.fetchProductsByFarm(
-        farmName: farmName,
+        farmId: farmId,
         limit: 5,
       );
 
       setState(() {
         _products = products;
         _isLoading = false;
+        debugPrint('Loaded ${products.length} products for farm $farmId');
       });
     } catch (e) {
       setState(() {

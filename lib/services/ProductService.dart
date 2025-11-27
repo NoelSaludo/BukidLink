@@ -28,17 +28,17 @@ class ProductService {
     return products;
   }
 
-  /// Fetches up to [limit] visible products for the given [farmName],
+  /// Fetches up to [limit] visible products for the given [farmId],
   /// ordered by `created_at` descending when available.
   Future<List<Product>> fetchProductsByFarm({
-    required String farmName,
+    required String farmId,
     int limit = 5,
   }) async {
     List<Product> products = [];
     try {
       Query query = _firestore
           .collection('products')
-          .where('farm_name', isEqualTo: farmName)
+          .where('farm_id', isEqualTo: farmId)
           .where('isVisible', isEqualTo: true);
 
       // Order by created_at if present; Firestore will allow ordering even
