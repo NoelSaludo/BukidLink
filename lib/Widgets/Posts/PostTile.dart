@@ -7,7 +7,6 @@ import 'package:bukidlink/models/Post.dart';
 import 'package:bukidlink/models/User.dart';
 import 'package:bukidlink/models/Farm.dart';
 import 'package:bukidlink/services/UserService.dart';
-import 'package:bukidlink/Widgets/Profile/FollowButton.dart';
 import 'package:intl/intl.dart';
 
 class PostTile extends StatelessWidget {

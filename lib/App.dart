@@ -5,6 +5,8 @@ import 'package:bukidlink/Pages/ProfilePage.dart';
 import 'package:bukidlink/Pages/farmer/FarmerProfilePage.dart';
 import 'package:bukidlink/Pages/MessagePage.dart';
 import 'package:bukidlink/pages/farmer/FarmerStorePage.dart';
+import 'package:bukidlink/Pages/farmer/FarmerProfilePage.dart';
+
 
 class App extends StatelessWidget {
   const App({super.key});
