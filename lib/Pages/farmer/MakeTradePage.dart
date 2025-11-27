@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'package:flutter/services.dart';
+import 'package:bukidlink/utils/constants/AppColors.dart';
+import 'package:bukidlink/utils/constants/AppTextStyles.dart';
+import 'package:bukidlink/widgets/farmer/CustomTextField.dart';
+import 'package:bukidlink/widgets/farmer/ImagePickerCard.dart';
+import 'package:bukidlink/services/ImagePickerService.dart';
 import '../../services/TradeService.dart';
 import '../../models/TradeModels.dart';
 
@@ -16,8 +20,9 @@ class MakeTradePage extends StatefulWidget {
 
 class _MakeTradePageState extends State<MakeTradePage> {
   final TradeService _tradeService = TradeService();
-  File? _image;
-  final picker = ImagePicker();
+  String? _imagePath;
+  final ImagePickerService _imagePickerService = ImagePickerService();
+  final _formKey = GlobalKey<FormState>();
 
   final _nameController = TextEditingController();
   final _quantityController = TextEditingController();
@@ -38,13 +43,14 @@ class _MakeTradePageState extends State<MakeTradePage> {
       _quantityController.text = widget.listing!.quantity;
       _descController.text = widget.listing!.description;
       _preferredTrades = List.from(widget.listing!.preferredTrades);
-      // Image handling logic is done in the build method
+      _imagePath = widget.listing!.image.isNotEmpty ? widget.listing!.image : null;
     }
   }
 
-  Future<void> _pickImage() async {
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) setState(() => _image = File(pickedFile.path));
+  Future<void> _handleImagePicker() async {
+    HapticFeedback.lightImpact();
+    final String? path = await _imagePickerService.showImageSourceBottomSheet(context);
+    if (path != null) setState(() => _imagePath = path);
   }
 
   void _addPref() {
@@ -57,18 +63,29 @@ class _MakeTradePageState extends State<MakeTradePage> {
   }
 
   Future<void> _submit() async {
-    if (_nameController.text.isEmpty || _quantityController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Fill in required fields')));
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(_isEditing ? 'Confirm update' : 'Confirm post'),
+        content: Text(_isEditing
+            ? 'Update this trade listing? Changes will be saved.'
+            : 'Post this trade listing? Other farmers will see it.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: Text('Continue')),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
 
     setState(() => _isLoading = true);
 
     try {
-      // Update 4: Determine Image Path (New file ?? Existing listing image ?? Empty)
-      String imagePath = _image?.path ?? (widget.listing?.image ?? '');
+        // Determine Image Path (New selection ?? Existing listing image ?? Empty)
+        String imagePath = _imagePath ?? (widget.listing?.image ?? '');
 
       final listingData = TradeListing(
         id: _isEditing ? widget.listing!.id : '', // Use existing ID if editing
@@ -86,14 +103,14 @@ class _MakeTradePageState extends State<MakeTradePage> {
       // Update 6: Call Update or Create based on mode
       if (_isEditing) {
         await _tradeService.updateListing(listingData);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Trade Updated!')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Trade updated'), backgroundColor: Colors.green[600]),
+        );
       } else {
         await _tradeService.createListing(listingData);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Trade Posted!')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Trade posted'), backgroundColor: Colors.green[600]),
+        );
       }
 
       Navigator.pop(context);
@@ -108,139 +125,316 @@ class _MakeTradePageState extends State<MakeTradePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Update 7: Display Logic for Image (New File > Existing Asset/File > Placeholder)
-    ImageProvider? displayImage;
-    if (_image != null) {
-      displayImage = FileImage(_image!);
-    } else if (_isEditing && widget.listing!.image.isNotEmpty) {
-      if (widget.listing!.image.startsWith('assets/')) {
-        displayImage = AssetImage(widget.listing!.image);
-      } else {
-        displayImage = FileImage(File(widget.listing!.image));
-      }
-    }
+    // No inline ImageProvider logic needed; ImagePickerCard handles imagePath
 
     return Scaffold(
       appBar: AppBar(
-        // Update 8: Dynamic Title
-        title: Text(
-          _isEditing ? "Edit Trade" : "Make a Trade",
-          style: TextStyle(color: Colors.black),
-        ),
-        backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: 'Item Name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 12),
-            TextField(
-              controller: _quantityController,
-              decoration: InputDecoration(
-                labelText: 'Quantity',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 12),
-
-            // --- NEW DESCRIPTION FIELD ---
-            TextField(
-              controller: _descController,
-              maxLines: 3, // Allows multiple lines for details
-              decoration: InputDecoration(
-                labelText: 'Product Details / Description',
-                alignLabelWithHint: true,
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 12),
-
-            // -----------------------------
-            GestureDetector(
-              onTap: _pickImage,
-              child: Container(
-                height: 120,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: displayImage == null
-                    ? Icon(Icons.add_a_photo)
-                    : Image(image: displayImage, fit: BoxFit.cover),
-              ),
-            ),
-            if (_isEditing && displayImage != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Center(
-                  child: Text(
-                    "Tap image to change",
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                ),
-              ),
-
-            SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _prefController,
-                    decoration: InputDecoration(
-                      hintText: 'Add preferred item',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.add_circle, color: Colors.green),
-                  onPressed: _addPref,
-                ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                AppColors.HEADER_GRADIENT_START,
+                AppColors.HEADER_GRADIENT_END,
               ],
             ),
-            Wrap(
-              spacing: 8,
-              children: _preferredTrades
-                  .map(
-                    (t) => Chip(
-                      label: Text(t),
-                      onDeleted: () =>
-                          setState(() => _preferredTrades.remove(t)),
-                    ),
-                  )
-                  .toList(),
+          ),
+        ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.25),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _isEditing ? Icons.edit : Icons.swap_horiz_outlined,
+                color: Colors.white,
+                size: 22,
+              ),
             ),
-            SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _submit,
-                child: _isLoading
-                    ? CircularProgressIndicator()
-                    : Text(
-                        _isEditing ? 'Update Trade' : 'Post Trade',
-                      ), // Update 9: Dynamic Text
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFFC3E956),
-                  foregroundColor: Colors.black,
-                  padding: EdgeInsets.all(16),
-                ),
+            const SizedBox(width: 12),
+            Text(
+              _isEditing ? 'Edit Trade' : 'Make a Trade',
+              style: const TextStyle(
+                fontFamily: AppTextStyles.FONT_FAMILY,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: 0.5,
               ),
             ),
           ],
         ),
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color(0xFFF5F5F5),
+                  const Color(0xFFE8F5E9).withOpacity(0.3),
+                ],
+              ),
+            ),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Form(
+                    key: _formKey,
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionHeader('Basic Information', Icons.info_outline),
+                          const SizedBox(height: 16),
+
+                          _buildCard(
+                            child: Column(
+                              children: [
+                                CustomTextField(
+                                  label: 'Item Name',
+                                  hint: 'e.g., Fresh Mango',
+                                  controller: _nameController,
+                                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter item name' : null,
+                                ),
+                                const SizedBox(height: 20),
+                                CustomTextField(
+                                  label: 'Quantity',
+                                  hint: 'e.g., 20',
+                                  controller: _quantityController,
+                                  keyboardType: TextInputType.number,
+                                  validator: (v) {
+                                    if (v == null || v.trim().isEmpty) return 'Please enter quantity';
+                                    if (int.tryParse(v.trim()) == null) return 'Enter a valid number';
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 16),
+                                CustomTextField(
+                                  label: 'Description',
+                                  hint: 'Details about the product',
+                                  controller: _descController,
+                                  maxLines: 4,
+                                  maxLength: 500,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          _buildSectionHeader('Product Image', Icons.image_outlined),
+                          const SizedBox(height: 12),
+                          _buildCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Upload a clear image of the item',
+                                  style: AppTextStyles.BODY_MEDIUM.copyWith(
+                                    color: AppColors.TEXT_SECONDARY,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                ImagePickerCard(
+                                  imagePath: _imagePath,
+                                  onTap: _handleImagePicker,
+                                  onRemove: _imagePath != null ? () => setState(() => _imagePath = null) : null,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          _buildSectionHeader('Preferred Trades', Icons.favorite_border),
+                          const SizedBox(height: 12),
+                          _buildCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Label above so the add button aligns with the input box
+                                Text(
+                                  'Preferred Item',
+                                  style: AppTextStyles.FORM_LABEL.copyWith(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.DARK_TEXT,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _prefController,
+                                        decoration: InputDecoration(
+                                          hintText: 'e.g., Rice, Eggs',
+                                          hintStyle: AppTextStyles.TEXT_FIELD_HINT.copyWith(fontSize: 14, color: AppColors.HINT_TEXT_GREY.withOpacity(0.7)),
+                                          filled: true,
+                                          fillColor: AppColors.BACKGROUND_WHITE,
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: BorderSide(color: AppColors.BORDER_GREY.withOpacity(0.2), width: 1.5),
+                                          ),
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                          counterText: '',
+                                        ),
+                                        style: AppTextStyles.BODY_MEDIUM.copyWith(fontSize: 15, fontWeight: FontWeight.w500),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    SizedBox(
+                                      height: 56,
+                                      width: 56,
+                                      child: ElevatedButton(
+                                        onPressed: _addPref,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.ACCENT_LIME,
+                                          foregroundColor: AppColors.DARK_TEXT,
+                                          padding: EdgeInsets.zero,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                        child: const Icon(Icons.add, size: 28),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Wrap(
+                                    spacing: 8,
+                                    children: _preferredTrades.map((t) => Chip(label: Text(t), onDeleted: () => setState(() => _preferredTrades.remove(t)))).toList(),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Press the + button to add preferred items',
+                                  style: AppTextStyles.BODY_MEDIUM.copyWith(
+                                    color: AppColors.TEXT_SECONDARY,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(50),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.ACCENT_LIME.withOpacity(0.4),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _submit,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.ACCENT_LIME,
+                                  foregroundColor: AppColors.DARK_TEXT,
+                                  padding: const EdgeInsets.symmetric(vertical: 18),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                                  elevation: 0,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(_isEditing ? Icons.edit : Icons.check_circle_outline, size: 26),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      _isEditing ? 'Update Trade' : 'Post Trade',
+                                      style: AppTextStyles.PRIMARY_BUTTON_TEXT.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.3),
+              child: const Center(child: CircularProgressIndicator()),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method to build section headers
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.primaryGreen.withOpacity(0.15),
+                AppColors.HEADER_GRADIENT_END.withOpacity(0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 22, color: AppColors.primaryGreen),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: AppTextStyles.FORM_LABEL.copyWith(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF2E7D32),
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Helper method to build card containers
+  Widget _buildCard({required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primaryGreen.withOpacity(0.1), width: 1),
+        boxShadow: [
+          BoxShadow(color: AppColors.primaryGreen.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: child,
     );
   }
 }
