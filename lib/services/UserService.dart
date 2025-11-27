@@ -310,6 +310,44 @@ class UserService {
     }
   }
 
+  /// Update user document fields for [uid] with the provided [updates] map.
+  /// Also updates the in-memory `currentUser` if it matches [uid].
+  Future<void> updateUserProfile(
+    String uid,
+    Map<String, dynamic> updates,
+  ) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      await firestore.collection('users').doc(uid).update({
+        ...updates,
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      // If currentUser matches uid, update the in-memory copy
+      if (currentUser != null && currentUser!.id == uid) {
+        final old = currentUser!;
+        currentUser = User(
+          id: old.id,
+          username: updates['username'] ?? old.username,
+          password: old.password,
+          firstName: updates['firstName'] ?? old.firstName,
+          lastName: updates['lastName'] ?? old.lastName,
+          emailAddress: updates['emailAddress'] ?? old.emailAddress,
+          address: updates['address'] ?? old.address,
+          contactNumber: updates['contactNumber'] ?? old.contactNumber,
+          profilePic: updates['profilePic'] ?? old.profilePic,
+          createdAt: old.createdAt,
+          updatedAt: DateTime.now(),
+          type: old.type,
+          farmId: old.farmId,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error updating user profile: $e');
+      rethrow;
+    }
+  }
+
   Future<User> getUserWithFallback(String id) async {
     return await UserService().getUserById(id) ??
         User(

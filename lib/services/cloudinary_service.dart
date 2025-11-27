@@ -2,6 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart';
+import 'package:cloudinary_url_gen/cloudinary.dart';
+import 'package:cloudinary_flutter/cloudinary_context.dart';
+
 import 'package:http/http.dart' as http;
 
 /// CloudinaryService
@@ -17,120 +21,90 @@ import 'package:http/http.dart' as http;
 /// NOTE: Do NOT place `API_SECRET` in the client for signed operations. For
 /// delete or signed uploads, implement a server-side signing endpoint.
 class CloudinaryService {
-  CloudinaryService._();
+  static final CloudinaryService _instance = CloudinaryService._internal();
 
-  static final CloudinaryService _instance = CloudinaryService._();
-  static CloudinaryService get instance => _instance;
+  factory CloudinaryService() {
+    return _instance;
+  }
 
-  /// Convenience static method that uploads a local image file and returns
-  /// the `secure_url` of the uploaded image on success.
-  ///
-  /// - [imagePath]: local filesystem path to the image file.
-  /// - [uploadPreset]: optional unsigned upload preset; if omitted the service
-  ///   will try to read `CLOUDINARY_UPLOAD_PRESET` from `.env`.
-  /// - [folder]: optional Cloudinary folder to place the uploaded image in.
-  ///
-  /// Throws an [Exception] on failure.
-  static Future<String> uploadImage(
-    String imagePath, {
-    String? uploadPreset,
-    String? folder,
-  }) {
-    return _instance._uploadImage(
-      imagePath,
-      uploadPreset: uploadPreset,
-      folder: folder,
+  CloudinaryService._internal() {
+    _cloudName = dotenv.env['CLOUDINARY_NAME'] ?? '';
+    _uploadPreset = dotenv.env['CLOUDINARY_UPLOAD_PRESET'] ?? '';
+    CloudinaryContext.cloudinary = Cloudinary.fromCloudName(
+      cloudName: _cloudName,
     );
   }
 
-  /// Build a Cloudinary delivery URL for a given `publicId`.
-  /// If [transformation] is provided it is inserted into the URL (raw
-  /// transformation string expected, e.g. `w_400,h_300,c_fill`). If [format]
-  /// is provided it will be appended (e.g. `jpg`).
-  static String getImageUrl(
-    String publicId, {
-    String? transformation,
-    String? format,
-  }) {
-    final name = dotenv.env['CLOUDINARY_NAME'] ?? dotenv.env['cloudinary_name'];
-    if (name == null || name.isEmpty) {
-      throw Exception('CLOUDINARY_NAME is not set in .env');
-    }
+  late final String _cloudName;
+  late final String _uploadPreset;
 
-    final buffer = StringBuffer();
-    buffer.write('https://res.cloudinary.com/');
-    buffer.write(name);
-    buffer.write('/image/upload/');
-    if (transformation != null && transformation.isNotEmpty) {
-      buffer.write('$transformation/');
+  /// Uploads a file to Cloudinary using unsigned upload.
+  /// Returns the secure URL of the uploaded image on success, null on failure.
+  Future<String?> uploadFile(File file) async {
+    if (_cloudName.isEmpty) {
+      debugPrint('CloudinaryService: CLOUDINARY_NAME is empty');
+      throw Exception('CLOUDINARY_NAME is not configured');
     }
-    buffer.write(publicId);
-    if (format != null && format.isNotEmpty) {
-      buffer.write('.$format');
-    }
-    return buffer.toString();
-  }
-
-  Future<String> _uploadImage(
-    String imagePath, {
-    String? uploadPreset,
-    String? folder,
-  }) async {
-    final cloudName =
-        dotenv.env['CLOUDINARY_NAME'] ?? dotenv.env['cloudinary_name'];
-    if (cloudName == null || cloudName.isEmpty) {
-      throw Exception('CLOUDINARY_NAME is not set in .env');
-    }
-
-    final preset =
-        uploadPreset ??
-        dotenv.env['CLOUDINARY_UPLOAD_PRESET'] ??
-        dotenv.env['cloudinary_upload_preset'];
-    if (preset == null || preset.isEmpty) {
+    if (_uploadPreset.isEmpty) {
+      debugPrint('CloudinaryService: CLOUDINARY_UPLOAD_PRESET is empty');
       throw Exception(
-        'CLOUDINARY_UPLOAD_PRESET is not set in .env and no uploadPreset provided',
+        'CLOUDINARY_UPLOAD_PRESET is not configured (required for unsigned uploads)',
       );
     }
 
+    if (!await file.exists()) {
+      debugPrint(
+        'CloudinaryService: file does not exist at path: ${file.path}',
+      );
+      throw Exception('File does not exist: ${file.path}');
+    }
+
+    // Correct endpoint: /image/upload (was missing 'image' and caused 400)
     final uri = Uri.parse(
-      'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
+      'https://api.cloudinary.com/v1_1/$_cloudName/image/upload',
     );
 
-    final file = File(imagePath);
-    if (!await file.exists()) {
-      throw Exception('File does not exist: $imagePath');
-    }
-
     final request = http.MultipartRequest('POST', uri);
-    request.fields['upload_preset'] = preset;
-    if (folder != null && folder.isNotEmpty) {
-      request.fields['folder'] = folder;
-    }
+    request.fields['upload_preset'] = _uploadPreset;
+    request.files.add(await http.MultipartFile.fromPath('file', file.path));
 
-    final multipartFile = await http.MultipartFile.fromPath('file', imagePath);
-    request.files.add(multipartFile);
+    try {
+      final streamed = await request.send();
+      final respStr = await streamed.stream.bytesToString();
 
-    final streamed = await request.send();
-    final resp = await http.Response.fromStream(streamed);
-
-    if (resp.statusCode < 200 || resp.statusCode >= 300) {
-      String body = resp.body;
-      String message = 'Cloudinary upload failed (status: ${resp.statusCode})';
-      try {
-        final json = jsonDecode(body);
-        if (json is Map && json['error'] != null) {
-          message = '${message}: ${json['error']}';
+      if (streamed.statusCode >= 200 && streamed.statusCode < 300) {
+        try {
+          final data = json.decode(respStr) as Map<String, dynamic>;
+          return data['secure_url'] as String?;
+        } catch (e) {
+          debugPrint('CloudinaryService: failed decoding success response: $e');
+          return null;
         }
-      } catch (_) {}
-      throw Exception(message);
-    }
+      }
 
-    final Map<String, dynamic> bodyJson = jsonDecode(resp.body);
-    final secureUrl = bodyJson['secure_url'] as String?;
-    if (secureUrl == null || secureUrl.isEmpty) {
-      throw Exception('Cloudinary upload did not return secure_url');
-    }
+      // Non-success: try to extract Cloudinary error message
+      String errorMessage = 'Status ${streamed.statusCode}';
+      try {
+        final data = json.decode(respStr);
+        if (data is Map && data['error'] != null) {
+          final err = data['error'];
+          if (err is Map && err['message'] != null) {
+            errorMessage = err['message'].toString();
+          } else {
+            errorMessage = err.toString();
+          }
+        } else {
+          errorMessage = respStr;
+        }
+      } catch (_) {
+        errorMessage = respStr;
+      }
 
-    return secureUrl;
+      debugPrint('Cloudinary upload failed: $errorMessage');
+      throw Exception('Cloudinary upload failed: $errorMessage');
+    } catch (e) {
+      debugPrint('Cloudinary upload error: $e');
+      rethrow;
+    }
   }
 }
