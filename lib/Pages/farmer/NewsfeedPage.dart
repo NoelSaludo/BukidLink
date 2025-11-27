@@ -1,43 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:bukidlink/utils/constants/AppColors.dart';
-import 'package:bukidlink/utils/constants/AppTextStyles.dart';
-import 'package:bukidlink/widgets/common/CustomBottomNavBar.dart';
-import 'package:bukidlink/models/Post.dart';
-import 'package:bukidlink/data/PostData.dart';
-import 'package:bukidlink/Widgets/Posts/PostTile.dart';
 import 'package:bukidlink/widgets/farmer/FarmerAppBar.dart';
 import 'package:bukidlink/widgets/farmer/FarmerBottomNavBar.dart';
-import 'package:bukidlink/Widgets/Posts/MakePost.dart';
-import 'package:bukidlink/services/PostService.dart';
 
-class NewsfeedPage extends StatefulWidget {
-  @override
-  _NewsfeedPageState createState() => _NewsfeedPageState();
-}
-
-class _NewsfeedPageState extends State<NewsfeedPage> {
-  List<Post> posts = [];
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    loadPosts();
-  }
-
-  Future<void> loadPosts() async {
-    final fetchedPosts = await PostService().fetchPosts();
-    setState(() {
-      posts = fetchedPosts;
-      isLoading = false;
-    });
-  }
-
-  void refreshPosts() async {
-    setState(() => isLoading = true);
-    await loadPosts();
-  }
-
+class NewsfeedPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,30 +11,9 @@ class _NewsfeedPageState extends State<NewsfeedPage> {
         children: [
           const FarmerAppBar(),
           Expanded(
-            child: isLoading 
-              ? const Center(child: CircularProgressIndicator())
-              : posts.isNotEmpty
-                  ? ListView.builder(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemCount: posts.length + 1,
-                      itemBuilder: (context, index) {
-                        if (index == 0) {
-                          return MakePost(
-                            onPostCreated: refreshPosts,
-                            text: "What's on your mind?",
-                          );
-                        }
-
-                        final post = posts[index - 1];
-                        return PostTile(post: post);
-                      },
-                    )
-                  : Center(
-                      child: Text(
-                        'No Posts yet',
-                        style: AppTextStyles.sectionTitle,
-                      ),
-                    ),
+            child: Center(
+              child: Text('Newsfeed Page', style: TextStyle(fontSize: 24)),
+            ),
           ),
         ],
       ),

@@ -3,14 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/models/Product.dart';
-import 'package:bukidlink/widgets/common/ProductImage.dart';
 
 class StoreProductCard extends StatelessWidget {
   final Product product;
   final int stockSold;
   final VoidCallback? onEdit;
   final VoidCallback? onRemove;
-  final bool isArchived;
 
   const StoreProductCard({
     super.key,
@@ -18,7 +16,6 @@ class StoreProductCard extends StatelessWidget {
     required this.stockSold,
     this.onEdit,
     this.onRemove,
-    this.isArchived = false,
   });
 
   @override
@@ -26,20 +23,17 @@ class StoreProductCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isArchived ? Colors.grey.shade100 : Colors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isArchived
-              ? Colors.grey.withOpacity(0.3)
-              : AppColors.ACCENT_LIME.withOpacity(0.3),
+          color: AppColors.ACCENT_LIME.withOpacity(0.3),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            spreadRadius: 1,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -53,11 +47,23 @@ class StoreProductCard extends StatelessWidget {
                 // Product Image
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: ProductImage(
-                    imagePath: product.imagePath,
+                  child: Image.asset(
+                    product.imagePath,
                     width: 80,
                     height: 80,
                     fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 80,
+                        height: 80,
+                        color: AppColors.ACCENT_LIME.withOpacity(0.2),
+                        child: Icon(
+                          Icons.image_not_supported,
+                          color: AppColors.ACCENT_LIME,
+                          size: 32,
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -158,7 +164,7 @@ class StoreProductCard extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: OutlinedButton(
                     onPressed: () {
                       HapticFeedback.lightImpact();
                       onEdit?.call();
@@ -166,58 +172,39 @@ class StoreProductCard extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       side: const BorderSide(
-                        color: AppColors.HEADER_GRADIENT_START,
+                        color: AppColors.DARK_TEXT,
                         width: 1.5,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    icon: const Icon(Icons.edit_outlined,
-                        size: 18, color: AppColors.HEADER_GRADIENT_START),
-                    label: Text(
+                    child: const Text(
                       'Edit',
-                      style: AppTextStyles.STORE_ACTION_BUTTON.copyWith(
-                        color: AppColors.HEADER_GRADIENT_START,
-                      ),
+                      style: AppTextStyles.STORE_ACTION_BUTTON,
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: OutlinedButton(
                     onPressed: () {
                       HapticFeedback.lightImpact();
                       onRemove?.call();
                     },
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide(
-                        color: isArchived
-                            ? AppColors.DARK_TEXT
-                            : AppColors.ERROR_RED,
+                      side: const BorderSide(
+                        color: AppColors.DARK_TEXT,
                         width: 1.5,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    icon: Icon(
-                      isArchived
-                          ? Icons.restore_from_trash
-                          : Icons.delete_outline,
-                      size: 18,
-                      color: isArchived
-                          ? AppColors.DARK_TEXT
-                          : AppColors.ERROR_RED,
-                    ),
-                    label: Text(
-                      isArchived ? 'Restore' : 'Remove',
-                      style: AppTextStyles.STORE_ACTION_BUTTON.copyWith(
-                        color: isArchived
-                            ? AppColors.DARK_TEXT
-                            : AppColors.ERROR_RED,
-                      ),
+                    child: const Text(
+                      'Remove',
+                      style: AppTextStyles.STORE_ACTION_BUTTON,
                     ),
                   ),
                 ),

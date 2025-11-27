@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/common/CartIconWithBadge.dart';
+import 'package:bukidlink/Pages/InboxPage.dart';
 import 'package:bukidlink/Pages/AccountPage.dart';
 import 'package:bukidlink/data/UserData.dart';
 
@@ -37,6 +38,22 @@ class HomeAppBar extends StatelessWidget {
             children: [
               Row(
                 children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.chat_bubble_outline,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => InboxPage(),
+                          ),
+                      );
+                    },
+                  ),
                   const Text('BukidLink', style: AppTextStyles.BUKIDLINK_LOGO),
                 ],
               ),

@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/Utils/FormValidator.dart';
-import 'package:bukidlink/Utils/constants/AppColors.dart';
 
 class PasswordField extends StatelessWidget {
   final TextEditingController controller;
   final String mode;
   final String? forceErrorText;
   final ValueChanged<String> onChanged;
-  final FocusNode? focusNode;
   const PasswordField({
     super.key,
     required this.controller,
     required this.mode,
     required this.forceErrorText,
     required this.onChanged,
-    this.focusNode,
   });
 
   @override
@@ -24,31 +21,13 @@ class PasswordField extends StatelessWidget {
         width: 332.0,
         height: 90.0,
         child: TextFormField(
-          focusNode: focusNode,
           decoration: InputDecoration(
             labelText: 'Password',
             filled: true,
-            fillColor: AppColors.LOGIN_TEXT_FIELD_FILL,
+            fillColor: Colors.grey[50],
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15.0),
-              borderSide: const BorderSide(
-                color: AppColors.LOGIN_TEXT_FIELD_BORDER,
-                width: 1.0,
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15.0),
-              borderSide: const BorderSide(
-                color: AppColors.LOGIN_TEXT_FIELD_BORDER,
-                width: 1.0,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15.0),
-              borderSide: const BorderSide(
-                color: AppColors.HEADER_GRADIENT_START,
-                width: 2.0,
-              ),
+              borderRadius: BorderRadius.circular(20.0),
+              borderSide: BorderSide(color: Colors.blue, width: 2.0),
             ),
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(
@@ -56,8 +35,9 @@ class PasswordField extends StatelessWidget {
               horizontal: 16.0,
             ),
           ),
-          style: const TextStyle(fontSize: 20.0),
+          style: TextStyle(fontSize: 20.0),
           obscureText: true,
+          forceErrorText: forceErrorText,
           controller: controller,
           onChanged: onChanged,
           validator: FormValidator().loginPasswordValidator,
@@ -81,7 +61,6 @@ class PasswordField extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4.0),
               child: TextFormField(
-                focusNode: focusNode,
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Colors.grey[50],
@@ -110,7 +89,6 @@ class PasswordField extends StatelessWidget {
         width: 332.0,
         height: 90.0,
         child: TextFormField(
-          focusNode: focusNode,
           decoration: InputDecoration(
             labelText: 'Password',
             filled: true,

@@ -4,6 +4,8 @@ import 'package:bukidlink/services/OrderService.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 
+
+// THIS UPDATED ATA
 class CheckoutPage extends StatefulWidget {
   final List<CartItem> cartItems;
   final String recipientName;
@@ -24,7 +26,6 @@ class CheckoutPage extends StatefulWidget {
 
 class _CheckoutPageState extends State<CheckoutPage> {
   String selectedPaymentMethod = "Cash on Delivery";
-  bool _isPlacing = false; // added flag
 
   double get subtotal =>
       widget.cartItems.fold(0, (sum, item) => sum + item.totalPrice);
@@ -131,6 +132,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         children: [
           GestureDetector(
             onTap: () {
+              // Placeholder for future expansion (dialog or bottom sheet)
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text("Only Cash on Delivery is available for now.")),
               );
@@ -195,24 +197,27 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Widget _buildProductRow(CartItem item) {
-    if (item.product == null) return const SizedBox.shrink();
-
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: _buildProductImage(item.product!.imagePath),
+            child: Image.asset(
+              item.product.imagePath,
+              width: 60,
+              height: 60,
+              fit: BoxFit.cover,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.product!.name,
+                Text(item.product.name,
                     style: AppTextStyles.CHECKOUT_PRODUCT_NAME),
-                Text("x${item.amount} ${item.product!.unit ?? ''}",
+                Text("x${item.quantity} ${item.product.unit ?? ''}",
                     style: AppTextStyles.CHECKOUT_PRODUCT_DETAILS),
               ],
             ),
@@ -221,47 +226,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
               style: AppTextStyles.CHECKOUT_PRICE),
         ],
       ),
-    );
-  }
-
-  Widget _buildProductImage(String path) {
-    final isNetwork = path.startsWith('http://') || path.startsWith('https://');
-    final effectivePath = path.isNotEmpty ? path : 'assets/images/default_cover_photo.png';
-    if (isNetwork) {
-      return Image.network(
-        effectivePath,
-        width: 60,
-        height: 60,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            width: 60,
-            height: 60,
-            alignment: Alignment.center,
-            child: const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) {
-          return Image.asset(
-            'assets/images/default_cover_photo.png',
-            width: 60,
-            height: 60,
-            fit: BoxFit.cover,
-          );
-        },
-      );
-    }
-    // Asset fallback
-    return Image.asset(
-      effectivePath,
-      width: 60,
-      height: 60,
-      fit: BoxFit.cover,
     );
   }
 
@@ -305,55 +269,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: _isPlacing ? null : () async {
-          if (widget.cartItems.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Cart is empty.')),
-            );
-            return;
-          }
-          setState(() => _isPlacing = true);
-          try {
-            final orderService = OrderService();
-            final orderId = await orderService.addOrder(
-              items: widget.cartItems,
-              recipientName: widget.recipientName,
-              contactNumber: widget.contactNumber,
-              shippingAddress: widget.shippingAddress,
-            );
-            if (orderId != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Order placed successfully.')),
-              );
-              Navigator.pop(context, true);
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Failed to place order. Please try again.')),
-              );
-            }
-          } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error: $e')),
-            );
-          } finally {
-            if (mounted) setState(() => _isPlacing = false);
-          }
+        onPressed: () async {
+          final orderService = OrderService();
+          orderService.addOrder(
+            items: widget.cartItems,
+            recipientName: widget.recipientName,
+            contactNumber: widget.contactNumber,
+            shippingAddress: widget.shippingAddress,
+          );
+          Navigator.pop(context, true);
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.HEADER_GRADIENT_START,
-          disabledBackgroundColor: AppColors.HEADER_GRADIENT_START.withOpacity(0.5),
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
         ),
-        child: _isPlacing
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-              )
-            : Text("Place Order", style: AppTextStyles.CHECKOUT_BUTTON_TEXT),
+        child: Text("Place Order", style: AppTextStyles.CHECKOUT_BUTTON_TEXT),
       ),
     );
   }
@@ -375,8 +308,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Map<String, List<CartItem>> _groupByFarmName() {
     final Map<String, List<CartItem>> grouped = {};
     for (var item in widget.cartItems) {
-      if (item.product == null) continue;
-      final key = item.product!.farmName;
+      final key = item.product.farmName;
       grouped.putIfAbsent(key, () => []).add(item);
     }
     return grouped;

@@ -6,7 +6,7 @@ import 'package:bukidlink/widgets/common/SearchBarWidget.dart';
 import 'package:bukidlink/widgets/common/ProductCard.dart';
 import 'package:bukidlink/widgets/category/CategoryAppBar.dart';
 import 'package:bukidlink/widgets/category/SortBottomSheet.dart';
-import 'package:bukidlink/services/ProductService.dart';
+import 'package:bukidlink/data/ProductData.dart';
 import 'package:bukidlink/models/Product.dart';
 
 class CategoryPage extends StatefulWidget {
@@ -26,53 +26,39 @@ class CategoryPage extends StatefulWidget {
 class _CategoryPageState extends State<CategoryPage> {
   String _sortBy = 'Popular';
   String _searchQuery = '';
-  List<Product> _allProducts = [];
   List<Product> _filteredProducts = [];
-  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchAndLoadProducts();
+    _loadProducts();
   }
 
-  // Fetch all products from ProductService (uses internal cache when available)
-  Future<void> _fetchAndLoadProducts() async {
-    setState(() => _loading = true);
-    try {
-      final products = await ProductService().fetchProducts();
-      if (!mounted) return;
-      // Keep only products matching this category as baseline
-      _allProducts = products
-          .where((p) => p.category.toLowerCase() == widget.categoryName.toLowerCase())
-          .toList();
+  void _loadProducts() {
+    setState(() {
+      _filteredProducts = ProductData.getProductsByCategory(
+        widget.categoryName,
+      );
       _applyFilters();
-    } catch (e) {
-      // fallback to empty list
-      if (mounted) setState(() => _allProducts = []);
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
+    });
   }
 
-  // Apply current search and sort to the _allProducts list
   void _applyFilters() {
-    var products = List<Product>.from(_allProducts);
-    products = _filterBySearch(products);
-    _sortProducts(products);
-    if (mounted) setState(() => _filteredProducts = products);
-  }
+    List<Product> products = ProductData.getProductsByCategory(
+      widget.categoryName,
+    );
 
-  List<Product> _filterBySearch(List<Product> products) {
-    if (_searchQuery.isEmpty) return products;
-    final q = _searchQuery.toLowerCase();
-    return products.where((product) {
-      return product.name.toLowerCase().contains(q) ||
-          product.farmName.toLowerCase().contains(q);
-    }).toList();
-  }
+    // Apply search filter
+    if (_searchQuery.isNotEmpty) {
+      products = products.where((product) {
+        return product.name.toLowerCase().contains(
+              _searchQuery.toLowerCase(),
+            ) ||
+            product.farmName.toLowerCase().contains(_searchQuery.toLowerCase());
+      }).toList();
+    }
 
-  void _sortProducts(List<Product> products) {
+    // Apply sorting
     switch (_sortBy) {
       case 'Price: Low to High':
         products.sort((a, b) => a.price.compareTo(b.price));
@@ -88,9 +74,13 @@ class _CategoryPageState extends State<CategoryPage> {
         break;
       case 'Popular':
       default:
-        // keep the order from the service/cache
+        // Keep original order (assumed to be by popularity)
         break;
     }
+
+    setState(() {
+      _filteredProducts = products;
+    });
   }
 
   void _onSearchChanged(String query) {
@@ -221,22 +211,19 @@ class _CategoryPageState extends State<CategoryPage> {
                 ),
 
                 // Products Grid
-                _loading || _filteredProducts.isEmpty
+                _filteredProducts.isEmpty
                     ? SliverFillRemaining(
                         child: Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              if (_loading)
-                                const CircularProgressIndicator()
-                              else
-                                Icon(
-                                  Icons.search_off,
-                                  size: 80,
-                                  color: AppColors.TEXT_SECONDARY.withValues(
-                                    alpha: 0.5,
-                                  ),
+                              Icon(
+                                Icons.search_off,
+                                size: 80,
+                                color: AppColors.TEXT_SECONDARY.withValues(
+                                  alpha: 0.5,
                                 ),
+                              ),
                               const SizedBox(height: 16),
                               Text(
                                 'No products found',

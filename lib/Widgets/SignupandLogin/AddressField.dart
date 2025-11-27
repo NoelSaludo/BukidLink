@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/Utils/FormValidator.dart';
-import 'package:bukidlink/Utils/constants/AppColors.dart';
-import 'package:bukidlink/Utils/constants/AppTextStyles.dart';
 
 class AddressField extends StatelessWidget {
   final TextEditingController controller;
@@ -18,32 +16,36 @@ class AddressField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Padding(
+          padding: EdgeInsets.only(left: 10.0),
+          child: Text(
+            "Address",
+            style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
+          ),
+        ),
         SizedBox(
-          width: double.infinity,
+          width: 312.0,
+          height: 65.0,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4.0),
             child: TextFormField(
               decoration: InputDecoration(
-                labelText: 'Address',
-                labelStyle: AppTextStyles.FORM_LABEL,
-                floatingLabelBehavior: FloatingLabelBehavior.auto,
                 filled: true,
-                fillColor: AppColors.LOGIN_TEXT_FIELD_FILL,
+                fillColor: Colors.grey[50],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20.0),
-                  borderSide: BorderSide.none,
+                  borderSide: BorderSide(color: Colors.blue, width: 2.0),
                 ),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(
-                  vertical: 12.0,
+                  vertical: 10.0,
                   horizontal: 16.0,
                 ),
               ),
-              style: const TextStyle(fontSize: 14.0),
+              style: TextStyle(fontSize: 14.0),
               controller: controller,
               validator: validator.tempAddressValidator,
               onChanged: onChanged,
-              maxLines: 3,
             ),
           ),
         ),

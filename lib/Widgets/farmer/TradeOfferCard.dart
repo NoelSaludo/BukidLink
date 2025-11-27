@@ -35,10 +35,9 @@ class TradeOfferCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            spreadRadius: 1,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -58,16 +57,6 @@ class TradeOfferCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-                // Swap Icon
-                Padding(
-                  padding: const EdgeInsets.only(top: 24.0),
-                  child: Icon(
-                    Icons.swap_horiz,
-                    color: AppColors.HEADER_GRADIENT_START.withOpacity(0.5),
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
                 // Offer Product
                 Expanded(
                   child: _buildProductSection(
@@ -84,29 +73,40 @@ class TradeOfferCard extends StatelessWidget {
               children: [
                 // Accept Button
                 Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
+                  child: GestureDetector(
+                    onTap: () {
                       HapticFeedback.lightImpact();
                       onAccept();
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.ACCENT_LIME,
+                    child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
+                      decoration: BoxDecoration(
+                        color: AppColors.ACCENT_LIME,
                         borderRadius: BorderRadius.circular(50),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.ACCENT_LIME.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      elevation: 2,
-                      shadowColor: AppColors.ACCENT_LIME.withOpacity(0.5),
-                    ),
-                    icon: const Icon(
-                      Icons.check_circle_outline,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    label: Text(
-                      'Accept',
-                      style: AppTextStyles.STORE_ACTION_BUTTON.copyWith(
-                        color: Colors.white,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.check_circle_outline,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Accept',
+                            style: AppTextStyles.STORE_ACTION_BUTTON.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -114,31 +114,37 @@ class TradeOfferCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 // Decline Button
                 Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
+                  child: GestureDetector(
+                    onTap: () {
                       HapticFeedback.lightImpact();
                       onDecline();
                     },
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.white,
+                    child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide(
-                        color: AppColors.TEXT_SECONDARY.withOpacity(0.3),
-                        width: 1.5,
-                      ),
-                      shape: RoundedRectangleBorder(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(50),
+                        border: Border.all(
+                          color: AppColors.TEXT_SECONDARY.withOpacity(0.3),
+                          width: 1.5,
+                        ),
                       ),
-                    ),
-                    icon: const Icon(
-                      Icons.cancel_outlined,
-                      color: AppColors.TEXT_SECONDARY,
-                      size: 20,
-                    ),
-                    label: Text(
-                      'Decline',
-                      style: AppTextStyles.STORE_ACTION_BUTTON.copyWith(
-                        color: AppColors.TEXT_SECONDARY,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.cancel_outlined,
+                            color: AppColors.TEXT_SECONDARY,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Decline',
+                            style: AppTextStyles.STORE_ACTION_BUTTON.copyWith(
+                              color: AppColors.TEXT_SECONDARY,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
