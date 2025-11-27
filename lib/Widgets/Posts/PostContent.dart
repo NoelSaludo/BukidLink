@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-// import 'package:bukidlink/Widgets/Notifications/NotificationIcon.dart';
+import 'package:bukidlink/Widgets/Posts/PostImage.dart';
 // import 'package:bukidlink/Widgets/Notifications/NotificationTitle.dart';
 // import 'package:bukidlink/Widgets/Notifications/NotificationBody.dart';
 // import 'package:bukidlink/Widgets/Notifications/NotificationTimestamp.dart';
@@ -8,18 +8,16 @@ import 'package:flutter/material.dart';
 
 class PostContent extends StatelessWidget {
   final String textContent;
-  final String imageContent;
+  final String imageUrl;
   
   const PostContent({
     super.key,
     required this.textContent,
-    required this. imageContent,
+    required this. imageUrl,
   });
 
   @override
   Widget build(BuildContext context) {
-      String imageUrl = 'assets/images/';
-      imageUrl += imageContent;
       return Container(
       child: Column(
         children: [
@@ -27,8 +25,9 @@ class PostContent extends StatelessWidget {
             padding: EdgeInsets.only(left: 10.0, bottom: 10.0),
             alignment: Alignment.topLeft,
             child: Text(textContent),),
-          const SizedBox(height: 5.0),
-          Image.asset(imageUrl),
+          const SizedBox(height: 20.0),
+          if(imageUrl.isNotEmpty) 
+          PostImage(imagePath:imageUrl)
         ]),
     );
   }
