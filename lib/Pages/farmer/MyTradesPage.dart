@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:bukidlink/utils/constants/AppColors.dart';
+import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import '../../services/TradeService.dart';
 import '../../models/TradeModels.dart';
 import '../../widgets/common/ProductImage.dart';
@@ -241,16 +243,57 @@ class TradeIncomingOffersPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Trade Details', style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                AppColors.HEADER_GRADIENT_START,
+                AppColors.HEADER_GRADIENT_END,
+              ],
+            ),
+          ),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.25),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.local_offer,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Trade Details',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontFamily: AppTextStyles.FONT_FAMILY,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ),
+          ],
+        ),
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
-          // --- EDIT / DELETE MENU ---
           PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.white),
             onSelected: (value) {
               if (value == 'edit') {
-                // Navigate to MakeTradePage in Edit Mode
                 Navigator.push(
                   context,
                   MaterialPageRoute(
