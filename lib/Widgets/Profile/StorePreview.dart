@@ -49,23 +49,8 @@ class _StorePreviewState extends State<StorePreview> {
       // 1) Try as user id
       final user = await UserService().getUserById(widget.profileID);
       if (user != null) {
-        // If the user has a farm reference, fetch the farm doc to get its name
-        if (user.farmId != null) {
-          final farm = await UserService().getFarmByReference(user.farmId);
-          if (farm != null) {
-            resolvedFarmId = farm.id;
-            displayFarmName = farm.name;
-          } else {
-            // fallback to reference id if farm fetch failed
-            resolvedFarmId = user.farmId?.id;
-            displayFarmName = user.farmId?.id ?? widget.profileID;
-          }
-        } else {
-          // user doesn't have a farm reference
-          resolvedFarmId = null;
-          displayFarmName = widget.profileID;
-        }
-
+        resolvedFarmId = user.farmId?.id;
+        displayFarmName = user.farmId?.id ?? widget.profileID;
         debugPrint(
           'StorePreview: resolved profileID as user -> farmId=$resolvedFarmId',
         );
@@ -155,7 +140,7 @@ class _StorePreviewState extends State<StorePreview> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Store Preview', style: AppTextStyles.PRODUCT_NAME_HEADER),
+                    Text('Store', style: AppTextStyles.PRODUCT_NAME_HEADER),
                     const SizedBox(height: 4),
                     if (_farmName != null)
                       Text(
@@ -178,7 +163,7 @@ class _StorePreviewState extends State<StorePreview> {
                 ),
                 onPressed: _openStore,
                 icon: const Icon(Icons.storefront_rounded, size: 18),
-                label: const Text('Open Store', style: AppTextStyles.BUTTON_TEXT),
+                label: const Text('View Store', style: AppTextStyles.BUTTON_TEXT),
               ),
             ],
           ),
@@ -186,17 +171,7 @@ class _StorePreviewState extends State<StorePreview> {
           // Increase height to accommodate ProductCard (compact layout)
           // ProductCard compact uses a 140px image plus content; 260 gives
           // enough room to avoid the 54px bottom overflow previously observed.
-          // Wrap the content in a RefreshIndicator so users can pull-to-refresh.
-          SizedBox(
-            height: 280,
-            child: RefreshIndicator(
-              onRefresh: _loadPreview,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: SizedBox(height: 280, child: _buildContent()),
-              ),
-            ),
-          ),
+          SizedBox(height: 280, child: _buildContent()),
         ],
       ),
     );
@@ -208,13 +183,13 @@ class _StorePreviewState extends State<StorePreview> {
     }
 
     if (_error != null) {
-            return Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.error_outline, size: 40, color: AppColors.ERROR_RED),
             const SizedBox(height: 12),
-            Text('Unable to load store', style: AppTextStyles.SECTION_TITLE),
+            Text('Couldn\'t load store', style: AppTextStyles.SECTION_TITLE),
             const SizedBox(height: 6),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -278,7 +253,7 @@ class _StorePreviewState extends State<StorePreview> {
                 ),
                 elevation: 2,
               ),
-              child: const Text('Open Store', style: AppTextStyles.BUTTON_TEXT),
+              child: const Text('Visit Store', style: AppTextStyles.BUTTON_TEXT),
             ),
           ],
         ),

@@ -39,34 +39,29 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.APP_BACKGROUND,
+      backgroundColor: AppColors.backgroundYellow,
       body: CustomScrollView(
         slivers: [
-          // Profile header aligned with StorePreview padding
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            sliver: SliverToBoxAdapter(child: ProfileInfo(profileID: widget.profileID)),
-          ),
+          // Profile header
+          SliverToBoxAdapter(child: ProfileInfo(profileID: widget.profileID)),
 
-          // Store preview section (already has its own padding internally)
+          // Store preview section
           SliverToBoxAdapter(child: StorePreview(profileID: widget.profileID)),
 
-          // Title section styled like store preview
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            sliver: SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Divider(thickness: 1),
-                  SizedBox(height: 6),
-                  Text('Posts History', style: AppTextStyles.PRODUCT_NAME_HEADER),
-                ],
-              ),
+          // Title section
+          const SliverToBoxAdapter(
+            child: Column(
+              children: [
+                Divider(thickness: 1),
+                Text(
+                  'Posts History',
+                  style: AppTextStyles.PRODUCT_NAME_HEADER,
+                ),
+              ],
             ),
           ),
 
-          // Loading indicator / posts list (pad to align with store preview)
+          // Loading indicator / posts list
           if (isLoading)
             const SliverToBoxAdapter(
               child: Center(
@@ -77,32 +72,24 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             )
           else if (posts.isEmpty)
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              sliver: const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(8),
-                  child: Center(
-                    child: Text('No posts yet', style: AppTextStyles.sectionTitle),
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Center(
+                  child: Text(
+                    'No posts yet',
+                    style: AppTextStyles.sectionTitle,
                   ),
                 ),
               ),
             )
           else
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final post = posts[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: PostTile(post: post),
-                  );
-                }, childCount: posts.length),
-              ),
+            SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final post = posts[index];
+                return PostTile(post: post);
+              }, childCount: posts.length),
             ),
-          // Add some bottom padding so content isn't clipped by nav bars
-          const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
       ),
     );

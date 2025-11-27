@@ -156,7 +156,7 @@ class _ProfileInfoState extends State<ProfileInfo> {
                   fit: StackFit.expand,
                   children: [
                     ProfileCoverPicture(imageUrl: coverImage),
-                    Container(color: Colors.black.withOpacity(0.15)),
+                    Container(color: Colors.black.withOpacity(0.2)),
                     Positioned(
                       top: 30,
                       left: 10,
@@ -203,7 +203,7 @@ class _ProfileInfoState extends State<ProfileInfo> {
               const SizedBox(height: 4),
               Text(
                 "Farmer • Local Producer",
-                style: AppTextStyles.CAPTION,
+                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
               ),
               const SizedBox(height: 8),
               // Followers count
@@ -214,7 +214,7 @@ class _ProfileInfoState extends State<ProfileInfo> {
                     final count = snapshot.data ?? 0;
                     return Text(
                       '$count followers'.replaceAll('\u0000', ''),
-                      style: AppTextStyles.CAPTION,
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                     );
                   },
                 ),
@@ -238,7 +238,7 @@ class _ProfileInfoState extends State<ProfileInfo> {
                     Expanded(
                       child: SizedBox(
                         height: 44,
-                            child: ElevatedButton(
+                        child: ElevatedButton(
                           onPressed: () => onMessagePress(context),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryGreen,
@@ -250,7 +250,7 @@ class _ProfileInfoState extends State<ProfileInfo> {
                             elevation: 2,
                           ),
                           child: Text(
-                            "Send Message",
+                            "Message",
                             style: AppTextStyles.BUTTON_TEXT.copyWith(fontSize: 13.0, fontWeight: FontWeight.w700),
                           ),
                         ),
@@ -268,7 +268,7 @@ class _ProfileInfoState extends State<ProfileInfo> {
         // --- Divider ---
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Divider(color: AppColors.INACTIVE_GREY, thickness: 1),
+          child: Divider(color: Colors.grey[300], thickness: 1),
         ),
       ],
     );
