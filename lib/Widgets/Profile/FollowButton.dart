@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:bukidlink/Utils/constants/AppColors.dart';
+import 'package:bukidlink/Utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/services/follow_service.dart';
 import 'package:bukidlink/services/UserService.dart';
 
@@ -102,8 +104,8 @@ class _FollowButtonState extends State<FollowButton> {
   @override
   Widget build(BuildContext context) {
     final label = _isFollowing ? 'Following' : 'Follow';
-    final bg = _isFollowing ? Colors.white : const Color(0xFFDCEF6A);
-    final fg = _isFollowing ? Colors.black : Colors.black;
+    final bg = _isFollowing ? Colors.white : AppColors.primaryGreen;
+    final fg = _isFollowing ? AppColors.primaryGreen : Colors.white;
 
     return SizedBox(
       width: widget.width ?? 110,
@@ -117,7 +119,7 @@ class _FollowButtonState extends State<FollowButton> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
             side: _isFollowing
-                ? const BorderSide(color: Colors.grey)
+                ? BorderSide(color: AppColors.primaryGreen)
                 : BorderSide.none,
           ),
         ),
@@ -127,7 +129,7 @@ class _FollowButtonState extends State<FollowButton> {
                 height: 18,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+            : Text(label, style: AppTextStyles.BUTTON_TEXT.copyWith(fontWeight: FontWeight.w700)),
       ),
     );
   }
