@@ -243,6 +243,10 @@ class UserService {
     return currentUser;
   }
 
+  String getSafeUserId() {
+  return currentUser?.id ?? "unknown-user";
+}
+
   // Fetch a Farm document given its DocumentReference. Returns null on error or if not found.
   Future<Farm?> getFarmByReference(DocumentReference? farmRef) async {
     if (farmRef == null) return null;
@@ -292,4 +296,22 @@ class UserService {
       return null;
     }
   }
+
+  
+  Future<User> getUserWithFallback(String id) async {
+  return await UserService().getUserById(id) ??
+      User(
+        id: 'unknown',
+        username: 'Unknown User',
+        password: '',
+        firstName: '',
+        lastName: '',
+        emailAddress: '',
+        address: '',
+        contactNumber: '',
+        profilePic: '',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+}
 }

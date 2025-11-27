@@ -6,20 +6,21 @@ import 'package:bukidlink/widgets/common/CustomBottomNavBar.dart';
 import 'package:bukidlink/models/Post.dart';
 import 'package:bukidlink/Widgets/Posts/PostTile.dart';
 import 'package:bukidlink/services/PostService.dart';
+import 'package:bukidlink/Widgets/farmer/FarmerBottomNavBar.dart';
 
-class ProfilePage extends StatefulWidget {
+class FarmerProfilePage extends StatefulWidget {
   final String profileID;
 
-  const ProfilePage({
+  const FarmerProfilePage({
     super.key,
     required this.profileID,
   });
 
   @override
-  _ProfilePageState createState() => _ProfilePageState();
+  _FarmerProfilePageState createState() => _FarmerProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _FarmerProfilePageState extends State<FarmerProfilePage> {
   List<Post> posts = [];
   bool isLoading = true;
 
@@ -30,8 +31,11 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> loadUserPosts() async {
-    final fetchedPosts =
-        await PostService().fetchPostsByUser(widget.profileID);
+    setState(() {
+      isLoading = true;
+    });
+
+    final fetchedPosts = await PostService().fetchPostsByUser(widget.profileID);
 
     setState(() {
       posts = fetchedPosts;
@@ -45,36 +49,37 @@ class _ProfilePageState extends State<ProfilePage> {
       backgroundColor: AppColors.backgroundYellow,
       body: CustomScrollView(
         slivers: [
-          // Profile header
+          // --- Profile Info ---
           SliverToBoxAdapter(
             child: ProfileInfo(profileID: widget.profileID),
           ),
 
-          // Title section
+          // --- Header ---
           const SliverToBoxAdapter(
-            child: Column(
-              children: [
-                Divider(thickness: 1),
-                Text(
-                  'Posts History',
-                  style: AppTextStyles.PRODUCT_NAME_HEADER,
-                ),
-              ],
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: Column(
+                children: [
+                  Divider(thickness: 1),
+                  SizedBox(height: 5),
+                  Text(
+                    'Posts History',
+                    style: AppTextStyles.PRODUCT_NAME_HEADER,
+                  ),
+                ],
+              ),
             ),
           ),
 
-          // Loading indicator
+          // --- Posts Section ---
           if (isLoading)
             const SliverToBoxAdapter(
-              child: Center(
-                child: Padding(
-                  padding: EdgeInsets.all(20),
-                  child: CircularProgressIndicator(),
-                ),
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Center(child: CircularProgressIndicator()),
               ),
             )
           else if (posts.isEmpty)
-            // No posts found
             const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.all(20),
@@ -87,7 +92,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             )
           else
-            // List of posts
             SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
@@ -99,9 +103,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
         ],
       ),
-      bottomNavigationBar: const CustomBottomNavBar(
-        currentIndex: 1,
-      ),
+      bottomNavigationBar: const FarmerBottomNavBar(currentIndex: 2),
     );
   }
 }
