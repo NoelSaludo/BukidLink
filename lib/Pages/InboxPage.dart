@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
-import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/pages/ChatPage.dart';
 import 'package:bukidlink/services/ChatService.dart';
 import 'package:bukidlink/services/UserService.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:bukidlink/utils/constants/AppTextStyles.dart';
+import 'package:bukidlink/widgets/common/CustomBottomNavBar.dart';
 
 class InboxPage extends StatefulWidget {
   InboxPage({super.key});
@@ -20,7 +21,6 @@ class _InboxPageState extends State<InboxPage> {
   final Map<String, String> _usernameCache = {};
   final Set<String> _loadingUsernames = {};
 
-  String? _currentUid;
 
   String formatTime(DateTime time) {
     final now = DateTime.now();
@@ -35,37 +35,58 @@ class _InboxPageState extends State<InboxPage> {
   Widget build(BuildContext context) {
     // Do not rely on a single static uid here; we listen to auth state below.
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: true,
-        elevation: 0,
-        backgroundColor: AppColors.HEADER_GRADIENT_START,
-        centerTitle: true,
-        title: Text(
-          'Inbox',
-          style: GoogleFonts.outfit(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 22,
-          ),
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                AppColors.HEADER_GRADIENT_START,
-                AppColors.HEADER_GRADIENT_END,
-              ],
+      appBar: (UserService.currentUser?.type ?? 'Consumer') == 'Consumer'
+          ? AppBar(
+              automaticallyImplyLeading: false,
+              backgroundColor: AppColors.HEADER_GRADIENT_START,
+              elevation: 0,
+              title: const Text(
+                'Inbox',
+                style: AppTextStyles.PRODUCT_INFO_TITLE,
+              ),
+              flexibleSpace: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      AppColors.HEADER_GRADIENT_START,
+                      AppColors.HEADER_GRADIENT_END,
+                    ],
+                  ),
+                ),
+              ),
+            )
+          : AppBar(
+              automaticallyImplyLeading: true,
+              elevation: 0,
+              backgroundColor: AppColors.HEADER_GRADIENT_START,
+              centerTitle: true,
+              title: Text(
+                'Inbox',
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 22,
+                ),
+              ),
+              flexibleSpace: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      AppColors.HEADER_GRADIENT_START,
+                      AppColors.HEADER_GRADIENT_END,
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
       body: StreamBuilder<fb_auth.User?>(
         stream: fb_auth.FirebaseAuth.instance.authStateChanges(),
         builder: (context, authSnap) {
           final currentUid = authSnap.data?.uid ?? UserService.currentUser?.id;
-          _currentUid = currentUid;
           if (currentUid == null) {
             return const Center(child: Text('Please sign in to view messages'));
           }
@@ -202,6 +223,9 @@ class _InboxPageState extends State<InboxPage> {
           );
         },
       ),
+      bottomNavigationBar: (UserService.currentUser?.type ?? 'Consumer') == 'Consumer'
+          ? const CustomBottomNavBar(currentIndex: 2)
+          : null,
     );
   }
 
