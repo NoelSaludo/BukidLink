@@ -8,6 +8,8 @@ import 'package:bukidlink/Widgets/Posts/PostIcon.dart';
 import 'package:bukidlink/Widgets/Posts/PostContent.dart';
 import 'package:bukidlink/Widgets/Posts/PostUsername.dart';
 import 'package:bukidlink/Widgets/Posts/PostTimestamp.dart';
+import 'package:bukidlink/Pages/ProfilePage.dart';
+import 'package:bukidlink/Pages/farmer/FarmerProfilePage.dart'; // <-- Only if needed
 import 'package:bukidlink/utils/constants/AppColors.dart';
 
 class PostTile extends StatelessWidget {
@@ -16,14 +18,13 @@ class PostTile extends StatelessWidget {
   PostTile({super.key, required this.post});
 
   Future<Map<String, dynamic>> _fetchData() async {
-    // Fetch poster
     final poster = await UserService().getUserById(post.posterID);
-    // Fetch farm if poster has one
     Farm? farm;
+
     if (poster != null && poster.farmId != null) {
       farm = await UserService().getFarmByReference(poster.farmId);
     }
-    // Fetch current user
+
     final currentUser = await UserService().getCurrentUser();
 
     return {
@@ -40,7 +41,6 @@ class PostTile extends StatelessWidget {
     return FutureBuilder<Map<String, dynamic>>(
       future: _fetchData(),
       builder: (context, snapshot) {
-        // Loading state
         if (!snapshot.hasData) {
           return Container(
             margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -69,6 +69,7 @@ class PostTile extends StatelessWidget {
         final imageUrl = poster.profilePic.isEmpty
             ? 'assets/images/default_profile.png'
             : poster.profilePic;
+
         final farmName = farm?.name ?? '';
         final currentType = currentUser?.type?.trim().toLowerCase() ?? 'user';
 
@@ -90,29 +91,35 @@ class PostTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: profile image + username + timestamp
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  // Use Navigator.push instead of pushNamed
                   PostIcon(
                     imageUrl: imageUrl,
                     onTapped: () {
                       if (currentType == 'farmer') {
-                        Navigator.pushNamed(
+                        Navigator.push(
                           context,
-                          '/farmerProfile',
-                          arguments: poster.id,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                FarmerProfilePage(profileID: poster.id),
+                          ),
                         );
                       } else {
-                        Navigator.pushNamed(
+                        Navigator.push(
                           context,
-                          '/profile',
-                          arguments: poster.id,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ProfilePage(profileID: poster.id),
+                          ),
                         );
                       }
                     },
                   ),
+
                   const SizedBox(width: 12),
+
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,9 +137,11 @@ class PostTile extends StatelessWidget {
                   ),
                 ],
               ),
+
               const SizedBox(height: 10),
               const Divider(color: Colors.grey, thickness: 0.5),
               const SizedBox(height: 8),
+
               PostContent(
                 textContent: post.textContent,
                 imageUrl: post.imageContent,

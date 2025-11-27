@@ -54,7 +54,7 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 Divider(thickness: 1),
                 Text(
-                  'Posts History.',
+                  'Posts History',
                   style: AppTextStyles.PRODUCT_NAME_HEADER,
                 ),
               ],

@@ -60,11 +60,10 @@ class PostIcon extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.ACCENT_LIME.withOpacity(0.2),
       ),
-      child: const Icon(
-        Icons.person,
-        color: AppColors.ACCENT_LIME,
-        size: 32,
-      ),
+      child: CircleAvatar(
+            radius: 22,
+            backgroundImage: const AssetImage('assets/images/default_profile.png'),
+          ),
     );
   }
 }

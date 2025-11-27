@@ -73,7 +73,6 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       itemCount: posts.length,
                       itemBuilder: (context, index) {
-
                         final post = posts[index];
                         return PostTile(post: post);
                       },
