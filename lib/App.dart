@@ -43,28 +43,7 @@ class App extends StatelessWidget {
             );
           }
         }
-
         
-        if (settings.name == '/farmerProfile') {
-          final args = settings.arguments;
-          if (args is String) {
-            return MaterialPageRoute(
-              builder: (context) => FarmerProfilePage(profileID: args),
-            );
-          } else {
-            // Fallback for missing or invalid arguments
-            return MaterialPageRoute(
-              builder: (context) => const Scaffold(
-                body: Center(child: Text('Invalid or missing profile ID')),
-              ),
-            );
-          }
-        }
-
-<<<<<<< HEAD
-=======
-        
->>>>>>> firebase
         if (settings.name == '/farmerProfile') {
           final args = settings.arguments;
           if (args is String) {
