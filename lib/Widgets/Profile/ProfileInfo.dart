@@ -125,7 +125,7 @@ class _ProfileInfoState extends State<ProfileInfo> {
     }
 
     final profile = _profile!;
-    final String profileImage = 'assets${profile.profilePic}';
+    final String profileImage = '{profile.profilePic}';
     final String username = profile.username;
     final String? currentUid = UserService.currentUser?.id;
 
@@ -158,9 +158,7 @@ class _ProfileInfoState extends State<ProfileInfo> {
                     Positioned(
                       top: 30,
                       left: 10,
-                      child: BackButton(
-                        color: Colors.white,
-                      ),
+                      child: BackButton(color: Colors.white),
                     ),
                   ],
                 ),
@@ -206,46 +204,41 @@ class _ProfileInfoState extends State<ProfileInfo> {
               const SizedBox(height: 20),
 
               // --- Buttons Row ---
-if (currentUid == profile.id) ...[
-  // --- Add Post Button ---
-  SizedBox(
-    width: double.infinity,
-    child: AddPost()
-  ),
-] else ...[
-  // --- Follow + Message Buttons ---
-  Row(
-    children: [
-      Expanded(
-        child: FollowButton(farmId: profile.farmId?.id ?? ''),
-      ),
-      const SizedBox(width: 10),
-      Expanded(
-        child: ElevatedButton(
-          onPressed: () => onMessagePress(context),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryGreen,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            elevation: 0,
-          ),
-          child: const Text(
-            "Message",
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ),
-    ],
-  ),
-],
-
-
+              if (currentUid == profile.id) ...[
+                // --- Add Post Button ---
+                SizedBox(width: double.infinity, child: AddPost()),
+              ] else ...[
+                // --- Follow + Message Buttons ---
+                Row(
+                  children: [
+                    Expanded(
+                      child: FollowButton(farmId: profile.farmId?.id ?? ''),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => onMessagePress(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          "Message",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
