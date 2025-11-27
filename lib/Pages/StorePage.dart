@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:bukidlink/models/Product.dart';
 import 'package:bukidlink/services/ProductService.dart';
@@ -22,7 +23,9 @@ class _StorePageState extends State<StorePage>
   List<Product> _allStoreProducts = [];
   List<String> _categories = [];
   Map<String, int> _productCountByCategory = {};
+  double? _averageRating;
   final ProductService _productService = ProductService();
+  StreamSubscription<List<Product>>? _productsSubscription;
   bool _isLoading = true;
 
   @override
@@ -32,49 +35,77 @@ class _StorePageState extends State<StorePage>
   }
 
   void _loadStoreData() {
-    // Fetch products from service and prepare UI state
-    _productService
-        .fetchProducts()
-        .then((allProducts) {
-          final storeProducts = allProducts
-              .where((product) => product.farmName == widget.farmName)
-              .toList();
+    // Subscribe to a real-time stream from ProductService and prepare UI state
+    _isLoading = true;
+    _productsSubscription = _productService.streamProducts().listen(
+      (allProducts) {
+        final storeProducts = allProducts
+            .where((product) => product.farmName == widget.farmName)
+            .toList();
 
-          // Extract unique categories
-          final categorySet = <String>{};
-          for (var product in storeProducts) {
-            categorySet.add(product.category);
-          }
-          final categories = ['All', ...categorySet.toList()..sort()];
+        // Extract unique categories
+        final categorySet = <String>{};
+        for (var product in storeProducts) {
+          categorySet.add(product.category);
+        }
+        final categories = ['All', ...categorySet.toList()..sort()];
 
-          // Count products by category
-          final productCountByCategory = <String, int>{};
-          productCountByCategory['All'] = storeProducts.length;
-          for (var category in categorySet) {
-            productCountByCategory[category] = storeProducts
-                .where((product) => product.category == category)
-                .length;
-          }
+        // Count products by category
+        final productCountByCategory = <String, int>{};
+        productCountByCategory['All'] = storeProducts.length;
+        for (var category in categorySet) {
+          productCountByCategory[category] = storeProducts
+              .where((product) => product.category == category)
+              .length;
+        }
 
-          setState(() {
-            _allStoreProducts = storeProducts;
-            _categories = categories;
-            _productCountByCategory = productCountByCategory;
-            _tabController = TabController(
-              length: _categories.length,
-              vsync: this,
+        // compute average rating from the storeProducts (only visible + with rating)
+        double? computedAvg;
+        final ratings = storeProducts
+            .where((p) => p.rating != null)
+            .map((p) => p.rating!)
+            .toList();
+        if (ratings.isNotEmpty) {
+          computedAvg = ratings.reduce((a, b) => a + b) / ratings.length;
+        } else {
+          computedAvg = null;
+        }
+
+        setState(() {
+          _allStoreProducts = storeProducts;
+          _categories = categories;
+          _productCountByCategory = productCountByCategory;
+          _averageRating = computedAvg;
+
+          // Recreate the TabController when number of categories changes,
+          // but try to preserve the selected index.
+          final previousIndex = _tabController?.index ?? 0;
+          _tabController?.dispose();
+          _tabController = TabController(
+            length: _categories.length,
+            vsync: this,
+          );
+          // Clamp the index to the new range
+          if (_tabController!.length > 0) {
+            _tabController!.index = previousIndex.clamp(
+              0,
+              _tabController!.length - 1,
             );
-            _isLoading = false;
-          });
-        })
-        .catchError((e) {
-          debugPrint('Error loading store products: $e');
-          setState(() => _isLoading = false);
+          }
+
+          _isLoading = false;
         });
+      },
+      onError: (e) {
+        debugPrint('Error loading store products stream: $e');
+        setState(() => _isLoading = false);
+      },
+    );
   }
 
   @override
   void dispose() {
+    _productsSubscription?.cancel();
     _tabController?.dispose();
     super.dispose();
   }
@@ -104,6 +135,7 @@ class _StorePageState extends State<StorePage>
                         farmName: widget.farmName,
                         totalProducts: _allStoreProducts.length,
                         categories: _productCountByCategory.keys.length - 1,
+                        averageRating: _averageRating,
                       ),
                       StoreTabBar(
                         tabController: _tabController!,
