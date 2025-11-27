@@ -5,18 +5,19 @@ import 'package:bukidlink/Utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/models/Post.dart';
 import 'package:bukidlink/services/PostService.dart';
 import 'package:bukidlink/services/UserService.dart';
+import 'package:bukidlink/Utils/constants/AppColors.dart';
 
-class MakePost extends StatefulWidget {
+class AddPost extends StatefulWidget {
   final String text; // Text shown in the tappable container
   final VoidCallback? onPostCreated;
 
-  const MakePost({Key? key, this.text = "This is the single scrollable container", this.onPostCreated}) : super(key: key);
+  const AddPost({Key? key, this.text = "This is the single scrollable container", this.onPostCreated}) : super(key: key);
 
   @override
-  _MakePostState createState() => _MakePostState();
+  _AddPostState createState() => _AddPostState();
 }
 
-class _MakePostState extends State<MakePost> {
+class _AddPostState extends State<AddPost> {
   final _formKey = GlobalKey<FormState>();
   final _textController = TextEditingController();
   final _imageUrlController = TextEditingController();
@@ -207,56 +208,29 @@ class _MakePostState extends State<MakePost> {
   }
 
  @override
+@override
 Widget build(BuildContext context) {
-  final profileImage = user?.profilePic;
-
-  return GestureDetector(
-    onTap: _showModal,
-    child: Container(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 240, 244, 230),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15), // more visible shadow
-            blurRadius: 12,
-            spreadRadius: 1,
-            offset: const Offset(0, 6),
-          ),
-        ],
+  return ElevatedButton(
+      onPressed: () {
+        _showModal();
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primaryGreen,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        elevation: 0,
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // --- Profile Image ---
-          CircleAvatar(
-            radius: 22,
-            backgroundImage: (profileImage != null && profileImage.isNotEmpty)
-            ? (profileImage.toLowerCase().startsWith('http')
-            ? NetworkImage(profileImage)
-            : AssetImage('assets' + profileImage) as ImageProvider)
-            : const AssetImage('assets/images/default_profile.png'),
-          ),
-
-          const SizedBox(width: 16),
-
-          // --- Text ---
-          Expanded(
-            child: Text(
-              widget.text,
-              style: AppTextStyles.FORM_LABEL.copyWith(
-                fontSize: 14,       // slightly smaller than username
-                color: Colors.black87,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
+      child: const Text(
+        "Create Post",
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
       ),
-    ),
-  );
+    );
 }
 
 }

@@ -3,7 +3,7 @@ import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/widgets/common/BouncingDotsLoader.dart';
 
 class PostImage extends StatelessWidget {
-  final String imagePath;
+  final String? imagePath; // allow null
   final double? width;
   final double? height;
   final BoxFit fit;
@@ -18,10 +18,15 @@ class PostImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Return nothing if imagePath is null or empty
+    if (imagePath == null || imagePath!.trim().isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     // Check if the path is a URL
-    if (imagePath.toLowerCase().startsWith('http')) {
+    if (imagePath!.toLowerCase().startsWith('http')) {
       return Image.network(
-        imagePath,
+        imagePath!,
         width: width,
         height: height,
         fit: fit,
@@ -42,11 +47,11 @@ class PostImage extends StatelessWidget {
         },
       );
     }
-    String imageUrl = 'assets/images/' + imagePath;
 
     // Fallback to asset image
+    final assetPath = 'assets/images/' + imagePath!;
     return Image.asset(
-      imageUrl,
+      assetPath,
       width: width,
       height: height,
       fit: fit,

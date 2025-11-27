@@ -1,111 +1,125 @@
 import 'package:flutter/material.dart';
-import 'package:bukidlink/Widgets/Posts/PostIcon.dart';
-import 'package:bukidlink/Widgets/Posts/PostContent.dart';
-import 'package:bukidlink/Widgets/Posts/PostUsername.dart';
-import 'package:bukidlink/Widgets/Posts/PostTimestamp.dart';
+import 'package:intl/intl.dart';
 import 'package:bukidlink/models/Post.dart';
 import 'package:bukidlink/models/User.dart';
 import 'package:bukidlink/models/Farm.dart';
 import 'package:bukidlink/services/UserService.dart';
-import 'package:intl/intl.dart';
+import 'package:bukidlink/Widgets/Posts/PostIcon.dart';
+import 'package:bukidlink/Widgets/Posts/PostContent.dart';
+import 'package:bukidlink/Widgets/Posts/PostUsername.dart';
+import 'package:bukidlink/Widgets/Posts/PostTimestamp.dart';
+import 'package:bukidlink/Pages/ProfilePage.dart';
+import 'package:bukidlink/Pages/farmer/FarmerProfilePage.dart'; // <-- Only if needed
+import 'package:bukidlink/utils/constants/AppColors.dart';
 
 class PostTile extends StatelessWidget {
   final Post post;
+
   PostTile({super.key, required this.post});
 
-  // Cache the Future to prevent refetching on rebuilds
-  Future<Map<String, dynamic>>? _posterAndFarmFuture;
-
-  Future<Map<String, dynamic>> _getPosterAndFarm() {
-    _posterAndFarmFuture ??= _fetchPosterAndFarm();
-    return _posterAndFarmFuture!;
-  }
-
-  Future<Map<String, dynamic>> _fetchPosterAndFarm() async {
-    final user = await UserService().getUserById(post.posterID);
+  Future<Map<String, dynamic>> _fetchData() async {
+    final poster = await UserService().getUserById(post.posterID);
     Farm? farm;
-    if (user != null && user.farmId != null) {
-      farm = await UserService().getFarmByReference(user.farmId);
+
+    if (poster != null && poster.farmId != null) {
+      farm = await UserService().getFarmByReference(poster.farmId);
     }
-    return {'user': user, 'farm': farm};
+
+    final currentUser = await UserService().getCurrentUser();
+
+    return {
+      'poster': poster,
+      'farm': farm,
+      'currentUser': currentUser,
+    };
   }
 
   @override
   Widget build(BuildContext context) {
-    DateFormat formatter = DateFormat('MMM d, yyyy · H:mm a');
+    final DateFormat formatter = DateFormat('MMM d, yyyy · h:mm a');
 
     return FutureBuilder<Map<String, dynamic>>(
-      future: _getPosterAndFarm(),
+      future: _fetchData(),
       builder: (context, snapshot) {
-        // Show a small placeholder while loading instead of full spinner
         if (!snapshot.hasData) {
           return Container(
-            margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-            height: 120,
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            height: 140,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 12,
+                  spreadRadius: 1,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
           );
         }
 
-        final poster = snapshot.data!['user'] as User?;
+        final poster = snapshot.data!['poster'] as User?;
         final farm = snapshot.data!['farm'] as Farm?;
+        final currentUser = snapshot.data!['currentUser'] as User?;
 
         if (poster == null) return const SizedBox();
 
-        final imageUrl = (poster.profilePic.isEmpty)
-            ? 'default_profile.png'
+        final imageUrl = poster.profilePic.isEmpty
+            ? 'assets/images/default_profile.png'
             : poster.profilePic;
+
         final farmName = farm?.name ?? '';
+        final currentType = currentUser?.type?.trim().toLowerCase() ?? 'user';
 
         return Container(
-          margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 12,
+                spreadRadius: 1,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: Profile icon + Username + Timestamp
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  // Use Navigator.push instead of pushNamed
                   PostIcon(
                     imageUrl: imageUrl,
                     onTapped: () {
-                      if (poster.farmId != null) {
-                        Navigator.pushNamed(
+                      if (currentType == 'farmer') {
+                        Navigator.push(
                           context,
-                          '/farmerProfile',
-                          arguments: poster.id,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                FarmerProfilePage(profileID: poster.id),
+                          ),
                         );
                       } else {
-                        Navigator.pushNamed(
+                        Navigator.push(
                           context,
-                          '/profile',
-                          arguments: poster.id,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ProfilePage(profileID: poster.id),
+                          ),
                         );
                       }
                     },
                   ),
-                  const SizedBox(width: 10),
+
+                  const SizedBox(width: 12),
+
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,8 +137,11 @@ class PostTile extends StatelessWidget {
                   ),
                 ],
               ),
+
               const SizedBox(height: 10),
-              const Divider(thickness: 1),
+              const Divider(color: Colors.grey, thickness: 0.5),
+              const SizedBox(height: 8),
+
               PostContent(
                 textContent: post.textContent,
                 imageUrl: post.imageContent,
