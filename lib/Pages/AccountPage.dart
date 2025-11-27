@@ -1,4 +1,3 @@
-import 'package:bukidlink/services/UserService.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
@@ -9,8 +8,6 @@ import 'package:bukidlink/services/ImagePickerService.dart';
 import 'package:bukidlink/pages/MyAddressPage.dart';
 import 'package:bukidlink/pages/AccountSecurityPage.dart';
 import 'package:bukidlink/pages/EditProfilePage.dart';
-import 'package:bukidlink/Pages/LoginPage.dart';
-import 'package:bukidlink/utils/PageNavigator.dart';
 
 class AccountPage extends StatefulWidget {
   final User? currentUser;
@@ -625,49 +622,26 @@ class _AccountPageState extends State<AccountPage> {
             ),
           ),
           TextButton(
-            onPressed: () async {
-              Navigator.pop(context); // Close dialog
-
-              try {
-                // Sign out using UserService
-                await UserService().signOut();
-
-                if (context.mounted) {
-                  // Navigate to login page and remove all previous routes
-                  PageNavigator().goTo(context, const LoginPage());
-
-                  // Show success message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Row(
-                        children: const [
-                          Icon(Icons.check_circle, color: Colors.white),
-                          SizedBox(width: 8),
-                          Text('Logged out successfully'),
-                        ],
-                      ),
-                      backgroundColor: AppColors.SUCCESS_GREEN,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      margin: const EdgeInsets.all(16),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Logout failed: ${e.toString()}'),
-                      backgroundColor: AppColors.ERROR_RED,
-                      behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 3),
-                    ),
-                  );
-                }
-              }
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Implement logout logic
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: const [
+                      Icon(Icons.check_circle, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text('Logged out successfully'),
+                    ],
+                  ),
+                  backgroundColor: AppColors.SUCCESS_GREEN,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  margin: const EdgeInsets.all(16),
+                ),
+              );
             },
             child: Text(
               'Logout',

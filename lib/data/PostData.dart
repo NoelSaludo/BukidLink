@@ -8,14 +8,14 @@
 //       id: '1',
 //       textContent: 'Bili na kayo mga suki!',
 //       imageContent: 'post1.png',
-//       createdAt: DateTime(2025, 10, 10, 10, 30),
+//       timestamp: DateTime(2025, 10, 10, 10, 30),
 //       posterID: '1',
 //     ),
 //     Post(
 //       id: '2',
 //       textContent:'Fresh fruits available at our store!',
 //       imageContent: 'post2.png',
-//       createdAt: DateTime(2025, 10, 10, 10, 30),
+//       timestamp: DateTime(2025, 10, 10, 10, 30),
 //       posterID: '2',
 //     ),
 //   ];
