@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:bukidlink/Widgets/Posts/PostIcon.dart';
-import 'package:bukidlink/Widgets/Posts/PostContent.dart';
-import 'package:bukidlink/Widgets/Posts/PostUsername.dart';
-import 'package:bukidlink/Widgets/Posts/PostTimestamp.dart';
+import 'package:intl/intl.dart';
 import 'package:bukidlink/models/Post.dart';
 import 'package:bukidlink/models/User.dart';
 import 'package:bukidlink/models/Farm.dart';
 import 'package:bukidlink/services/UserService.dart';
-import 'package:intl/intl.dart';
+import 'package:bukidlink/Widgets/Posts/PostIcon.dart';
+import 'package:bukidlink/Widgets/Posts/PostContent.dart';
+import 'package:bukidlink/Widgets/Posts/PostUsername.dart';
+import 'package:bukidlink/Widgets/Posts/PostTimestamp.dart';
 
 class PostTile extends StatelessWidget {
   final Post post;
   PostTile({super.key, required this.post});
 
-  // Cache the Future to prevent refetching on rebuilds
   Future<Map<String, dynamic>>? _posterAndFarmFuture;
 
   Future<Map<String, dynamic>> _getPosterAndFarm() {
@@ -37,17 +36,16 @@ class PostTile extends StatelessWidget {
     return FutureBuilder<Map<String, dynamic>>(
       future: _getPosterAndFarm(),
       builder: (context, snapshot) {
-        // Show a small placeholder while loading instead of full spinner
         if (!snapshot.hasData) {
           return Container(
-            margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             height: 120,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withOpacity(0.03),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -58,25 +56,24 @@ class PostTile extends StatelessWidget {
 
         final poster = snapshot.data!['user'] as User?;
         final farm = snapshot.data!['farm'] as Farm?;
-
         if (poster == null) return const SizedBox();
 
         final imageUrl = (poster.profilePic.isEmpty)
-            ? 'default_profile.png'
+            ? 'assets/default_profile.png'
             : poster.profilePic;
         final farmName = farm?.name ?? '';
 
         return Container(
-          margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
@@ -87,8 +84,10 @@ class PostTile extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  // Profile Icon
                   PostIcon(
                     imageUrl: imageUrl,
+                    radius: 24,
                     onTapped: () {
                       if (poster.farmId != null) {
                         Navigator.pushNamed(
@@ -105,7 +104,9 @@ class PostTile extends StatelessWidget {
                       }
                     },
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
+
+                  // Username + Timestamp
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,7 +125,14 @@ class PostTile extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
-              const Divider(thickness: 1),
+
+              const Divider(
+                thickness: 0.5,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 8),
+
+              // Post content
               PostContent(
                 textContent: post.textContent,
                 imageUrl: post.imageContent,

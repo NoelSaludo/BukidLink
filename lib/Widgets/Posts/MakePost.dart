@@ -46,9 +46,9 @@ class _MakePostState extends State<MakePost> {
     if (_imageUrlController.text.isNotEmpty) {
       imageContent = _imageUrlController.text;
     } else if (_imageFile != null) {
-      imageContent = 'post1.png'; // Replace with actual upload path if needed
+      imageContent = ''; // Replace with actual upload path if needed
     } else {
-      imageContent = 'post1.png';
+      imageContent = '';
     }
 
     return Post(
@@ -233,9 +233,12 @@ Widget build(BuildContext context) {
           CircleAvatar(
             radius: 22,
             backgroundImage: (profileImage != null && profileImage.isNotEmpty)
+            ? (profileImage.toLowerCase().startsWith('http')
             ? NetworkImage(profileImage)
-            : const AssetImage('assets/images/default_profile.png') as ImageProvider,
-            ),
+            : AssetImage('assets' + profileImage) as ImageProvider)
+            : const AssetImage('assets/images/default_profile.png'),
+          ),
+
 
           const SizedBox(width: 16),
 
