@@ -6,7 +6,9 @@ import 'package:bukidlink/widgets/common/CustomBottomNavBar.dart';
 import 'package:bukidlink/models/Post.dart';
 import 'package:bukidlink/Widgets/Posts/PostTile.dart';
 import 'package:bukidlink/services/PostService.dart';
+import 'package:bukidlink/services/UserService.dart';
 import 'package:bukidlink/Widgets/farmer/FarmerBottomNavBar.dart';
+import 'package:bukidlink/models/User.dart';
 
 class FarmerProfilePage extends StatefulWidget {
   final String profileID;
@@ -23,6 +25,7 @@ class FarmerProfilePage extends StatefulWidget {
 class _FarmerProfilePageState extends State<FarmerProfilePage> {
   List<Post> posts = [];
   bool isLoading = true;
+  final user = UserService().getCurrentUser();
 
   @override
   void initState() {
@@ -60,7 +63,6 @@ class _FarmerProfilePageState extends State<FarmerProfilePage> {
               padding: EdgeInsets.symmetric(vertical: 10),
               child: Column(
                 children: [
-                  Divider(thickness: 1),
                   SizedBox(height: 5),
                   Text(
                     'Posts History',
@@ -103,7 +105,6 @@ class _FarmerProfilePageState extends State<FarmerProfilePage> {
             ),
         ],
       ),
-      bottomNavigationBar: const FarmerBottomNavBar(currentIndex: 2),
     );
   }
 }

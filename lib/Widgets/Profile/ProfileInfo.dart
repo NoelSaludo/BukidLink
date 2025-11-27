@@ -8,10 +8,10 @@ import 'package:bukidlink/Widgets/Profile/ProfileIcon.dart';
 import 'package:bukidlink/Widgets/Profile/MessageButton.dart';
 import 'package:bukidlink/Widgets/Profile/FollowButton.dart';
 import 'package:bukidlink/Utils/constants/AppColors.dart';
-
 import 'package:bukidlink/services/ChatService.dart';
 import 'package:bukidlink/Pages/ChatPage.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileUsername.dart';
+import 'package:bukidlink/Widgets/Posts/AddPost.dart';
 // PageNavigator and MessagePage were used previously for navigation to a
 // legacy message page; we now navigate directly to `ChatPage`.
 
@@ -26,6 +26,7 @@ class ProfileInfo extends StatefulWidget {
 
 class _ProfileInfoState extends State<ProfileInfo> {
   final UserService _userService = UserService();
+  final currentUserID = UserService().getCurrentUser()?.id;
   User? _profile;
   bool _isLoading = true;
 
@@ -205,38 +206,46 @@ class _ProfileInfoState extends State<ProfileInfo> {
               const SizedBox(height: 20),
 
               // --- Buttons Row ---
-              Row(
-                children: [
-                  Expanded(
-                    child: FollowButton(farmId: profile.farmId?.id ?? ''),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed:
-                          (currentUid != null && currentUid != profile.id)
-                          ? () => onMessagePress(context)
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryGreen,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        "Message",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+if (currentUid == profile.id) ...[
+  // --- Add Post Button ---
+  SizedBox(
+    width: double.infinity,
+    child: AddPost()
+  ),
+] else ...[
+  // --- Follow + Message Buttons ---
+  Row(
+    children: [
+      Expanded(
+        child: FollowButton(farmId: profile.farmId?.id ?? ''),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: ElevatedButton(
+          onPressed: () => onMessagePress(context),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryGreen,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            elevation: 0,
+          ),
+          child: const Text(
+            "Message",
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    ],
+  ),
+],
+
+
             ],
           ),
         ),

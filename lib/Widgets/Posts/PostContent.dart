@@ -24,7 +24,15 @@ class PostContent extends StatelessWidget {
           Container(
             padding: EdgeInsets.only(left: 10.0, bottom: 10.0),
             alignment: Alignment.topLeft,
-            child: Text(textContent),),
+            child: Text(
+              textContent,
+              style: TextStyle(
+                fontSize: 14.0,        // slightly smaller than username
+                color: Colors.black87,  // soft black for readability
+                height: 1.4,           // line spacing for legibility
+                fontWeight: FontWeight.normal,
+              ),
+),),
           const SizedBox(height: 20.0),
           if(imageUrl.isNotEmpty) 
           PostImage(imagePath:imageUrl)

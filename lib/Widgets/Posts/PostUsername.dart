@@ -25,12 +25,20 @@ class PostUsername extends StatelessWidget {
         SizedBox(
           child: Text(
           username,
-          style: AppTextStyles.PRODUCT_NAME_HEADER,
+          style: TextStyle(
+            fontSize: 15.0,
+            color: Colors.black,
+            fontWeight: FontWeight.w600,
+          ),
           ),
         ),
         Text(
           farmName,
-          style: AppTextStyles.farmName,
+          
+          style: TextStyle(
+            fontSize: 13.0,        // slightly larger than post content
+            color: Colors.grey,    // more prominent// semi-bold
+          ),
         )
       ]),
     );

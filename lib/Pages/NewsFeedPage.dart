@@ -71,15 +71,9 @@ class _NewsFeedPageState extends State<NewsFeedPage> {
               : posts.isNotEmpty
                   ? ListView.builder(
                       padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemCount: posts.length + 1,
+                      itemCount: posts.length,
                       itemBuilder: (context, index) {
-                        if (index == 0) {
-                          return MakePost(
-                            onPostCreated: refreshPosts,
-                            text: "What's on your mind?",
-                          );
-                        }
-                        final post = posts[index - 1];
+                        final post = posts[index];
                         return PostTile(post: post);
                       },
                     )

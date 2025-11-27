@@ -53,7 +53,10 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Column(
               children: [
                 Divider(thickness: 1),
-                Text('Posts History', style: AppTextStyles.PRODUCT_NAME_HEADER),
+                Text(
+                  'Posts History',
+                  style: AppTextStyles.PRODUCT_NAME_HEADER,
+                ),
               ],
             ),
           ),
@@ -89,7 +92,6 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
         ],
       ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),
     );
   }
 }
