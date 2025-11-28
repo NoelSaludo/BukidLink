@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bukidlink/models/User.dart';
 import 'package:bukidlink/services/UserService.dart';
+import 'package:bukidlink/services/follow_service.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileCoverPicture.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileIcon.dart';
 import 'package:bukidlink/Widgets/Profile/MessageButton.dart';
 import 'package:bukidlink/Widgets/Profile/FollowButton.dart';
 import 'package:bukidlink/Utils/constants/AppColors.dart';
+import 'package:bukidlink/Utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/services/ChatService.dart';
 import 'package:bukidlink/Pages/ChatPage.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileUsername.dart';
@@ -201,6 +203,21 @@ class _ProfileInfoState extends State<ProfileInfo> {
                 "Farmer • Local Producer",
                 style: TextStyle(fontSize: 14, color: Colors.grey[700]),
               ),
+              const SizedBox(height: 8),
+              // Followers count
+              if (profile.farmId != null)
+                StreamBuilder<int>(
+                  stream: FollowService().followerCountStream(
+                    farmId: profile.farmId!.id,
+                  ),
+                  builder: (context, snapshot) {
+                    final count = snapshot.data ?? 0;
+                    return Text(
+                      '$count followers'.replaceAll('\u0000', ''),
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    );
+                  },
+                ),
               const SizedBox(height: 20),
 
               // --- Buttons Row ---
@@ -216,22 +233,25 @@ class _ProfileInfoState extends State<ProfileInfo> {
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => onMessagePress(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryGreen,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      child: SizedBox(
+                        height: 44,
+                        child: ElevatedButton(
+                          onPressed: () => onMessagePress(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryGreen,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            elevation: 2,
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          elevation: 0,
-                        ),
-                        child: const Text(
-                          "Message",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                          child: Text(
+                            "Message",
+                            style: AppTextStyles.BUTTON_TEXT.copyWith(
+                              fontSize: 13.0,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ),
