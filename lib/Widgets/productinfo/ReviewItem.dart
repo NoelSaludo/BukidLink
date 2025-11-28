@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:bukidlink/models/ProductReview.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
+import 'package:intl/intl.dart';
 
 class ReviewItem extends StatelessWidget {
   final ProductReview review;
@@ -101,7 +102,7 @@ class ReviewItem extends StatelessWidget {
                         }),
                       ),
                       const SizedBox(width: 8),
-                      Text(review.date, style: AppTextStyles.REVIEW_DATE),
+                      Text(DateFormat('yyyy-MM-dd').format(review.date), style: AppTextStyles.REVIEW_DATE),
                     ],
                   ),
                 ],

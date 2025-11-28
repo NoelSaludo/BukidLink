@@ -2,26 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
-import 'package:bukidlink/utils/PageNavigator.dart';
-import 'package:bukidlink/pages/StorePage.dart';
+// Navigation now uses named routes; PageNavigator/ProfilePage import not required here.
+import 'package:bukidlink/Widgets/Profile/FollowButton.dart';
+import 'package:bukidlink/services/FarmService.dart';
 
 class ProductDetailsCard extends StatelessWidget {
   final String description;
   final String farmName;
+  final String? farmId;
 
   const ProductDetailsCard({
     super.key,
     required this.description,
     required this.farmName,
+    this.farmId,
   });
 
-  void _navigateToStore(BuildContext context) {
+  Future<void> _navigateToProfile(BuildContext context) async {
     HapticFeedback.lightImpact();
-    PageNavigator().goToAndKeepWithTransition(
+    // Resolve the farm owner (user) id when we have a farmId and pass
+    // the userId to the named route so navigation remains consistent.
+    String? argumentToPass;
+    if (farmId != null && farmId!.isNotEmpty) {
+      final userId = await FarmService().getUserIdForFarmId(farmId!);
+      argumentToPass = userId ?? farmId;
+    } else {
+      argumentToPass = farmName;
+    }
+
+    Navigator.of(
       context,
-      StorePage(farmName: farmName),
-      PageTransitionType.slideFromRight,
-    );
+    ).pushNamed('/farmerProfile', arguments: argumentToPass);
   }
 
   @override
@@ -49,7 +60,7 @@ class ProductDetailsCard extends StatelessWidget {
           Text(description, style: AppTextStyles.DESCRIPTION_TEXT),
           const SizedBox(height: 16),
           GestureDetector(
-            onTap: () => _navigateToStore(context),
+            onTap: () => _navigateToProfile(context),
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -89,7 +100,18 @@ class ProductDetailsCard extends StatelessWidget {
                           style: AppTextStyles.SELLER_LABEL_MEDIUM,
                         ),
                         const SizedBox(height: 2),
-                        Text(farmName, style: AppTextStyles.SELLER_NAME_LARGE),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              farmName,
+                              style: AppTextStyles.SELLER_NAME_LARGE,
+                            ),
+                            const SizedBox(height: 8),
+                            if (farmId != null)
+                              FollowButton(farmId: farmId!, width: 120),
+                          ],
+                        ),
                       ],
                     ),
                   ),

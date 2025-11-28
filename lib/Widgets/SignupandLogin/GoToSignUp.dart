@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bukidlink/Utils/constants/AppTextStyles.dart';
 
 class GoToSignUp extends StatelessWidget {
   final VoidCallback onPressed;
@@ -10,8 +11,14 @@ class GoToSignUp extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text("Don't have an account yet?"),
-        TextButton(onPressed: onPressed, child: Text('Sign Up')),
+        const Text(
+          "Don't have an account yet?",
+          style: AppTextStyles.BODY_MEDIUM,
+        ),
+        TextButton(
+          onPressed: onPressed,
+          child: const Text('Sign Up', style: AppTextStyles.LINK_TEXT),
+        ),
       ],
     );
   }

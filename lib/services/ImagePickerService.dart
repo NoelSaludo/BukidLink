@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:bukidlink/services/cloudinary_service.dart';
 
 /// A reusable service for handling image picking operations
 /// Provides methods for selecting images from camera or gallery
@@ -27,7 +28,17 @@ class ImagePickerService {
       );
 
       if (image != null) {
-        return image.path;
+        // Upload picked file to Cloudinary and return the secure URL
+        try {
+          final File file = File(image.path);
+          final String? uploadedUrl = await CloudinaryService().uploadFile(
+            file,
+          );
+          return uploadedUrl;
+        } catch (e) {
+          debugPrint('Failed to upload image to Cloudinary: $e');
+          return null;
+        }
       }
       return null;
     } on PlatformException catch (e) {
@@ -72,7 +83,8 @@ class ImagePickerService {
   Future<String?> saveImageToAppDirectory(String imagePath) async {
     try {
       final Directory appDir = await getApplicationDocumentsDirectory();
-      final String fileName = 'profile_${DateTime.now().millisecondsSinceEpoch}${path.extension(imagePath)}';
+      final String fileName =
+          'profile_${DateTime.now().millisecondsSinceEpoch}${path.extension(imagePath)}';
       final String newPath = path.join(appDir.path, 'profile_images', fileName);
 
       // Create directory if it doesn't exist
@@ -147,10 +159,7 @@ class ImageSourceBottomSheet extends StatelessWidget {
             const SizedBox(height: 20),
             const Text(
               'Change Profile Picture',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
             ListTile(
@@ -169,14 +178,15 @@ class ImageSourceBottomSheet extends StatelessWidget {
               subtitle: const Text('Use your camera'),
               onTap: () async {
                 HapticFeedback.lightImpact();
-                Navigator.pop(context); // Close bottom sheet first
-                final String? imagePath = await imagePickerService.pickFromCamera(
-                  imageQuality: 85,
-                  maxWidth: 1024,
-                  maxHeight: 1024,
-                );
-                if (context.mounted && imagePath != null) {
-                  Navigator.pop(context, imagePath);
+                // Pick and upload; return the Cloudinary URL to the caller
+                final String? imageUrl = await imagePickerService
+                    .pickFromCamera(
+                      imageQuality: 85,
+                      maxWidth: 1024,
+                      maxHeight: 1024,
+                    );
+                if (context.mounted) {
+                  Navigator.pop(context, imageUrl);
                 }
               },
             ),
@@ -197,14 +207,14 @@ class ImageSourceBottomSheet extends StatelessWidget {
               subtitle: const Text('Select from your photos'),
               onTap: () async {
                 HapticFeedback.lightImpact();
-                Navigator.pop(context); // Close bottom sheet first
-                final String? imagePath = await imagePickerService.pickFromGallery(
-                  imageQuality: 85,
-                  maxWidth: 1024,
-                  maxHeight: 1024,
-                );
-                if (context.mounted && imagePath != null) {
-                  Navigator.pop(context, imagePath);
+                final String? imageUrl = await imagePickerService
+                    .pickFromGallery(
+                      imageQuality: 85,
+                      maxWidth: 1024,
+                      maxHeight: 1024,
+                    );
+                if (context.mounted) {
+                  Navigator.pop(context, imageUrl);
                 }
               },
             ),

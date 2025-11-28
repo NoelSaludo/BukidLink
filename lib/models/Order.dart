@@ -1,6 +1,5 @@
-//Order.dart
 import 'package:bukidlink/models/CartItem.dart';
-import 'package:bukidlink/models/FarmerOrderSubStatus.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum OrderStatus {
   toPay,
@@ -36,19 +35,25 @@ class Order {
 
   /// Check if all products in this order are rated
   bool get isAllRated {
-    return items.every((item) => item.product.tempRating > 0);
+    return items.every((item) => (item.product?.rating ?? 0) > 0);
   }
 
+  Order fromDocument(Map<String, dynamic> data) {
+    return Order(
+      id: data['id'] ?? '',
+      items: (data['items'] as List<dynamic>? ?? [])
+          .map((item) => CartItem.fromDocument(item))
+          .toList(),
+      recipientName: data['recipient_name'] ?? '',
+      contactNumber: data['contact_number'] ?? '',
+      shippingAddress: data['shipping_address'] ?? '',
+      datePlaced: (data['date_placed'] as Timestamp).toDate(),
+      dateDelivered: data['date_delivered'] != null
+          ? (data['date_delivered'] as Timestamp).toDate()
+          : null,
+      status: OrderStatus.values.firstWhere(
+          (e) => e.toString() == 'OrderStatus.${data['status']}',
+          orElse: () => OrderStatus.toPay),
+    );
+  }
 }
-
-class OrderWithFarmerStage {
-  final Order order;
-  final FarmerSubStatus farmerStage;
-
-  OrderWithFarmerStage({
-    required this.order,
-    required this.farmerStage,
-  });
-}
-
-

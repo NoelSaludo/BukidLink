@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/WelcomeText.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/LoginorSigninButton.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/UsernameField.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/PasswordField.dart';
-import 'package:bukidlink/Widgets/SignupandLogin/ConfirmPasswordField.dart';
+import 'package:bukidlink/widgets/SignupandLogin/SignUpHeader.dart';
+import 'package:bukidlink/widgets/auth/AuthTextField.dart';
+import 'package:bukidlink/widgets/auth/AuthButton.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
-import 'package:bukidlink/Widgets/CustomBackButton.dart';
 import 'package:bukidlink/Pages/LoadingPage.dart';
 import 'package:bukidlink/models/User.dart';
+import 'package:bukidlink/models/Farm.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bukidlink/services/UserService.dart';
-
+import 'package:bukidlink/Utils/FormValidator.dart';
+import 'package:bukidlink/Utils/constants/AppColors.dart';
 
 class SignUpContinuedPage extends StatefulWidget {
   final String firstName;
@@ -17,6 +17,8 @@ class SignUpContinuedPage extends StatefulWidget {
   final String emailAddress;
   final String address;
   final String contactNumber;
+  final String accountType;
+
   const SignUpContinuedPage({
     super.key,
     required this.firstName,
@@ -24,7 +26,8 @@ class SignUpContinuedPage extends StatefulWidget {
     required this.emailAddress,
     required this.address,
     required this.contactNumber,
-    });
+    required this.accountType,
+  });
 
   @override
   State<SignUpContinuedPage> createState() => _SignUpContinuedPageState();
@@ -33,226 +36,251 @@ class SignUpContinuedPage extends StatefulWidget {
 class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-  TextEditingController();
-  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  final ValueNotifier<String> accountType = ValueNotifier<String>('Sign Up');
-  String? forceErrorText;
+  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController farmAddressController = TextEditingController();
+  final TextEditingController farmNameController = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool isLoading = false;
 
+  // Use an instance of FormValidator and call its instance methods
+  final FormValidator formValidator = FormValidator();
+
+  @override
   void dispose() {
     usernameController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
+    farmAddressController.dispose();
+    farmNameController.dispose();
     super.dispose();
   }
 
-  void onChanged(String value) {
-    if (forceErrorText != null) {
-      setState(() {
-        forceErrorText = null;
-      });
-    }
-  }
-
-  void handleSignUp(BuildContext context) async {
-    final bool isValid = formKey.currentState?.validate() ?? false;
-
-    if (!isValid) {
+  void _handleSignUp() async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
 
     setState(() => isLoading = true);
 
     try {
-      // Create User model with all collected data
       final user = User(
         id: '',
-        // Firebase will generate the UID, we'll use empty string for now
         username: usernameController.text,
         password: passwordController.text,
-        // Plain password - Firebase handles hashing
         firstName: widget.firstName,
         lastName: widget.lastName,
         emailAddress: widget.emailAddress,
         address: widget.address,
         contactNumber: widget.contactNumber,
-        profilePic: '',
-        // Default empty, can be set later
-        type: accountType
-            .value, // Use the selected account type (Consumer or Farmer)
+        profilePic: '/images/default_profile.png',
+        type: widget.accountType,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
 
-      // Use UserService to create account and sign in
-      final userCredential = await UserService().register(
-          user);
+      final userCredential = widget.accountType == 'Farmer'
+          ? await UserService().registerFarm(
+              user,
+              Farm(
+                id: '',
+                name: farmNameController.text,
+                address: farmAddressController.text,
+                ownerId: FirebaseFirestore.instance.doc('users/placeholder'),
+                createdAt: DateTime.now(),
+                updatedAt: DateTime.now(),
+              ),
+            )
+          : await UserService().registerUser(user);
 
-      if (context.mounted) {
-        setState(() => isLoading = false);
-
+      if (mounted) {
         if (userCredential != null) {
-          // Successfully signed up and signed in
-          PageNavigator().goTo(context, LoadingPage());
+          PageNavigator().goTo(context, LoadingPage(userType: widget.accountType));
         } else {
-          // Sign-up failed
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Sign-up failed. Please try again.')),
           );
         }
       }
     } catch (e) {
-      if (context.mounted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+      }
+    } finally {
+      if (mounted) {
         setState(() => isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Mirror the layout used in SignUpPage: gradient background + SignUpHeader
+    final height = MediaQuery.of(context).size.height;
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      resizeToAvoidBottomInset: false,
-      body: _buildContent(context),
-    );
-  }
-
-  Widget _buildContent(BuildContext context) {
-    final height = MediaQuery
-        .of(context)
-        .size
-        .height;
-    final width = MediaQuery
-        .of(context)
-        .size
-        .width;
-    accountType.value = 'Consumer';
-
-    return Stack(
-      children: [
-        const SizedBox(height: 150.0),
-        Positioned(
-          top: 20,
-          left: 10,
-          child: CustomBackButton(
-            onPressed: () => PageNavigator().goBack(context),
-          ),
-        ),
-        Align(
-          alignment: Alignment.topCenter,
-          child: Column(
-            children: [
-              const SizedBox(height: 150.0),
-              const WelcomeText(text: 'Almost Done!'),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.LOGIN_BACKGROUND_START,
+              AppColors.LOGIN_BACKGROUND_END,
             ],
           ),
         ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: Container(
-            width: width * 0.90,
-            height: height * 0.70,
-            decoration: const BoxDecoration(
-              color: Color.fromARGB(255, 160, 190, 92),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20.0),
-                topRight: Radius.circular(20.0),
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter, // Starting point of the gradient
-                end: Alignment.bottomCenter, // Ending point of the gradient
-                colors: [
-                  const Color.fromARGB(
-                    255,
-                    200,
-                    230,
-                    108,
-                  ), // First color in the gradient
-                  const Color.fromARGB(
-                    255,
-                    52,
-                    82,
-                    52,
-                  ), // Second color in the gradient
-                ],
-                stops: [0.0, 1.0], // Optional: Define color distribution
-              ),
-            ),
-            child: Form(
-              key: formKey,
-              child: ValueListenableBuilder<String>(
-                valueListenable: accountType,
-                builder: (context, tab, _) {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // --- Input fields ---
-                      const SizedBox(height: 50.0),
-                      EmailField(
-                        controller: usernameController,
-                        mode: 'SignUp',
-                        forceErrorText: forceErrorText,
-                        onChanged: onChanged,
+        child: SingleChildScrollView(
+          child: SizedBox(
+            height: height,
+            child: Stack(
+              alignment: Alignment.bottomCenter,
+              children: [
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: Padding(
+                    padding: EdgeInsets.only(top: height * 0.10),
+                    child: const SignUpHeader(),
+                  ),
+                ),
+                Positioned(
+                  top: 40,
+                  left: 8,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
+                    width: double.infinity,
+                    height: height * 0.60,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(40.0),
+                        topRight: Radius.circular(40.0),
                       ),
-                      PasswordField(
-                        controller: passwordController,
-                        mode: 'SignUp',
-                        forceErrorText: null,
-                        onChanged: onChanged,
-                      ),
-                      ConfirmPasswordField(
-                        controller: confirmPasswordController,
-
-                      ),
-                      const SizedBox(height: 16.0),
-                      // --- Action button ---
-                      const Spacer(),
-                      Container(
-                        alignment: Alignment.bottomCenter,
-                        child: LoginorSigninButton(
-                          onPressed: () {
-                            if (tab == 'Consumer') {
-                              handleSignUp(context);
-                            } else if (tab == 'Farmer') {
-                              handleSignUp(context);
-                            }
-                          },
-                          mode: tab,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromRGBO(0, 0, 0, 0.1),
+                          spreadRadius: 1,
+                          blurRadius: 10,
+                          offset: const Offset(0, -5),
                         ),
-                      ),
-
-                      const SizedBox(height: 50.0),
-                    ],
-                  );
-                },
-              ),
+                      ],
+                    ),
+                    child: _buildForm(),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildTabButton(String label, bool isActive, VoidCallback onPressed) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isActive ? Colors.green : Colors.white,
-        foregroundColor: isActive ? Colors.white : Colors.green[800],
-        minimumSize: const Size(100, 35),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-      onPressed: onPressed,
-      child: Text(label),
     );
   }
 
-  void goBack(BuildContext context) {
-    PageNavigator().goBack(context);
-  }
+  Widget _buildForm() {
+    return Form(
+      key: _formKey,
+      child: SingleChildScrollView(
+        child: Padding(
+          // match SignUpPage padding inside the white sheet
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 16.0),
 
+              // Added descriptive heading for this step (avoid numeric "Step 2")
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: Column(
+                  children: [
+                    Text(
+                      'Create your account credentials',
+                      style: TextStyle(
+                        fontSize: 20.0,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.DARK_TEXT,
+                      ),
+                    ),
+                    const SizedBox(height: 6.0),
+                    Text(
+                      'Pick a username and secure password to sign in later.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppColors.DARK_TEXT.withAlpha(180),
+                        fontSize: 13.0,
+                      ),
+                    ),
+                    const SizedBox(height: 12.0),
+                  ],
+                ),
+              ),
+
+              AuthTextField(
+                controller: usernameController,
+                hintText: 'Username',
+                validator: formValidator.signupUsernameValidator,
+              ),
+              const SizedBox(height: 8.0),
+              AuthTextField(
+                controller: passwordController,
+                hintText: 'Password',
+                obscureText: true,
+                validator: formValidator.signupPasswordValidator,
+              ),
+              const SizedBox(height: 8.0),
+              AuthTextField(
+                controller: confirmPasswordController,
+                hintText: 'Confirm Password',
+                obscureText: true,
+                validator: (value) {
+                  final baseValidation = formValidator.confirmPasswordValidator(value);
+                  if (baseValidation != null) return baseValidation;
+                  if (value != passwordController.text) {
+                    return 'Value must be the same as Password field';
+                  }
+                  return null;
+                },
+              ),
+              if (widget.accountType == 'Farmer') ...[
+                const SizedBox(height: 8.0),
+                AuthTextField(
+                  controller: farmNameController,
+                  hintText: 'Farm Name',
+                  validator: formValidator.farmNameValidator,
+                ),
+                const SizedBox(height: 8.0),
+                AuthTextField(
+                  controller: farmAddressController,
+                  hintText: 'Farm Address',
+                  validator: formValidator.farmAddressValidator,
+                ),
+              ],
+              const SizedBox(height: 16.0),
+
+              // use the same gradient-styled button as SignUpPage
+              AuthButton(
+                onPressed: () {
+                  if (isLoading) return;
+                  _handleSignUp();
+                },
+                text: isLoading ? 'Creating Account...' : 'Sign Up',
+                useLoginGradient: true,
+              ),
+
+              const SizedBox(height: 20.0),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
