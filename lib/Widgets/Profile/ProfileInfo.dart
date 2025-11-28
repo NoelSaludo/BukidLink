@@ -127,7 +127,7 @@ class _ProfileInfoState extends State<ProfileInfo> {
     }
 
     final profile = _profile!;
-    final String profileImage = 'assets${profile.profilePic}';
+    final String profileImage = '{profile.profilePic}';
     final String username = profile.username;
     final String? currentUid = UserService.currentUser?.id;
 
@@ -160,9 +160,7 @@ class _ProfileInfoState extends State<ProfileInfo> {
                     Positioned(
                       top: 30,
                       left: 10,
-                      child: BackButton(
-                        color: Colors.white,
-                      ),
+                      child: BackButton(color: Colors.white),
                     ),
                   ],
                 ),
@@ -209,7 +207,9 @@ class _ProfileInfoState extends State<ProfileInfo> {
               // Followers count
               if (profile.farmId != null)
                 StreamBuilder<int>(
-                  stream: FollowService().followerCountStream(farmId: profile.farmId!.id),
+                  stream: FollowService().followerCountStream(
+                    farmId: profile.farmId!.id,
+                  ),
                   builder: (context, snapshot) {
                     final count = snapshot.data ?? 0;
                     return Text(
@@ -223,10 +223,7 @@ class _ProfileInfoState extends State<ProfileInfo> {
               // --- Buttons Row ---
               if (currentUid == profile.id) ...[
                 // --- Add Post Button ---
-                SizedBox(
-                  width: double.infinity,
-                  child: AddPost()
-                ),
+                SizedBox(width: double.infinity, child: AddPost()),
               ] else ...[
                 // --- Follow + Message Buttons ---
                 Row(
@@ -251,7 +248,10 @@ class _ProfileInfoState extends State<ProfileInfo> {
                           ),
                           child: Text(
                             "Message",
-                            style: AppTextStyles.BUTTON_TEXT.copyWith(fontSize: 13.0, fontWeight: FontWeight.w700),
+                            style: AppTextStyles.BUTTON_TEXT.copyWith(
+                              fontSize: 13.0,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ),
