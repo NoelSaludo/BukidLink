@@ -4,14 +4,12 @@ import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/account/EditableTextField.dart';
 import 'package:bukidlink/utils/FormValidator.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AccountSecurityPage extends StatefulWidget {
   final String? currentPassword;
 
-  const AccountSecurityPage({
-    super.key,
-    this.currentPassword,
-  });
+  const AccountSecurityPage({super.key, this.currentPassword});
 
   @override
   State<AccountSecurityPage> createState() => _AccountSecurityPageState();
@@ -22,7 +20,7 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
   late TextEditingController _currentPasswordController;
   late TextEditingController _newPasswordController;
   late TextEditingController _confirmPasswordController;
-  
+
   bool _isCurrentPasswordVisible = false;
   bool _isNewPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
@@ -62,36 +60,119 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
   }
 
   void _handleSave() {
-    if (_formKey.currentState?.validate() ?? false) {
-      HapticFeedback.mediumImpact();
-      // TODO: Save new password to database
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      HapticFeedback.heavyImpact();
+      return;
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || user.email == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: const [
-              Icon(Icons.check_circle, color: Colors.white),
+              Icon(Icons.error, color: Colors.white),
               SizedBox(width: 8),
-              Text('Password updated successfully!'),
+              Text('No authenticated user found.'),
             ],
           ),
-          backgroundColor: AppColors.SUCCESS_GREEN,
+          backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          margin: const EdgeInsets.all(16),
         ),
       );
-      
-      // Clear fields after successful save
-      _currentPasswordController.clear();
-      _newPasswordController.clear();
-      _confirmPasswordController.clear();
-      
-      Navigator.pop(context);
-    } else {
-      HapticFeedback.heavyImpact();
+      return;
     }
+
+    HapticFeedback.mediumImpact();
+
+    // Reauthenticate user using current password
+    final credential = EmailAuthProvider.credential(
+      email: user.email!,
+      password: _currentPasswordController.text.trim(),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Updating password...'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+
+    user
+        .reauthenticateWithCredential(credential)
+        .then((_) async {
+          try {
+            await user.updatePassword(_newPasswordController.text.trim());
+
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: const [
+                    Icon(Icons.check_circle, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text('Password updated successfully!'),
+                  ],
+                ),
+                backgroundColor: AppColors.SUCCESS_GREEN,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                margin: const EdgeInsets.all(16),
+              ),
+            );
+
+            _currentPasswordController.clear();
+            _newPasswordController.clear();
+            _confirmPasswordController.clear();
+
+            Navigator.pop(context);
+          } on FirebaseAuthException catch (e) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            String message = 'Failed to update password.';
+            if (e.code == 'weak-password') {
+              message = 'The new password is too weak.';
+            } else if (e.code == 'requires-recent-login') {
+              message = 'Please re-login and try again.';
+            }
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.error, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(message)),
+                  ],
+                ),
+                backgroundColor: Colors.redAccent,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        })
+        .catchError((error) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          String message = 'Reauthentication failed.';
+          if (error is FirebaseAuthException &&
+              error.code == 'wrong-password') {
+            message = 'Current password is incorrect.';
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(message)),
+                ],
+              ),
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        });
   }
 
   @override
@@ -167,7 +248,7 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
                 ),
               ),
             ),
-            
+
             // Form Content
             SliverToBoxAdapter(
               child: Padding(
@@ -221,7 +302,8 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
                               ),
                               onPressed: () {
                                 setState(() {
-                                  _isCurrentPasswordVisible = !_isCurrentPasswordVisible;
+                                  _isCurrentPasswordVisible =
+                                      !_isCurrentPasswordVisible;
                                 });
                               },
                             ),
@@ -241,7 +323,8 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
                               ),
                               onPressed: () {
                                 setState(() {
-                                  _isNewPasswordVisible = !_isNewPasswordVisible;
+                                  _isNewPasswordVisible =
+                                      !_isNewPasswordVisible;
                                 });
                               },
                             ),
@@ -261,7 +344,8 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
                               ),
                               onPressed: () {
                                 setState(() {
-                                  _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                                  _isConfirmPasswordVisible =
+                                      !_isConfirmPasswordVisible;
                                 });
                               },
                             ),
@@ -270,7 +354,7 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // Security Tips
                     Container(
                       padding: const EdgeInsets.all(16),
@@ -304,14 +388,18 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
                           ),
                           const SizedBox(height: 12),
                           _buildSecurityTip('Use at least 10 characters'),
-                          _buildSecurityTip('Include uppercase and lowercase letters'),
-                          _buildSecurityTip('Add numbers and special characters'),
+                          _buildSecurityTip(
+                            'Include uppercase and lowercase letters',
+                          ),
+                          _buildSecurityTip(
+                            'Add numbers and special characters',
+                          ),
                           _buildSecurityTip('Avoid personal information'),
                         ],
                       ),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Save Button
                     ElevatedButton(
                       onPressed: _handleSave,
@@ -331,13 +419,15 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
                           const SizedBox(width: 8),
                           Text(
                             'Update Password',
-                            style: AppTextStyles.BUTTON_TEXT.copyWith(fontSize: 16),
+                            style: AppTextStyles.BUTTON_TEXT.copyWith(
+                              fontSize: 16,
+                            ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 12),
-                    
+
                     // Cancel Button
                     OutlinedButton(
                       onPressed: () {
@@ -379,11 +469,7 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
         children: [
-          Icon(
-            Icons.check_circle,
-            size: 16,
-            color: AppColors.primaryGreen,
-          ),
+          Icon(Icons.check_circle, size: 16, color: AppColors.primaryGreen),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
