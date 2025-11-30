@@ -4,6 +4,7 @@ import 'package:bukidlink/models/Order.dart';
 import 'package:bukidlink/models/FarmerOrderSubStatus.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
+import 'package:bukidlink/widgets/common/ProductImage.dart';
 
 class OrderDetailsPage extends StatelessWidget {
   final Order order;
@@ -247,7 +248,10 @@ class OrderDetailsPage extends StatelessWidget {
     // Group items by farm
     final Map<String, List<dynamic>> groupedItems = {};
     for (var item in order.items) {
-      final farm = item.product.farmName;
+      // Handle null product
+      if (item.product == null) continue;
+
+      final farm = item.product!.farmName;
       groupedItems.putIfAbsent(farm, () => []).add(item);
     }
 
@@ -274,14 +278,35 @@ class OrderDetailsPage extends StatelessWidget {
   }
 
   Widget _buildProductRow(dynamic item) {
+    // Handle null product
+    if (item.product == null) {
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Text(
+          'Product information unavailable',
+          style: TextStyle(
+            fontFamily: 'Outfit',
+            fontSize: 14,
+            color: Colors.grey,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              item.product.imagePath,
+            child: ProductImage(
+              imagePath: item.product!.imagePath,
               width: 60,
               height: 60,
               fit: BoxFit.cover,
@@ -292,9 +317,9 @@ class OrderDetailsPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.product.name, style: AppTextStyles.CHECKOUT_PRODUCT_NAME),
+                Text(item.product!.name, style: AppTextStyles.CHECKOUT_PRODUCT_NAME),
                 Text(
-                  "x${item.quantity} ${item.product.unit ?? ''}",
+                  "x${item.amount} ${item.product!.unit ?? ''}",
                   style: AppTextStyles.CHECKOUT_PRODUCT_DETAILS,
                 ),
               ],

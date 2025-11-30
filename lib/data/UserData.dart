@@ -5,9 +5,8 @@ class UserData {
     // Users
     User(
       id: '1',
-      username: 'Tindahan ni Lourdes',
-      password:
-          'fcf730b6d95236ecd3c9fc2d92d7b6b2bb061514961aec041d6c7a7192f592e4',
+      username: 'Farmjuseyo',
+      password: 'fcf730b6d95236ecd3c9fc2d92d7b6b2bb061514961aec041d6c7a7192f592e4',
       firstName: 'Test',
       lastName: 'User',
       emailAddress: 'TestUser@gmail.com',
@@ -37,9 +36,8 @@ class UserData {
     ),
     User(
       id: '3',
-      username: 'Farmjuseyo',
-      password:
-          'fcf730b6d95236ecd3c9fc2d92d7b6b2bb061514961aec041d6c7a7192f592e4',
+      username: 'Farm Lourdes',
+      password: 'fcf730b6d95236ecd3c9fc2d92d7b6b2bb061514961aec041d6c7a7192f592e4',
       firstName: 'Test',
       lastName: 'User',
       emailAddress: 'TestUser@gmail.com',
@@ -64,6 +62,8 @@ class UserData {
       contactNumber: '09123456789',
       profilePic: 'customer1.png',
       type: 'consumer',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
     User(
       id: '5',
@@ -76,6 +76,8 @@ class UserData {
       contactNumber: '09123456780',
       profilePic: 'customer2.png',
       type: 'consumer',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
     User(
       id: '6',
@@ -88,6 +90,8 @@ class UserData {
       contactNumber: '09123456781',
       profilePic: 'customer3.png',
       type: 'consumer',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
     User(
       id: '7',
@@ -100,6 +104,8 @@ class UserData {
       contactNumber: '09123456782',
       profilePic: 'customer4.png',
       type: 'consumer',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
   ];
 

@@ -1,12 +1,16 @@
-// OrderManagementPage.dart
+// (Farmer View) OrderManagementPage.dart
 import 'dart:typed_data';
+import 'package:bukidlink/data/UserData.dart';
 import 'package:flutter/material.dart';
 import 'package:bukidlink/widgets/farmer/FarmerBottomNavBar.dart';
 import 'package:bukidlink/widgets/farmer/FarmerOrderCard.dart';
-import 'package:bukidlink/data/TestOrdersData.dart';
+import 'package:bukidlink/models/Order.dart';
 import 'package:bukidlink/models/FarmerOrderSubStatus.dart';
+import 'package:bukidlink/services/OrderService.dart';
+import 'package:bukidlink/services/UserService.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' hide Order;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -29,8 +33,12 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
     'Completed'
   ];
 
-  // Simulated current farmer — in real app replace with logged-in farmer's farm name
-  final String currentFarmerName = 'Farmjuseyo';
+  String get currentFarmId {
+    final user = UserService.currentUser;
+    final farmIdPath = user?.farmId?.path;
+    final farmId = farmIdPath?.split('/').last ?? '';
+    return farmId;
+  }
 
   @override
   void initState() {
@@ -61,31 +69,7 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
     }
   }
 
-  List<FarmerOrder> _ordersForTab(String tabLabel, {DateTimeRange? dateRange}) {
-    final stage = _farmerStageFromTabLabel(tabLabel);
-
-    // Filter generated farmerOrders by farmerName and stage
-    var filtered = TestOrders.generateFarmerOrders()
-        .where((fo) => fo.farmerName == currentFarmerName && fo.farmerStage == stage)
-        .toList();
-
-    // Apply date filtering if provided
-    if (dateRange != null) {
-      filtered = filtered.where((fo) {
-        final orderDate = fo.datePlaced;
-        return orderDate.isAfter(dateRange.start.subtract(const Duration(days: 1))) &&
-            orderDate.isBefore(dateRange.end.add(const Duration(days: 1)));
-      }).toList();
-    }
-
-    // debug log
-    print(">>> TAB: $tabLabel | FARMER: $currentFarmerName | FOUND: ${filtered.length}");
-    return filtered;
-  }
-
-  // Bulk accept all pending orders
-  void _acceptAllPending() {
-    final orders = _ordersForTab('Pending');
+  Future<void> _acceptAllPending(List<Order> orders) async {
     if (orders.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No pending orders to accept.')),
@@ -93,18 +77,26 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
       return;
     }
 
-    for (var order in orders) {
-      // Update status to toPack (simulate API call)
-      order.farmerStage = FarmerSubStatus.toPack;
+    try {
+      for (var order in orders) {
+        await OrderService.shared.updateFarmerStage(order.id, FarmerSubStatus.toPack);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${orders.length} pending orders accepted!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error accepting orders: $e')),
+        );
+      }
     }
-    setState(() {});
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${orders.length} pending orders accepted!')),
-    );
   }
 
-  // Print receipts for toPack orders (with date filter)
-  void _printReceipts() async {
+  Future<void> _printReceipts(List<Order> allToPackOrders) async {
     final dateRange = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2020),
@@ -129,7 +121,12 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
     );
     if (dateRange == null) return;
 
-    final orders = _ordersForTab('To Pack', dateRange: dateRange);
+    final orders = allToPackOrders.where((order) {
+      final orderDate = order.datePlaced;
+      return orderDate.isAfter(dateRange.start.subtract(const Duration(days: 1))) &&
+          orderDate.isBefore(dateRange.end.add(const Duration(days: 1)));
+    }).toList();
+
     if (orders.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No orders to print in selected date range.')),
@@ -137,14 +134,12 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
       return;
     }
 
-    // Generate and show PDF preview
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => _generateReceiptsPdf(orders),
     );
   }
 
-  // Handover to courier for toHandover orders (with date filter)
-  void _handoverToCourier() async {
+  Future<void> _handoverToCourier(List<Order> allToHandoverOrders) async {
     final dateRange = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2020),
@@ -169,7 +164,12 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
     );
     if (dateRange == null) return;
 
-    final orders = _ordersForTab('To Handover', dateRange: dateRange);
+    final orders = allToHandoverOrders.where((order) {
+      final orderDate = order.datePlaced;
+      return orderDate.isAfter(dateRange.start.subtract(const Duration(days: 1))) &&
+          orderDate.isBefore(dateRange.end.add(const Duration(days: 1)));
+    }).toList();
+
     if (orders.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No orders to handover in selected date range.')),
@@ -177,18 +177,26 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
       return;
     }
 
-    for (var order in orders) {
-      // Update status to shipping (simulate API call)
-      order.farmerStage = FarmerSubStatus.shipping;
+    try {
+      for (var order in orders) {
+        await OrderService.shared.updateFarmerStage(order.id, FarmerSubStatus.shipping);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${orders.length} orders handed over to courier!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error handing over orders: $e')),
+        );
+      }
     }
-    setState(() {});
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${orders.length} orders handed over to courier!')),
-    );
   }
 
-  // PDF generation for receipts
-  Future<Uint8List> _generateReceiptsPdf(List<FarmerOrder> orders) async {
+  Future<Uint8List> _generateReceiptsPdf(List<Order> orders) async {
     final pdf = pw.Document();
 
     for (var order in orders) {
@@ -199,7 +207,6 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
             return pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                // Header
                 pw.Container(
                   padding: const pw.EdgeInsets.all(20),
                   decoration: pw.BoxDecoration(
@@ -217,15 +224,13 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
                       ),
                       pw.SizedBox(height: 10),
                       pw.Text(
-                        currentFarmerName,
+                        UserService.currentUser?.firstName ?? 'Farm',
                         style: pw.TextStyle(fontSize: 16),
                       ),
                     ],
                   ),
                 ),
                 pw.SizedBox(height: 20),
-
-                // Order Info
                 pw.Container(
                   padding: const pw.EdgeInsets.all(15),
                   child: pw.Column(
@@ -235,7 +240,7 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
                         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                         children: [
                           pw.Text(
-                            'Order ID: ${order.orderId}',
+                            'Order ID: ${order.id}',
                             style: pw.TextStyle(
                               fontSize: 14,
                               fontWeight: pw.FontWeight.bold,
@@ -264,8 +269,6 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
                   ),
                 ),
                 pw.SizedBox(height: 20),
-
-                // Items Table
                 pw.Table(
                   border: pw.TableBorder.all(color: PdfColors.grey300),
                   columnWidths: {
@@ -275,7 +278,6 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
                     3: const pw.FlexColumnWidth(1.5),
                   },
                   children: [
-                    // Header row
                     pw.TableRow(
                       decoration: const pw.BoxDecoration(
                         color: PdfColors.grey200,
@@ -287,14 +289,17 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
                         _buildTableCell('Total', isHeader: true),
                       ],
                     ),
-                    // Item rows
-                    ...order.items.map((item) {
-                      final total = item.product.price * item.quantity;
+                    ...order.items.where((item) => item.product != null).map((item) {
+                      final productPrice = item.product?.price ?? 0.0;
+                      final productName = item.product?.name ?? 'Unknown Product';
+                      final itemAmount = item.amount;
+                      final total = productPrice * itemAmount;
+
                       return pw.TableRow(
                         children: [
-                          _buildTableCell(item.product.name),
-                          _buildTableCell('${item.quantity}'),
-                          _buildTableCell('₱${item.product.price.toStringAsFixed(2)}'),
+                          _buildTableCell(productName),
+                          _buildTableCell('$itemAmount'),
+                          _buildTableCell('₱${productPrice.toStringAsFixed(2)}'),
                           _buildTableCell('₱${total.toStringAsFixed(2)}'),
                         ],
                       );
@@ -302,8 +307,6 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
                   ],
                 ),
                 pw.SizedBox(height: 20),
-
-                // Total
                 pw.Container(
                   alignment: pw.Alignment.centerRight,
                   child: pw.Container(
@@ -322,10 +325,7 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
                     ),
                   ),
                 ),
-
                 pw.Spacer(),
-
-                // Footer
                 pw.Divider(),
                 pw.Text(
                   'Thank you for your business!',
@@ -361,6 +361,48 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
 
   @override
   Widget build(BuildContext context) {
+    if (currentFarmId.isEmpty) {
+      return Scaffold(
+        backgroundColor: AppColors.backgroundYellow,
+        appBar: AppBar(
+          title: Text('Orders', style: AppTextStyles.PRODUCT_INFO_TITLE),
+          backgroundColor: AppColors.HEADER_GRADIENT_START,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
+                const SizedBox(height: 16),
+                Text(
+                  'Farm ID Not Found',
+                  style: TextStyle(
+                    fontFamily: 'Outfit',
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red.shade700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Your user account is not properly linked to a farm. Please contact support.',
+                  style: const TextStyle(
+                    fontFamily: 'Outfit',
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+        bottomNavigationBar: const FarmerBottomNavBar(currentIndex: 3),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.backgroundYellow,
       appBar: AppBar(
@@ -403,111 +445,149 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
       body: TabBarView(
         controller: _tabController,
         children: tabs.map((tabLabel) {
-          final orders = _ordersForTab(tabLabel);
+          final stage = _farmerStageFromTabLabel(tabLabel);
 
-          return Column(
-            children: [
-              // Bulk action buttons with improved styling
-              if (tabLabel == 'Pending')
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12.0),
-                  child: ElevatedButton.icon(
-                    onPressed: _acceptAllPending,
-                    icon: const Icon(Icons.check_circle_outline, color: Colors.white),
-                    label: const Text(
-                      'Accept All Orders',
-                      style: TextStyle(
-                        fontFamily: 'Outfit',
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
+          return StreamBuilder<List<Order>>(
+            stream: OrderService.shared.farmerOrdersStream(currentFarmId, stage),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.hasError) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Error loading orders',
+                        style: const TextStyle(
+                          fontFamily: 'Outfit',
+                          fontSize: 16,
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${snapshot.error}',
+                        style: const TextStyle(
+                          fontFamily: 'Outfit',
+                          fontSize: 14,
+                          color: Colors.red,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              final orders = snapshot.data ?? [];
+
+              return Column(
+                children: [
+                  if (tabLabel == 'Pending' && orders.isNotEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12.0),
+                      child: ElevatedButton.icon(
+                        onPressed: () => _acceptAllPending(orders),
+                        icon: const Icon(Icons.check_circle_outline, color: Colors.white),
+                        label: const Text(
+                          'Accept All Orders',
+                          style: TextStyle(
+                            fontFamily: 'Outfit',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 2,
+                        ),
                       ),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGreen,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                  if (tabLabel == 'To Pack' && orders.isNotEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12.0),
+                      child: ElevatedButton.icon(
+                        onPressed: () => _printReceipts(orders),
+                        icon: const Icon(Icons.print, color: Colors.white),
+                        label: const Text(
+                          'Print Receipts',
+                          style: TextStyle(
+                            fontFamily: 'Outfit',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 2,
+                        ),
                       ),
-                      elevation: 2,
+                    ),
+                  if (tabLabel == 'To Handover' && orders.isNotEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12.0),
+                      child: ElevatedButton.icon(
+                        onPressed: () => _handoverToCourier(orders),
+                        icon: const Icon(Icons.local_shipping, color: Colors.white),
+                        label: const Text(
+                          'Handover to Courier',
+                          style: TextStyle(
+                            fontFamily: 'Outfit',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 2,
+                        ),
+                      ),
+                    ),
+                  Expanded(
+                    child: orders.isEmpty
+                        ? Center(
+                      child: Text(
+                        'No orders in "$tabLabel"',
+                        style: const TextStyle(
+                          fontFamily: 'Outfit',
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    )
+                        : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: orders.length,
+                      itemBuilder: (context, index) {
+                        return FarmerOrderCard(order: orders[index]);
+                      },
                     ),
                   ),
-                ),
-              if (tabLabel == 'To Pack')
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12.0),
-                  child: ElevatedButton.icon(
-                    onPressed: _printReceipts,
-                    icon: const Icon(Icons.print, color: Colors.white),
-                    label: const Text(
-                      'Print Receipts',
-                      style: TextStyle(
-                        fontFamily: 'Outfit',
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGreen,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 2,
-                    ),
-                  ),
-                ),
-              if (tabLabel == 'To Handover')
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12.0),
-                  child: ElevatedButton.icon(
-                    onPressed: _handoverToCourier,
-                    icon: const Icon(Icons.local_shipping, color: Colors.white),
-                    label: const Text(
-                      'Handover to Courier',
-                      style: TextStyle(
-                        fontFamily: 'Outfit',
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGreen,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 2,
-                    ),
-                  ),
-                ),
-              // Orders list
-              Expanded(
-                child: orders.isEmpty
-                    ? Center(
-                  child: Text(
-                    'No orders in "$tabLabel"',
-                    style: const TextStyle(
-                      fontFamily: 'Outfit',
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
-                  ),
-                )
-                    : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: orders.length,
-                  itemBuilder: (context, index) {
-                    return FarmerOrderCard(orderWrapper: orders[index]);
-                  },
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           );
         }).toList(),
       ),

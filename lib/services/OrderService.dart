@@ -1,9 +1,13 @@
 import 'package:bukidlink/models/Order.dart';
 import 'package:bukidlink/models/CartItem.dart';
+import 'package:bukidlink/models/FarmerOrderSubStatus.dart';
+import 'package:bukidlink/services/UserService.dart';
+import 'package:bukidlink/services/CartService.dart';
+import 'package:bukidlink/services/ProductService.dart';
+import 'package:uuid/uuid.dart';
 import 'package:cloud_firestore/cloud_firestore.dart' hide Order;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:bukidlink/services/UserService.dart'; // Added to access app-level current user
 
 class OrderService {
   static final OrderService shared = OrderService._internal();
@@ -12,14 +16,86 @@ class OrderService {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final _uuid = const Uuid();
 
   String? get _effectiveUserId => UserService.currentUser?.id ?? _auth.currentUser?.uid;
 
-  final List<Order> _orders = [];
+  List<Order> _orders = [];
   List<Order> get orders => _orders;
 
-  // Add order to Firestore
-  Future<String?> addOrder({
+  CollectionReference get _ordersCollection => _firestore.collection('orders');
+
+  Future<void> initializeForCurrentUser() async {
+    final userId = UserService.currentUser?.id;
+
+    if (userId == null) {
+      debugPrint('No user logged in');
+      _orders = [];
+      return;
+    }
+
+    try {
+      final snapshot = await _ordersCollection
+          .where('user_id', isEqualTo: userId)
+          .orderBy('date_placed', descending: true)
+          .get();
+
+      final ordersWithProducts = <Order>[];
+      for (var doc in snapshot.docs) {
+        final order = await _orderFromDocument(doc);
+        if (order != null) {
+          ordersWithProducts.add(order);
+        }
+      }
+
+      _orders = ordersWithProducts;
+    } catch (e, stackTrace) {
+      debugPrint('Error loading orders: $e');
+      debugPrint('Stack trace: $stackTrace');
+      _orders = [];
+    }
+  }
+
+  Stream<List<Order>> ordersStream() {
+    final userId = UserService.currentUser?.id;
+
+    if (userId == null) {
+      return Stream.value([]);
+    }
+
+    return _ordersCollection
+        .where('user_id', isEqualTo: userId)
+        .orderBy('date_placed', descending: true)
+        .snapshots()
+        .asyncMap((snapshot) async {
+      final ordersWithProducts = <Order>[];
+      for (var doc in snapshot.docs) {
+        final order = await _orderFromDocument(doc);
+        if (order != null) {
+          ordersWithProducts.add(order);
+        }
+      }
+
+      _orders = ordersWithProducts;
+      return _orders;
+    });
+  }
+
+  Map<String, List<CartItem>> _groupItemsByFarmer(List<CartItem> items) {
+    final Map<String, List<CartItem>> grouped = {};
+
+    for (var item in items) {
+      final farmerId = item.product?.farmId;
+      if (farmerId != null && farmerId.isNotEmpty) {
+        grouped.putIfAbsent(farmerId, () => []);
+        grouped[farmerId]!.add(item);
+      }
+    }
+
+    return grouped;
+  }
+
+  Future<List<String>> addOrdersFromCart({
     required List<CartItem> items,
     required String recipientName,
     required String contactNumber,
@@ -27,55 +103,87 @@ class OrderService {
   }) async {
     if (_effectiveUserId == null) {
       debugPrint('User not logged in');
-      return null;
+      return [];
     }
 
     try {
-      final orderRef = _firestore.collection('orders').doc();
-      final orderId = orderRef.id;
+      final itemsByFarmer = _groupItemsByFarmer(items);
 
-      // Convert items to Firestore format
-      final itemsData = items.map((item) => {
-        'product_id': item.productId,
-        'amount': item.amount,
-      }).toList();
+      if (itemsByFarmer.isEmpty) {
+        debugPrint('No valid items with farmer IDs');
+        return [];
+      }
 
-      // Calculate total
-      final total = items.fold<double>(0, (sum, item) => sum + item.totalPrice);
+      final List<String> createdOrderIds = [];
 
-      await orderRef.set({
-        'user_id': _effectiveUserId,
-        'items': itemsData,
-        'recipient_name': recipientName,
-        'contact_number': contactNumber,
-        'shipping_address': shippingAddress,
-        'date_placed': FieldValue.serverTimestamp(),
-        'date_delivered': null,
-        'status': 'to_pay',
-        'total': total,
-        'created_at': FieldValue.serverTimestamp(),
-        'updated_at': FieldValue.serverTimestamp(),
-      });
+      for (var entry in itemsByFarmer.entries) {
+        final farmerId = entry.key;
+        final farmerItems = entry.value;
 
-      debugPrint('Order created successfully: $orderId');
-      return orderId;
-    } catch (e) {
-      debugPrint('Error adding order: $e');
-      return null;
+        final orderRef = _firestore.collection('orders').doc();
+        final orderId = orderRef.id;
+
+        final itemsData = farmerItems.map((item) => {
+          'product_id': item.productId,
+          'amount': item.amount,
+        }).toList();
+
+        final total = farmerItems.fold<double>(0, (sum, item) => sum + item.totalPrice);
+
+        await orderRef.set({
+          'user_id': _effectiveUserId,
+          'items': itemsData,
+          'farmer_id': farmerId,
+          'farmer_stage': 'pending',
+          'recipient_name': recipientName,
+          'contact_number': contactNumber,
+          'shipping_address': shippingAddress,
+          'date_placed': FieldValue.serverTimestamp(),
+          'date_delivered': null,
+          'status': 'to_pay',
+          'total': total,
+          'created_at': FieldValue.serverTimestamp(),
+          'updated_at': FieldValue.serverTimestamp(),
+        });
+
+        createdOrderIds.add(orderId);
+      }
+
+      return createdOrderIds;
+
+    } catch (e, stackTrace) {
+      debugPrint('Error adding orders: $e');
+      debugPrint('Stack trace: $stackTrace');
+      return [];
     }
   }
 
-  // Update order to shipping status
+  @Deprecated('Use addOrdersFromCart instead')
+  Future<String?> addOrder({
+    required List<CartItem> items,
+    required String recipientName,
+    required String contactNumber,
+    required String shippingAddress,
+    String? farmerId,
+  }) async {
+    final orders = await addOrdersFromCart(
+      items: items,
+      recipientName: recipientName,
+      contactNumber: contactNumber,
+      shippingAddress: shippingAddress,
+    );
+
+    return orders.isNotEmpty ? orders.first : null;
+  }
+
   Future<bool> updateToShipping(String orderId) async {
     return await _updateOrderStatus(orderId, 'to_ship');
   }
 
-  // Update order to receive status
   Future<bool> updateToReceive(String orderId) async {
     return await _updateOrderStatus(orderId, 'to_receive');
   }
 
-  // Update order to rate status
   Future<bool> updateToRate(String orderId) async {
     try {
       await _firestore.collection('orders').doc(orderId).update({
@@ -83,7 +191,6 @@ class OrderService {
         'date_delivered': FieldValue.serverTimestamp(),
         'updated_at': FieldValue.serverTimestamp(),
       });
-      debugPrint('Order $orderId updated to rate status');
       return true;
     } catch (e) {
       debugPrint('Error updating order to rate: $e');
@@ -91,19 +198,16 @@ class OrderService {
     }
   }
 
-  // Update order to complete status
   Future<bool> updateToComplete(String orderId) async {
     return await _updateOrderStatus(orderId, 'completed');
   }
 
-  // Generic method to update order status
   Future<bool> _updateOrderStatus(String orderId, String status) async {
     try {
       await _firestore.collection('orders').doc(orderId).update({
         'status': status,
         'updated_at': FieldValue.serverTimestamp(),
       });
-      debugPrint('Order $orderId updated to $status');
       return true;
     } catch (e) {
       debugPrint('Error updating order status: $e');
@@ -111,7 +215,6 @@ class OrderService {
     }
   }
 
-  // Fetch all orders of a specific user
   Future<List<Order>> fetchAllOrdersOfUser(String userId) async {
     try {
       final querySnapshot = await _firestore
@@ -132,7 +235,6 @@ class OrderService {
       _orders.clear();
       _orders.addAll(orders);
 
-      debugPrint('Fetched ${orders.length} orders for user $userId');
       return orders;
     } catch (e) {
       debugPrint('Error fetching orders: $e');
@@ -140,7 +242,6 @@ class OrderService {
     }
   }
 
-  // Fetch all orders of current user
   Future<List<Order>> fetchMyOrders() async {
     if (_effectiveUserId == null) {
       debugPrint('User not logged in');
@@ -149,12 +250,10 @@ class OrderService {
     return await fetchAllOrdersOfUser(_effectiveUserId!);
   }
 
-  // Convert Firestore document to Order object
   Future<Order?> _orderFromDocument(DocumentSnapshot doc) async {
     try {
       final data = doc.data() as Map<String, dynamic>;
 
-      // Parse items - need to fetch product details
       final itemsData = (data['items'] as List<dynamic>?) ?? [];
       final items = <CartItem>[];
 
@@ -163,25 +262,33 @@ class OrderService {
         final amount = itemData['amount'] as int? ?? 0;
 
         if (productId != null) {
-          // Create CartItem with productId - product will be fetched separately if needed
-          items.add(CartItem(
+          final product = await ProductService.shared.getProductById(productId);
+
+          final cartItem = CartItem(
+            id: '${doc.id}_$productId',
             productId: productId,
             amount: amount,
-            product: null, // Product should be fetched from ProductService if needed
-          ));
+            product: product,
+          );
+
+          items.add(cartItem);
         }
       }
 
-      // Parse status
       final statusStr = data['status'] as String? ?? 'to_pay';
       final status = _statusFromString(statusStr);
 
-      // Parse dates
+      final farmerStageStr = data['farmer_stage'] as String? ?? 'pending';
+      final farmerStage = Order.farmerStageFromString(farmerStageStr);
+
       final datePlaced = (data['date_placed'] as Timestamp?)?.toDate() ?? DateTime.now();
       final dateDelivered = (data['date_delivered'] as Timestamp?)?.toDate();
 
-      return Order(
+      final order = Order(
         id: doc.id,
+        userId: data['user_id'] ?? '',
+        farmerId: data['farmer_id'] ?? '',
+        farmerStage: farmerStage,
         items: items,
         recipientName: data['recipient_name'] ?? '',
         contactNumber: data['contact_number'] ?? '',
@@ -190,13 +297,15 @@ class OrderService {
         dateDelivered: dateDelivered,
         status: status,
       );
-    } catch (e) {
-      debugPrint('Error parsing order document: $e');
+
+      return order;
+    } catch (e, stackTrace) {
+      debugPrint('Error parsing order document ${doc.id}: $e');
+      debugPrint('Stack trace: $stackTrace');
       return null;
     }
   }
 
-  // Convert string to OrderStatus enum
   OrderStatus _statusFromString(String status) {
     switch (status) {
       case 'to_pay':
@@ -214,7 +323,6 @@ class OrderService {
     }
   }
 
-  // Convert OrderStatus enum to string
   String _statusToString(OrderStatus status) {
     switch (status) {
       case OrderStatus.toPay:
@@ -230,13 +338,29 @@ class OrderService {
     }
   }
 
-  // Legacy methods (kept for backward compatibility)
-  void updateOrderStatus(String orderId, OrderStatus newStatus) {
-    final index = _orders.indexWhere((o) => o.id == orderId);
-    if (index != -1) {
-      _orders[index].status = newStatus;
-      // Also update in Firestore
-      _updateOrderStatus(orderId, _statusToString(newStatus));
+  Future<void> updateOrderStatus(String orderId, OrderStatus newStatus) async {
+    try {
+      final statusString = _statusToString(newStatus);
+      final updateData = <String, dynamic>{
+        'status': statusString,
+        'updated_at': FieldValue.serverTimestamp(),
+      };
+
+      if (newStatus == OrderStatus.toRate || newStatus == OrderStatus.completed) {
+        updateData['date_delivered'] = FieldValue.serverTimestamp();
+      }
+
+      await _ordersCollection.doc(orderId).update(updateData);
+
+      final index = _orders.indexWhere((o) => o.id == orderId);
+      if (index != -1) {
+        _orders[index].status = newStatus;
+        if (newStatus == OrderStatus.toRate || newStatus == OrderStatus.completed) {
+          _orders[index].dateDelivered = DateTime.now();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error updating order status: $e');
     }
   }
 
@@ -280,10 +404,77 @@ class OrderService {
     return getOrdersByStatus(status);
   }
 
-  /// Mark as completed after rating all items
-  void checkAndMarkCompleted(Order order) {
+  Future<void> checkAndMarkCompleted(Order order) async {
     if (order.isAllRated && order.status == OrderStatus.toRate) {
-      updateOrderStatus(order.id, OrderStatus.completed);
+      await updateOrderStatus(order.id, OrderStatus.completed);
+    }
+  }
+
+  Future<void> removeOrder(String orderId) async {
+    try {
+      await _ordersCollection.doc(orderId).delete();
+      _orders.removeWhere((o) => o.id == orderId);
+    } catch (e) {
+      debugPrint('Error removing order: $e');
+    }
+  }
+
+  Stream<List<Order>> farmerOrdersStream(String farmerId, FarmerSubStatus stage) {
+    final stageString = Order.farmerStageToString(stage);
+
+    return _ordersCollection
+        .where('farmer_id', isEqualTo: farmerId)
+        .where('farmer_stage', isEqualTo: stageString)
+        .orderBy('date_placed', descending: true)
+        .snapshots()
+        .asyncMap((snapshot) async {
+      final ordersWithProducts = <Order>[];
+      for (var doc in snapshot.docs) {
+        final order = await _orderFromDocument(doc);
+        if (order != null) {
+          ordersWithProducts.add(order);
+        }
+      }
+
+      return ordersWithProducts;
+    });
+  }
+
+  Future<void> updateFarmerStage(String orderId, FarmerSubStatus newStage) async {
+    try {
+      final stageString = Order.farmerStageToString(newStage);
+      final customerStatus = _mapFarmerStageToCustomerStatus(newStage);
+      final customerStatusString = _statusToString(customerStatus);
+
+      await _ordersCollection.doc(orderId).update({
+        'farmer_stage': stageString,
+        'status': customerStatusString,
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      final index = _orders.indexWhere((o) => o.id == orderId);
+      if (index != -1) {
+        _orders[index].farmerStage = newStage;
+        _orders[index].status = customerStatus;
+      }
+    } catch (e) {
+      debugPrint('Error updating farmer stage: $e');
+      rethrow;
+    }
+  }
+
+  OrderStatus _mapFarmerStageToCustomerStatus(FarmerSubStatus farmerStage) {
+    switch (farmerStage) {
+      case FarmerSubStatus.pending:
+        return OrderStatus.toPay;
+      case FarmerSubStatus.toPack:
+        return OrderStatus.toShip;
+      case FarmerSubStatus.toHandover:
+        return OrderStatus.toShip;
+      case FarmerSubStatus.shipping:
+        return OrderStatus.toReceive;
+      case FarmerSubStatus.completed:
+        return OrderStatus.toRate;
     }
   }
 }

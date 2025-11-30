@@ -1,37 +1,62 @@
 // FarmerOrderDetailsPage.dart
 import 'package:flutter/material.dart';
-import 'package:bukidlink/data/TestOrdersData.dart';
+import 'package:bukidlink/models/Order.dart';
 import 'package:bukidlink/models/FarmerOrderSubStatus.dart';
+import 'package:bukidlink/services/OrderService.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/models/CartItem.dart';
 
 class FarmerOrderDetailsPage extends StatefulWidget {
-  final FarmerOrder farmerOrder;
+  final Order order;
 
-  const FarmerOrderDetailsPage({super.key, required this.farmerOrder});
+  const FarmerOrderDetailsPage({super.key, required this.order});
 
   @override
   State<FarmerOrderDetailsPage> createState() => _FarmerOrderDetailsPageState();
 }
 
 class _FarmerOrderDetailsPageState extends State<FarmerOrderDetailsPage> {
-  late FarmerOrder order;
+  late Order order;
+  bool _isUpdating = false;
 
   @override
   void initState() {
     super.initState();
-    order = widget.farmerOrder;
+    order = widget.order;
   }
 
-  void _updateStage(FarmerSubStatus newStage) {
+  Future<void> _updateStage(FarmerSubStatus newStage) async {
+    if (_isUpdating) return;
+
     setState(() {
-      order.farmerStage = newStage;
+      _isUpdating = true;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Order updated to ${_getStatusLabel(newStage)}!')),
-    );
-    // In a real app, call API to persist change
+
+    try {
+      await OrderService.shared.updateFarmerStage(order.id, newStage);
+
+      setState(() {
+        order.farmerStage = newStage;
+        _isUpdating = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Order updated to ${_getStatusLabel(newStage)}!')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isUpdating = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating order: $e')),
+        );
+      }
+    }
   }
 
   String _getStatusLabel(FarmerSubStatus status) {
@@ -46,8 +71,21 @@ class _FarmerOrderDetailsPageState extends State<FarmerOrderDetailsPage> {
         return 'Shipping';
       case FarmerSubStatus.completed:
         return 'Completed';
-      default:
-        return status.name;
+    }
+  }
+
+  Color _getStatusColor(FarmerSubStatus status) {
+    switch (status) {
+      case FarmerSubStatus.pending:
+        return Colors.orange;
+      case FarmerSubStatus.toPack:
+        return Colors.blue;
+      case FarmerSubStatus.toHandover:
+        return Colors.purple;
+      case FarmerSubStatus.shipping:
+        return Colors.teal;
+      case FarmerSubStatus.completed:
+        return Colors.green;
     }
   }
 
@@ -137,7 +175,7 @@ class _FarmerOrderDetailsPageState extends State<FarmerOrderDetailsPage> {
           _infoRow("Contact Number", order.contactNumber),
           _infoRow("Shipping Address", order.shippingAddress),
           const SizedBox(height: 8),
-          _infoRow("Order ID", order.orderId),
+          _infoRow("Order ID", order.id),
           _infoRow("Date Placed", _formatDate(order.datePlaced)),
         ],
       ),
@@ -163,6 +201,11 @@ class _FarmerOrderDetailsPageState extends State<FarmerOrderDetailsPage> {
   }
 
   Widget _buildOrderItems() {
+    final firstItemWithProduct = order.items.firstWhere(
+          (item) => item.product != null,
+      orElse: () => order.items.first,
+    );
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -170,7 +213,10 @@ class _FarmerOrderDetailsPageState extends State<FarmerOrderDetailsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(order.farmerName, style: AppTextStyles.CHECKOUT_SHOP_NAME),
+          Text(
+            firstItemWithProduct.product?.farmName ?? 'Unknown Farm',
+            style: AppTextStyles.CHECKOUT_SHOP_NAME,
+          ),
           const SizedBox(height: 8),
           Column(
             children: order.items.map((item) => _buildProductRow(item)).toList(),
@@ -181,6 +227,26 @@ class _FarmerOrderDetailsPageState extends State<FarmerOrderDetailsPage> {
   }
 
   Widget _buildProductRow(CartItem item) {
+    if (item.product == null) {
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Text(
+          'Product information unavailable',
+          style: TextStyle(
+            fontFamily: 'Outfit',
+            fontSize: 14,
+            color: Colors.grey,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -188,10 +254,18 @@ class _FarmerOrderDetailsPageState extends State<FarmerOrderDetailsPage> {
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.asset(
-              item.product.imagePath,
+              item.product!.imagePath,
               width: 60,
               height: 60,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 60,
+                  height: 60,
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.image_not_supported),
+                );
+              },
             ),
           ),
           const SizedBox(width: 12),
@@ -199,9 +273,9 @@ class _FarmerOrderDetailsPageState extends State<FarmerOrderDetailsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.product.name, style: AppTextStyles.CHECKOUT_PRODUCT_NAME),
+                Text(item.product!.name, style: AppTextStyles.CHECKOUT_PRODUCT_NAME),
                 Text(
-                  "x${item.quantity} ${item.product.unit ?? ''}",
+                  "x${item.amount} ${item.product!.unit ?? ''}",
                   style: AppTextStyles.CHECKOUT_PRODUCT_DETAILS,
                 ),
               ],
@@ -375,41 +449,32 @@ class _FarmerOrderDetailsPageState extends State<FarmerOrderDetailsPage> {
         break;
       case FarmerSubStatus.completed:
         return const SizedBox.shrink();
-      default:
-        return const SizedBox.shrink();
     }
 
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () => _updateStage(nextStage!),
+        onPressed: _isUpdating ? null : () => _updateStage(nextStage!),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.HEADER_GRADIENT_START,
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
+          disabledBackgroundColor: Colors.grey,
         ),
-        child: Text(buttonText, style: AppTextStyles.CHECKOUT_BUTTON_TEXT),
+        child: _isUpdating
+            ? const SizedBox(
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          ),
+        )
+            : Text(buttonText, style: AppTextStyles.CHECKOUT_BUTTON_TEXT),
       ),
     );
-  }
-
-  Color _getStatusColor(FarmerSubStatus status) {
-    switch (status) {
-      case FarmerSubStatus.pending:
-        return Colors.orange;
-      case FarmerSubStatus.toPack:
-        return Colors.blue;
-      case FarmerSubStatus.toHandover:
-        return Colors.purple;
-      case FarmerSubStatus.shipping:
-        return Colors.teal;
-      case FarmerSubStatus.completed:
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
   }
 
   BoxDecoration _whiteBoxDecoration() {

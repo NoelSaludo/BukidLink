@@ -51,7 +51,7 @@ class CartService extends ChangeNotifier {
     try {
       final products = await _productService.fetchProducts();
       return products.firstWhere(
-        (p) => p.id == productId,
+            (p) => p.id == productId,
         orElse: () => products.first,
       );
     } catch (e) {
@@ -78,6 +78,7 @@ class CartService extends ChangeNotifier {
   }
 
   // Add a product to cart
+  // Add a product to cart
   Future<void> addProductToCart(Product product, int amount) async {
     if (_currentUserId == null) throw Exception('User not logged in');
 
@@ -101,6 +102,7 @@ class CartService extends ChangeNotifier {
 
         // Add to local _items
         _items.add(CartItem(
+          id: product.id,
           productId: product.id,
           product: product,
           amount: amount,
@@ -115,10 +117,10 @@ class CartService extends ChangeNotifier {
   }
 
   Future<void> _updateExistingProduct(
-    DocumentReference productRef,
-    DocumentSnapshot productDoc,
-    int amount,
-  ) async {
+      DocumentReference productRef,
+      DocumentSnapshot productDoc,
+      int amount,
+      ) async {
     final data = productDoc.data() as Map<String, dynamic>;
     final currentAmount = data['amount'] ?? 0;
     final newAmount = currentAmount + amount;
@@ -128,11 +130,11 @@ class CartService extends ChangeNotifier {
   }
 
   Future<void> _addNewProduct(
-    DocumentReference cartRef,
-    DocumentReference productRef,
-    Product product,
-    int amount,
-  ) async {
+      DocumentReference cartRef,
+      DocumentReference productRef,
+      Product product,
+      int amount,
+      ) async {
     await productRef.set({
       'product_id': product.id,
       'amount': amount,
@@ -232,9 +234,9 @@ class CartService extends ChangeNotifier {
   int get totalQuantity => _items.fold(0, (sum, item) => sum + item.amount);
 
   double get subtotal => _items.fold(
-        0.0,
+    0.0,
         (sum, item) => sum + item.totalPrice,
-      );
+  );
 
   double get deliveryFee => _items.isEmpty ? 0.0 : 50.0;
   double get total => subtotal + deliveryFee;
@@ -256,7 +258,7 @@ class CartService extends ChangeNotifier {
   int getProductQuantity(String productId) {
     try {
       final item = _items.firstWhere(
-        (item) => item.productId == productId,
+            (item) => item.productId == productId,
       );
       return item.amount;
     } catch (e) {
