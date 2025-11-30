@@ -4,14 +4,13 @@ import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/account/EditableTextField.dart';
 import 'package:bukidlink/utils/FormValidator.dart';
+import 'package:bukidlink/services/UserService.dart';
+import 'package:bukidlink/models/User.dart';
 
 class MyAddressPage extends StatefulWidget {
   final String? currentAddress;
 
-  const MyAddressPage({
-    super.key,
-    this.currentAddress,
-  });
+  const MyAddressPage({super.key, this.currentAddress});
 
   @override
   State<MyAddressPage> createState() => _MyAddressPageState();
@@ -24,7 +23,9 @@ class _MyAddressPageState extends State<MyAddressPage> {
   @override
   void initState() {
     super.initState();
-    _addressController = TextEditingController(text: widget.currentAddress ?? '');
+    _addressController = TextEditingController(
+      text: widget.currentAddress ?? '',
+    );
   }
 
   @override
@@ -33,28 +34,55 @@ class _MyAddressPageState extends State<MyAddressPage> {
     super.dispose();
   }
 
-  void _handleSave() {
+  void _handleSave() async {
     if (_formKey.currentState?.validate() ?? false) {
       HapticFeedback.mediumImpact();
-      // TODO: Save address to backend/database
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: const [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 8),
-              Text('Address updated successfully!'),
-            ],
-          ),
-          backgroundColor: AppColors.SUCCESS_GREEN,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          margin: const EdgeInsets.all(16),
-        ),
+
+      final current = UserService().getCurrentUser();
+      final uid = current?.id ?? UserService().getSafeUserId();
+
+      final updatedUser = User(
+        id: uid,
+        username: current?.username ?? '',
+        password: current?.password ?? '',
+        firstName: current?.firstName ?? '',
+        lastName: current?.lastName ?? '',
+        emailAddress: current?.emailAddress ?? '',
+        address: _addressController.text.trim(),
+        contactNumber: current?.contactNumber ?? '',
+        profilePic: current?.profilePic ?? '',
+        createdAt: current?.createdAt ?? DateTime.now(),
+        updatedAt: DateTime.now(),
+        type: current?.type,
+        farmId: current?.farmId,
       );
-      Navigator.pop(context);
+
+      try {
+        await UserService().updateUser(updatedUser);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: const [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Address updated successfully!'),
+              ],
+            ),
+            backgroundColor: AppColors.SUCCESS_GREEN,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+        Navigator.pop(context, true);
+      } catch (e) {
+        HapticFeedback.heavyImpact();
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update address: $e')));
+      }
     } else {
       HapticFeedback.heavyImpact();
     }
@@ -133,7 +161,7 @@ class _MyAddressPageState extends State<MyAddressPage> {
                 ),
               ),
             ),
-            
+
             // Form Content
             SliverToBoxAdapter(
               child: Padding(
@@ -183,7 +211,7 @@ class _MyAddressPageState extends State<MyAddressPage> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Save Button
                     ElevatedButton(
                       onPressed: _handleSave,
@@ -203,13 +231,15 @@ class _MyAddressPageState extends State<MyAddressPage> {
                           const SizedBox(width: 8),
                           Text(
                             'Save Address',
-                            style: AppTextStyles.BUTTON_TEXT.copyWith(fontSize: 16),
+                            style: AppTextStyles.BUTTON_TEXT.copyWith(
+                              fontSize: 16,
+                            ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 12),
-                    
+
                     // Cancel Button
                     OutlinedButton(
                       onPressed: () {

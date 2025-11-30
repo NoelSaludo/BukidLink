@@ -291,7 +291,8 @@ class UserService {
         password: '', // leave empty; don't fetch stored password
         firstName: data['firstName'] ?? '',
         lastName: data['lastName'] ?? '',
-        emailAddress: data['email'] ?? '',
+        // Support both legacy 'email' key and newer 'emailAddress'
+        emailAddress: data['emailAddress'] ?? data['email'] ?? '',
         address: data['address'] ?? '',
         contactNumber: data['contactNumber'] ?? '',
         profilePic: data['profilePic'] ?? 'default_image.png',
@@ -344,6 +345,54 @@ class UserService {
       }
     } catch (e) {
       debugPrint('Error updating user profile: $e');
+      rethrow;
+    }
+  }
+
+  /// Replace/overwrite the entire user document for [user].
+  /// This writes all main user fields to Firestore and updates the in-memory
+  /// `currentUser` reference.
+  Future<void> updateUser(User user) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final docRef = firestore.collection('users').doc(user.id);
+
+      await docRef.set({
+        'username': user.username,
+        'firstName': user.firstName,
+        'lastName': user.lastName,
+        // write both keys for backward compatibility
+        'emailAddress': user.emailAddress,
+        'email': user.emailAddress,
+        'address': user.address,
+        'contactNumber': user.contactNumber,
+        'profilePic': user.profilePic,
+        'type': user.type ?? 'Consumer',
+        'farmId': user.farmId,
+        'created_at': Timestamp.fromDate(user.createdAt),
+        'updated_at': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: false));
+
+      // update in-memory currentUser
+      currentUser = User(
+        id: user.id,
+        username: user.username,
+        password: (currentUser != null && currentUser!.id == user.id)
+            ? currentUser!.password
+            : user.password,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        emailAddress: user.emailAddress,
+        address: user.address,
+        contactNumber: user.contactNumber,
+        profilePic: user.profilePic,
+        createdAt: user.createdAt,
+        updatedAt: DateTime.now(),
+        type: user.type,
+        farmId: user.farmId,
+      );
+    } catch (e) {
+      debugPrint('Error replacing user document: $e');
       rethrow;
     }
   }

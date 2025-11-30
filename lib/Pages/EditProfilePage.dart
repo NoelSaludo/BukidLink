@@ -5,6 +5,8 @@ import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/account/EditableTextField.dart';
 import 'package:bukidlink/widgets/common/ProfileImageWidget.dart';
 import 'package:bukidlink/utils/FormValidator.dart';
+import 'package:bukidlink/services/UserService.dart';
+import 'package:bukidlink/models/User.dart';
 
 class EditProfilePage extends StatefulWidget {
   final TextEditingController usernameController;
@@ -56,11 +58,56 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return null;
   }
 
-  void _handleSave() {
+  void _handleSave() async {
     if (_formKey.currentState?.validate() ?? false) {
       HapticFeedback.mediumImpact();
-      widget.onSave();
-      Navigator.pop(context);
+
+      final current = UserService().getCurrentUser();
+      final uid = current?.id ?? UserService().getSafeUserId();
+
+      final updatedUser = User(
+        id: uid,
+        username: widget.usernameController.text.trim(),
+        password: current?.password ?? widget.usernameController.text,
+        firstName: widget.firstNameController.text.trim(),
+        lastName: widget.lastNameController.text.trim(),
+        emailAddress: current?.emailAddress ?? '',
+        address: current?.address ?? '',
+        contactNumber: widget.contactNumberController.text.trim(),
+        profilePic: widget.profilePicUrl ?? current?.profilePic ?? '',
+        createdAt: current?.createdAt ?? DateTime.now(),
+        updatedAt: DateTime.now(),
+        type: current?.type,
+        farmId: current?.farmId,
+      );
+
+      try {
+        await UserService().updateUser(updatedUser);
+        widget.onSave();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: const [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Profile updated successfully!'),
+              ],
+            ),
+            backgroundColor: AppColors.SUCCESS_GREEN,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+        Navigator.pop(context, true);
+      } catch (e) {
+        HapticFeedback.heavyImpact();
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update profile: $e')));
+      }
     } else {
       HapticFeedback.heavyImpact();
     }
@@ -146,7 +193,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
               ),
             ),
-            
+
             // Form Fields
             SliverToBoxAdapter(
               child: Padding(
@@ -185,7 +232,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    
+
                     _buildFormSection(
                       title: 'Contact Information',
                       children: [
@@ -198,7 +245,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       ],
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Save Button
                     ElevatedButton(
                       onPressed: _handleSave,
@@ -218,13 +265,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           const SizedBox(width: 8),
                           Text(
                             'Save Changes',
-                            style: AppTextStyles.BUTTON_TEXT.copyWith(fontSize: 16),
+                            style: AppTextStyles.BUTTON_TEXT.copyWith(
+                              fontSize: 16,
+                            ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 12),
-                    
+
                     // Cancel Button
                     OutlinedButton(
                       onPressed: () {
