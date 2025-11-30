@@ -102,7 +102,10 @@ class _ProfileInfoState extends State<ProfileInfo> {
 
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => ChatPage(sender: targetId)),
+      MaterialPageRoute(
+        builder: (_) =>
+            ChatPage(sender: targetId, senderName: _profile?.username),
+      ),
     );
   }
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
-import 'package:bukidlink/pages/ChatPage.dart';
+import 'package:bukidlink/Pages/ChatPage.dart';
 import 'package:bukidlink/services/ChatService.dart';
 import 'package:bukidlink/services/UserService.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
@@ -215,10 +215,18 @@ class _InboxPageState extends State<InboxPage> {
                       ),
                     ),
                     onTap: () {
+                      final cachedName = _usernameCache.containsKey(otherId)
+                          ? _usernameCache[otherId]
+                          : null;
+                      final passName =
+                          (cachedName != null && cachedName != 'Loading...')
+                          ? cachedName
+                          : null;
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => ChatPage(sender: otherId),
+                          builder: (_) =>
+                              ChatPage(sender: otherId, senderName: passName),
                         ),
                       );
                     },
