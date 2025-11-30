@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bukidlink/Pages/SplashScreen.dart';
 import 'package:bukidlink/Pages/LoginPage.dart';
 import 'package:bukidlink/Pages/HomePage.dart';
 import 'package:bukidlink/Pages/ProfilePage.dart';
@@ -12,10 +13,11 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
       ),
-      home: const LoginPage(),
+      home: const SplashScreen(),
       // home:
       //     const FarmerStorePage(), // remove this line after testing or to access the farm store page directly
       routes: {
