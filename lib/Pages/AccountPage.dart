@@ -38,11 +38,13 @@ class _AccountPageState extends State<AccountPage> {
   @override
   void initState() {
     super.initState();
-    _initializeControllers();
+    _user = widget.currentUser;
+    _initializeControllers(_user);
   }
 
-  void _initializeControllers() {
-    final user = widget.currentUser;
+  void _initializeControllers([User? userParam]) {
+    // Accept an optional user to initialize controllers from.
+    final user = userParam ?? _user ?? widget.currentUser;
     _usernameController = TextEditingController(text: user?.username ?? '');
     _firstNameController = TextEditingController(text: user?.firstName ?? '');
     _lastNameController = TextEditingController(text: user?.lastName ?? '');
@@ -52,6 +54,32 @@ class _AccountPageState extends State<AccountPage> {
       text: user?.contactNumber ?? '',
     );
     _profilePicUrl = user?.profilePic;
+  }
+
+  User? _user;
+
+  Future<void> _reloadCurrentUser() async {
+    try {
+      final uid = UserService().getSafeUserId();
+      final fresh = await UserService().getUserById(uid);
+      if (fresh != null) {
+        setState(() {
+          _user = fresh;
+          // Re-init controllers with fresh data
+          _usernameController.dispose();
+          _firstNameController.dispose();
+          _lastNameController.dispose();
+          _passwordController.dispose();
+          _addressController.dispose();
+          _contactNumberController.dispose();
+          _initializeControllers(_user);
+          _isImageUpdated = false;
+          _profilePicUrl = fresh.profilePic;
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to reload user: $e');
+    }
   }
 
   @override
@@ -181,7 +209,7 @@ class _AccountPageState extends State<AccountPage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = widget.currentUser;
+    final user = _user ?? widget.currentUser;
     debugPrint('User: $user');
 
     return Scaffold(
@@ -330,10 +358,10 @@ class _AccountPageState extends State<AccountPage> {
               _buildMenuItem(
                 icon: Icons.location_on_outlined,
                 title: 'My Address',
-                subtitle: widget.currentUser?.address,
-                onTap: () {
+                subtitle: _user?.address ?? widget.currentUser?.address,
+                onTap: () async {
                   HapticFeedback.lightImpact();
-                  Navigator.push(
+                  final result = await Navigator.push<bool?>(
                     context,
                     MaterialPageRoute(
                       builder: (context) => MyAddressPage(
@@ -341,6 +369,9 @@ class _AccountPageState extends State<AccountPage> {
                       ),
                     ),
                   );
+                  if (result == true) {
+                    await _reloadCurrentUser();
+                  }
                 },
               ),
               _buildDivider(),
@@ -548,7 +579,11 @@ class _AccountPageState extends State<AccountPage> {
 
   void _navigateToEditProfile() {
     HapticFeedback.lightImpact();
-    Navigator.push(
+    _openEditProfile();
+  }
+
+  Future<void> _openEditProfile() async {
+    final result = await Navigator.push<bool?>(
       context,
       MaterialPageRoute(
         builder: (context) => EditProfilePage(
@@ -562,6 +597,10 @@ class _AccountPageState extends State<AccountPage> {
         ),
       ),
     );
+
+    if (result == true) {
+      await _reloadCurrentUser();
+    }
   }
 
   void _showInfoDialog(String title, String message) {

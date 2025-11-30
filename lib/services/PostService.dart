@@ -13,13 +13,11 @@ class PostService {
   }
   PostService._internal();
 
-//Fetch Posts
+  //Fetch Posts
   Future<List<Post>> fetchPosts() async {
     List<Post> posts = [];
     try {
-      QuerySnapshot snapshot = await _firestore
-          .collection('posts')
-          .get();
+      QuerySnapshot snapshot = await _firestore.collection('posts').get();
 
       for (var doc in snapshot.docs) {
         posts.add(Post.fromDocument(doc));
@@ -33,22 +31,22 @@ class PostService {
 
   // Fetch Posts associated with a specific User
   Future<List<Post>> fetchPostsByUser(String userId) async {
-  try {
-    final querySnapshot = await _firestore
-        .collection('posts')
-        .where('posterID', isEqualTo: userId) // <-- compare to string
-        .get();
+    try {
+      final querySnapshot = await _firestore
+          .collection('posts')
+          .where('posterID', isEqualTo: userId) // <-- compare to string
+          .get();
 
-    List<Post> posts = [];
-    for (var doc in querySnapshot.docs) {
-      posts.add(Post.fromDocument(doc));
+      List<Post> posts = [];
+      for (var doc in querySnapshot.docs) {
+        posts.add(Post.fromDocument(doc));
+      }
+      return posts;
+    } catch (e) {
+      print("Error fetching user posts: $e");
+      return [];
     }
-    return posts;
-  } catch (e) {
-    print("Error fetching user posts: $e");
-    return [];
   }
-}
 
   // Add a new product to the farm (and global products collection)
   Future<void> createPost(Post post) async {
@@ -75,10 +73,9 @@ class PostService {
   Future<void> archivePost(String postId) async {
     if (postId.isEmpty) return;
     try {
-      await _firestore
-          .collection('posts')
-          .doc(postId)
-          .update({'isVisible': false});
+      await _firestore.collection('posts').doc(postId).update({
+        'isVisible': false,
+      });
     } catch (e) {
       debugPrint('Error archiving post: $e');
       rethrow;
@@ -89,10 +86,9 @@ class PostService {
   Future<void> restoreProduct(String postId) async {
     if (postId.isEmpty) return;
     try {
-      await _firestore
-          .collection('posts')
-          .doc(postId)
-          .update({'isVisible': true});
+      await _firestore.collection('posts').doc(postId).update({
+        'isVisible': true,
+      });
     } catch (e) {
       debugPrint('Error restoring post: $e');
       rethrow;
@@ -100,27 +96,34 @@ class PostService {
   }
 
   Future<User> getUserByPost(String posterID) async {
-  final doc = await FirebaseFirestore.instance.collection('users').doc(posterID).get();
-  if (!doc.exists) throw Exception('User not found');
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(posterID)
+        .get();
+    if (!doc.exists) throw Exception('User not found');
 
-  final data = doc.data()!;
-  return User(
-    id: doc.id,
-    username: data['username'] ?? '',
-    password: '',
-    firstName: data['firstName'] ?? '',
-    lastName: data['lastName'] ?? '',
-    emailAddress: data['email'] ?? '',
-    address: data['address'] ?? '',
-    contactNumber: data['contactNumber'] ?? '',
-    profilePic: data['profilePic'] ?? 'default_image.png',
-    type: data['type'] ?? 'Consumer',
-    createdAt: data['created_at'] != null ? (data['created_at'] as Timestamp).toDate() : DateTime.now(),
-    updatedAt: data['updated_at'] != null ? (data['updated_at'] as Timestamp).toDate() : DateTime.now(),
-    farmId: data['farmId'] as DocumentReference?,
-  );
-}
-
+    final data = doc.data()!;
+    return User(
+      id: doc.id,
+      username: data['username'] ?? '',
+      password: '',
+      firstName: data['firstName'] ?? '',
+      lastName: data['lastName'] ?? '',
+      // Support either 'email' or 'emailAddress' stored on user docs
+      emailAddress: data['emailAddress'] ?? data['email'] ?? '',
+      address: data['address'] ?? '',
+      contactNumber: data['contactNumber'] ?? '',
+      profilePic: data['profilePic'] ?? 'default_image.png',
+      type: data['type'] ?? 'Consumer',
+      createdAt: data['created_at'] != null
+          ? (data['created_at'] as Timestamp).toDate()
+          : DateTime.now(),
+      updatedAt: data['updated_at'] != null
+          ? (data['updated_at'] as Timestamp).toDate()
+          : DateTime.now(),
+      farmId: data['farmId'] as DocumentReference?,
+    );
+  }
 
   // Update an existing product (only editable fields)
   // Future<void> updateProduct(Post post) async {
