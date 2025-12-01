@@ -1,21 +1,22 @@
+import 'ProductReview.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'ProductReview.dart';
 
 class Product {
   final String id;
   final String name;
+  final String farmerId;
   final String farmName;
   final String imagePath;
   final String category;
-  final double price; // Numeric price for sorting/filtering
-  final String? description; // Product description
-  final double? rating; // Product rating (0-5)
-  final String? unit; // e.g., "kg", "piece", "bundle"
-  final int? reviewCount; // Number of reviews
-  final String availability; // e.g., "In Stock", "Limited", "Out of Stock"
-  final int stockCount; // Remaining stock quantity
-  final List<ProductReview>? reviews; // Product reviews
+  final double price;
+  final String? description;
+  final double? rating;
+  final String? unit;
+  final int? reviewCount;
+  final String availability;
+  final int stockCount;
+  final List<ProductReview>? reviews;
   double tempRating = 0.0;
   final String? farmId;
   final bool isVisible;
@@ -23,6 +24,7 @@ class Product {
   Product({
     required this.id,
     required this.name,
+    required this.farmerId,
     required this.farmName,
     required this.imagePath,
     required this.category,
@@ -37,6 +39,25 @@ class Product {
     this.farmId,
     this.isVisible = true,
   });
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'id': id,
+      'name': name,
+      'farmerId': farmerId,
+      'farmName': farmName,
+      'imagePath': imagePath,
+      'category': category,
+      'price': price,
+      'description': description,
+      'rating': rating,
+      'unit': unit,
+      'reviewCount': reviewCount,
+      'availability': availability,
+      'stockCount': stockCount,
+      'tempRating': tempRating,
+    };
+  }
 
   static Product fromDocument(QueryDocumentSnapshot<Object?> doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -70,11 +91,12 @@ class Product {
     // Derive availability if it's not explicitly provided
     final String availability =
         (data['availability'] as String?) ??
-        (stockCount > 0 ? 'In Stock' : 'Out of Stock');
+            (stockCount > 0 ? 'In Stock' : 'Out of Stock');
 
     return Product(
       id: doc.id,
       name: data['name'] ?? '',
+      farmerId: data['farmerId'] ?? '',
       farmName: data['farm_name'] ?? '',
       farmId: data['farm_id'] is DocumentReference
           ? (data['farm_id'] as DocumentReference).id
@@ -92,12 +114,30 @@ class Product {
       stockCount: stockCount,
       reviews: data['reviews'] != null
           ? (data['reviews'] as List<dynamic>).map((reviewData) {
-              final reviewMap = reviewData as Map<String, dynamic>;
-              return ProductReview.fromDocument(reviewMap);
-            }).toList()
+        final reviewMap = reviewData as Map<String, dynamic>;
+        return ProductReview.fromDocument(reviewMap);
+      }).toList()
           : null,
       isVisible: data['isVisible'] ?? true,
     );
+  }
+
+  factory Product.fromFirestore(Map<String, dynamic> data) {
+    return Product(
+      id: data['id'] ?? '',
+      name: data['name'] ?? '',
+      farmerId: data['farmerId'] ?? '',
+      farmName: data['farmName'] ?? '',
+      imagePath: data['imagePath'] ?? '',
+      category: data['category'] ?? '',
+      price: (data['price'] ?? 0).toDouble(),
+      availability: data['availability'] ?? 'In Stock',
+      stockCount: data['stockCount'] ?? 0,
+      description: data['description'],
+      rating: data['rating']?.toDouble(),
+      unit: data['unit'],
+      reviewCount: data['reviewCount'],
+    )..tempRating = (data['tempRating'] ?? 0).toDouble();
   }
 
   // Create a modified copy of this Product. Useful for updating cached instances.
@@ -121,6 +161,7 @@ class Product {
     return Product(
       id: id ?? this.id,
       name: name ?? this.name,
+      farmerId: this.farmerId,
       farmName: farmName ?? this.farmName,
       imagePath: imagePath ?? this.imagePath,
       category: category ?? this.category,

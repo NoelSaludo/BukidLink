@@ -3,9 +3,101 @@ import 'package:bukidlink/models/ProductReview.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProductService {
+  // ADD: Singleton pattern
+  static final ProductService shared = ProductService._internal();
+  ProductService._internal();
+  factory ProductService() => shared;
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   List<Product> _productsCache = [];
+
+  // ADD: Method to get product by ID
+  Future<Product?> getProductById(String productId) async {
+    try {
+      print('🔍 getProductById called for: $productId');
+
+      // First check cache
+      final cachedIndex = _productsCache.indexWhere((p) => p.id == productId);
+      if (cachedIndex != -1) {
+        print('✅ Found in cache: ${_productsCache[cachedIndex].name}');
+        return _productsCache[cachedIndex];
+      }
+
+      print('💾 Not in cache, fetching from Firestore...');
+
+      // If not in cache, fetch from Firestore
+      DocumentSnapshot doc = await _firestore
+          .collection('products')
+          .doc(productId)
+          .get();
+
+      if (!doc.exists) {
+        print('❌ Product $productId not found in Firestore');
+        return null;
+      }
+
+      print('📄 Document exists, parsing data...');
+
+      // Parse product from DocumentSnapshot
+      final data = doc.data() as Map<String, dynamic>;
+
+      // Stock/amount may be stored under different keys
+      final dynamic rawAmount = data['amount'] ?? data['stock_count'] ?? data['stockCount'] ?? 0;
+      final int stockCount = rawAmount is int ? rawAmount : int.tryParse(rawAmount?.toString() ?? '0') ?? 0;
+
+      // Price/cost may be stored under 'cost' or 'price'
+      final dynamic rawPrice = data['cost'] ?? data['price'];
+      final double price = rawPrice != null ? double.tryParse(rawPrice.toString()) ?? 0.0 : 0.0;
+
+      // Image path
+      final String rawImage = (data['image_url'] ?? data['imagePath'] ?? '').toString();
+      final String imagePath = rawImage.isNotEmpty ? rawImage : 'assets/images/default_cover_photo.png';
+
+      // Rating
+      final dynamic rawRating = data['rating'];
+      final double? rating = rawRating != null ? double.tryParse(rawRating.toString()) ?? 0.0 : null;
+
+      // Availability
+      final String availability = (data['availability'] as String?) ?? (stockCount > 0 ? 'In Stock' : 'Out of Stock');
+
+      final product = Product(
+        id: doc.id,
+        name: data['name'] ?? '',
+        farmerId: data['farmerId'] ?? '',
+        farmName: data['farm_name'] ?? '',
+        farmId: data['farm_id'] is DocumentReference
+            ? (data['farm_id'] as DocumentReference).id
+            : data['farm_id']?.toString(),
+        imagePath: imagePath,
+        category: data['category'] ?? '',
+        price: price,
+        description: data['description'],
+        rating: rating,
+        unit: data['unit'],
+        reviewCount: (data['review_count'] != null) ? int.tryParse(data['review_count'].toString()) : null,
+        availability: availability,
+        stockCount: stockCount,
+        reviews: data['reviews'] != null
+            ? (data['reviews'] as List<dynamic>).map((reviewData) {
+          final reviewMap = reviewData as Map<String, dynamic>;
+          return ProductReview.fromDocument(reviewMap);
+        }).toList()
+            : null,
+        isVisible: data['isVisible'] ?? true,
+      );
+
+      // Add to cache
+      _productsCache.add(product);
+
+      print('✅ Product loaded successfully: ${product.name}');
+
+      return product;
+    } catch (e) {
+      print('❌ Error fetching product by ID $productId: $e');
+      return null;
+    }
+  }
 
   Future<List<Product>> fetchProducts() async {
     List<Product> products = [];
@@ -115,7 +207,7 @@ class ProductService {
         } else if (rawCreated is String) {
           created =
               DateTime.tryParse(rawCreated) ??
-              DateTime.fromMillisecondsSinceEpoch(0);
+                  DateTime.fromMillisecondsSinceEpoch(0);
         } else {
           created = DateTime.fromMillisecondsSinceEpoch(0);
         }
@@ -147,9 +239,9 @@ class ProductService {
 
   // Accept a ProductReview and persist it as a Map to Firestore.
   Future<void> addReviewToProduct(
-    String productId,
-    ProductReview review,
-  ) async {
+      String productId,
+      ProductReview review,
+      ) async {
     try {
       DocumentReference productRef = _firestore
           .collection('products')
@@ -294,8 +386,8 @@ class ProductService {
         }
 
         final rIndex = updatedReviews.indexWhere(
-          (r) =>
-              r.userName == review.userName &&
+              (r) =>
+          r.userName == review.userName &&
               r.comment == review.comment &&
               r.date == review.date,
         );
