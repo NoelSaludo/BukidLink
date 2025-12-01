@@ -1,3 +1,4 @@
+//CheckOutPage.dart
 import 'package:flutter/material.dart';
 import 'package:bukidlink/models/CartItem.dart';
 import 'package:bukidlink/services/OrderService.dart';
@@ -24,7 +25,7 @@ class CheckoutPage extends StatefulWidget {
 
 class _CheckoutPageState extends State<CheckoutPage> {
   String selectedPaymentMethod = "Cash on Delivery";
-  bool _isPlacing = false; // added flag
+  bool _isPlacing = false;
 
   double get subtotal =>
       widget.cartItems.fold(0, (sum, item) => sum + item.totalPrice);
@@ -69,6 +70,33 @@ class _CheckoutPageState extends State<CheckoutPage> {
             _buildPaymentMethodSection(),
             const SizedBox(height: 16),
             _buildSectionTitle("Order Summary"),
+
+            if (groupedItems.length > 1)
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Your items will be split into ${groupedItems.length} separate orders (one per farm)',
+                        style: TextStyle(
+                          fontFamily: 'Outfit',
+                          fontSize: 12,
+                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ...groupedItems.entries
                 .map((entry) => _buildShopSection(entry.key, entry.value)),
             const SizedBox(height: 16),
@@ -312,29 +340,57 @@ class _CheckoutPageState extends State<CheckoutPage> {
             );
             return;
           }
+
           setState(() => _isPlacing = true);
+
           try {
             final orderService = OrderService();
-            final orderId = await orderService.addOrder(
+
+            final orderIds = await orderService.addOrdersFromCart(
               items: widget.cartItems,
               recipientName: widget.recipientName,
               contactNumber: widget.contactNumber,
               shippingAddress: widget.shippingAddress,
             );
-            if (orderId != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Order placed successfully.')),
-              );
-              Navigator.pop(context, true);
+
+            if (orderIds.isNotEmpty) {
+
+              final message = orderIds.length == 1
+                  ? 'Order placed successfully!'
+                  : '${orderIds.length} orders placed successfully!';
+
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(message),
+                    backgroundColor: Colors.green,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+
+                // Return true to signal success (caller should clear cart)
+                Navigator.pop(context, true);
+              }
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Failed to place order. Please try again.')),
-              );
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Failed to place order. Please try again.'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             }
           } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error: $e')),
-            );
+            debugPrint(' Error placing order: $e');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Error: $e'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
           } finally {
             if (mounted) setState(() => _isPlacing = false);
           }
@@ -349,10 +405,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
         ),
         child: _isPlacing
             ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-              )
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+        )
             : Text("Place Order", style: AppTextStyles.CHECKOUT_BUTTON_TEXT),
       ),
     );

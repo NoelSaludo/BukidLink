@@ -292,7 +292,7 @@ class _FarmerStorePageState extends State<FarmerStorePage>
                     unselectedLabelColor: Colors.white,
                     labelStyle: AppTextStyles.FARMER_TAB_LABEL,
                     unselectedLabelStyle:
-                        AppTextStyles.FARMER_TAB_LABEL_UNSELECTED,
+                    AppTextStyles.FARMER_TAB_LABEL_UNSELECTED,
                     tabs: [
                       Tab(
                         child: Padding(
@@ -412,14 +412,14 @@ class _FarmerStorePageState extends State<FarmerStorePage>
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildOnSaleList(),
-                      _buildSoldOutList(),
-                      _buildArchivedList(),
-                      _buildTradesList(),
-                    ],
-                  ),
+              controller: _tabController,
+              children: [
+                _buildOnSaleList(),
+                _buildSoldOutList(),
+                _buildArchivedList(),
+                _buildTradesList(),
+              ],
+            ),
           ),
         ],
       ),
@@ -546,10 +546,12 @@ class _FarmerStorePageState extends State<FarmerStorePage>
   }
 
   Product _createDummyProductFromListing(TradeListing listing) {
+    final user = UserService().getCurrentUser();
     return Product(
       id: listing.id,
       name: listing.name,
-      farmName: "My Farm", // Or fetch current user farm name
+      farmerId: user?.id ?? '', // ADDED: Get farmer ID from current user
+      farmName: user?.username ?? ".", // Or fetch current user farm name
       imagePath: listing.image.isNotEmpty
           ? listing.image
           : 'assets/images/default_cover_photo.png',
@@ -565,7 +567,8 @@ class _FarmerStorePageState extends State<FarmerStorePage>
     return Product(
       id: offer.id,
       name: offer.itemName,
-      farmName: offer.offeredByName, // Display name of the person offering
+      farmerId: offer.offeredByUid ?? '', // ADDED: Get farmer ID from offer
+      farmName: offer.offeredByName,
       imagePath: offer.imagePath.isNotEmpty
           ? offer.imagePath
           : 'assets/images/default_cover_photo.png',

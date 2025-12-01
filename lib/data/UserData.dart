@@ -5,9 +5,8 @@ class UserData {
     // Users
     User(
       id: '1',
-      username: 'Tindahan ni Lourdes',
-      password:
-          'fcf730b6d95236ecd3c9fc2d92d7b6b2bb061514961aec041d6c7a7192f592e4',
+      username: 'Farmjuseyo',
+      password: 'fcf730b6d95236ecd3c9fc2d92d7b6b2bb061514961aec041d6c7a7192f592e4',
       firstName: 'Test',
       lastName: 'User',
       emailAddress: 'TestUser@gmail.com',
@@ -37,9 +36,8 @@ class UserData {
     ),
     User(
       id: '3',
-      username: 'Farmjuseyo',
-      password:
-          'fcf730b6d95236ecd3c9fc2d92d7b6b2bb061514961aec041d6c7a7192f592e4',
+      username: 'Farm Lourdes',
+      password: 'fcf730b6d95236ecd3c9fc2d92d7b6b2bb061514961aec041d6c7a7192f592e4',
       firstName: 'Test',
       lastName: 'User',
       emailAddress: 'TestUser@gmail.com',
@@ -51,11 +49,74 @@ class UserData {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     ),
+
+    // CUSTOMERS
+    User(
+      id: '4',
+      username: 'JuanDelaCruz',
+      password: 'fcf730b6d95236ecd3c9fc2d92d7b6b2bb061514961aec041d6c7a7192f592e4',
+      firstName: 'Juan',
+      lastName: 'Dela Cruz',
+      emailAddress: 'juan@example.com',
+      address: 'Barangay 1, Batangas City',
+      contactNumber: '09123456789',
+      profilePic: 'customer1.png',
+      type: 'consumer',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ),
+    User(
+      id: '5',
+      username: 'MariaSantos',
+      password: 'fcf730b6d95236ecd3c9fc2d92d7b6b2bb061514961aec041d6c7a7192f592e4',
+      firstName: 'Maria',
+      lastName: 'Santos',
+      emailAddress: 'maria@example.com',
+      address: 'Barangay 2, Batangas City',
+      contactNumber: '09123456780',
+      profilePic: 'customer2.png',
+      type: 'consumer',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ),
+    User(
+      id: '6',
+      username: 'PedroReyes',
+      password: 'fcf730b6d95236ecd3c9fc2d92d7b6b2bb061514961aec041d6c7a7192f592e4',
+      firstName: 'Pedro',
+      lastName: 'Reyes',
+      emailAddress: 'pedro@example.com',
+      address: 'Barangay 3, Batangas City',
+      contactNumber: '09123456781',
+      profilePic: 'customer3.png',
+      type: 'consumer',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ),
+    User(
+      id: '7',
+      username: 'AnaLopez',
+      password: 'fcf730b6d95236ecd3c9fc2d92d7b6b2bb061514961aec041d6c7a7192f592e4',
+      firstName: 'Ana',
+      lastName: 'Lopez',
+      emailAddress: 'ana@example.com',
+      address: 'Barangay 4, Batangas City',
+      contactNumber: '09123456782',
+      profilePic: 'customer4.png',
+      type: 'consumer',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ),
   ];
 
   // Get all Users
   static List<User> getAllUsers() {
     return _allUsers;
+  }
+
+  // Get all Customers
+  static List<User> getAllCustomers() {
+    return _allUsers.where((u) => u.type == 'consumer').toList();
   }
 
   // Get User by ID

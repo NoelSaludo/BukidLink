@@ -6,12 +6,13 @@ class ProductData {
     Product(
       id: '1',
       name: 'Apple',
+      farmerId: '2',
       farmName: 'De Castro Farms',
       imagePath: 'assets/images/apple.png',
       category: 'Fruits',
       price: 50,
       description:
-          'Crisp and sweet apples, freshly harvested from our organic orchards. Perfect for snacking or baking.',
+      'Crisp and sweet apples, freshly harvested from our organic orchards. Perfect for snacking or baking.',
       rating: 4.5,
       unit: 'kg',
       reviewCount: 24,
@@ -21,12 +22,13 @@ class ProductData {
     Product(
       id: '2',
       name: 'Mango',
+      farmerId: '1',
       farmName: 'Farmjuseyo',
       imagePath: 'assets/images/mango.png',
       category: 'Fruits',
       price: 50,
       description:
-          'Juicy and sweet Philippine mangoes, hand-picked at peak ripeness for maximum flavor.',
+      'Juicy and sweet Philippine mangoes, hand-picked at peak ripeness for maximum flavor.',
       rating: 4.8,
       unit: 'kg',
       reviewCount: 42,
@@ -36,12 +38,13 @@ class ProductData {
     Product(
       id: '3',
       name: 'Strawberry',
+      farmerId: '1',
       farmName: 'Farmjuseyo',
       imagePath: 'assets/images/strawberry.png',
       category: 'Fruits',
       price: 300,
       description:
-          'Premium fresh strawberries grown in our highland farms. Sweet, juicy and perfect for desserts.',
+      'Premium fresh strawberries grown in our highland farms. Sweet, juicy and perfect for desserts.',
       rating: 4.7,
       unit: 'kg',
       reviewCount: 18,
@@ -51,12 +54,13 @@ class ProductData {
     Product(
       id: '4',
       name: 'Grapes',
+      farmerId: '3',
       farmName: 'Farm Lourdes',
       imagePath: 'assets/images/grapes.png',
       category: 'Fruits',
       price: 70,
       description:
-          'Sweet and seedless grapes, carefully grown and harvested. Great for healthy snacking.',
+      'Sweet and seedless grapes, carefully grown and harvested. Great for healthy snacking.',
       rating: 4.6,
       unit: 'kg',
       availability: 'In Stock',
@@ -65,12 +69,13 @@ class ProductData {
     Product(
       id: '5',
       name: 'Pineapple',
+      farmerId: '4',
       farmName: 'Fernandez Domingo',
       imagePath: 'assets/images/pineapple.png',
       category: 'Fruits',
       price: 167,
       description:
-          'Fresh tropical pineapples with a perfect balance of sweetness and tang. Excellent for fresh juice.',
+      'Fresh tropical pineapples with a perfect balance of sweetness and tang. Excellent for fresh juice.',
       rating: 4.4,
       unit: 'kg',
       availability: 'In Stock',
@@ -79,12 +84,13 @@ class ProductData {
     Product(
       id: '6',
       name: 'Banana',
+      farmerId: '5',
       farmName: 'Tindahan ni Evelin',
       imagePath: 'assets/images/banana.png',
       category: 'Fruits',
       price: 40,
       description:
-          'Locally grown bananas, rich in nutrients and perfect for energy. Ideal for smoothies or snacking.',
+      'Locally grown bananas, rich in nutrients and perfect for energy. Ideal for smoothies or snacking.',
       rating: 4.3,
       unit: 'kg',
       availability: 'In Stock',
@@ -95,12 +101,13 @@ class ProductData {
     Product(
       id: '7',
       name: 'Carrots',
+      farmerId: '2',
       farmName: 'De Castro Farms',
       imagePath: 'assets/images/carrots.png',
       category: 'Vegetables',
       price: 50,
       description:
-          'Fresh and crunchy carrots, rich in vitamins and beta-carotene. Perfect for salads, stir-fries, or healthy snacking.',
+      'Fresh and crunchy carrots, rich in vitamins and beta-carotene. Perfect for salads, stir-fries, or healthy snacking.',
       rating: 4.5,
       unit: 'kg',
       reviewCount: 31,
@@ -110,12 +117,13 @@ class ProductData {
     Product(
       id: '8',
       name: 'Eggplant',
+      farmerId: '1',
       farmName: 'Farmjuseyo',
       imagePath: 'assets/images/eggplant.png',
       category: 'Vegetables',
       price: 50,
       description:
-          'Locally grown eggplants with smooth, glossy skin. Ideal for grilling, baking, or traditional Filipino dishes.',
+      'Locally grown eggplants with smooth, glossy skin. Ideal for grilling, baking, or traditional Filipino dishes.',
       rating: 4.4,
       unit: 'kg',
       reviewCount: 27,
@@ -125,12 +133,13 @@ class ProductData {
     Product(
       id: '9',
       name: 'Broccoli',
+      farmerId: '1',
       farmName: 'Farmjuseyo',
       imagePath: 'assets/images/broccoli.png',
       category: 'Vegetables',
       price: 300,
       description:
-          'Premium fresh broccoli florets, packed with nutrients and fiber. Great for steaming, stir-frying, or salads.',
+      'Premium fresh broccoli florets, packed with nutrients and fiber. Great for steaming, stir-frying, or salads.',
       rating: 4.6,
       unit: 'kg',
       reviewCount: 15,
@@ -140,12 +149,13 @@ class ProductData {
     Product(
       id: '10',
       name: 'Potato',
+      farmerId: '3',
       farmName: 'Farm Lourdes',
       imagePath: 'assets/images/potato.png',
       category: 'Vegetables',
       price: 70,
       description:
-          'Quality potatoes perfect for mashing, frying, or roasting. Versatile and essential for any kitchen.',
+      'Quality potatoes perfect for mashing, frying, or roasting. Versatile and essential for any kitchen.',
       rating: 4.7,
       unit: 'kg',
       reviewCount: 38,
@@ -155,12 +165,13 @@ class ProductData {
     Product(
       id: '11',
       name: 'Spinach',
+      farmerId: '4',
       farmName: 'Fernandez Domingo',
       imagePath: 'assets/images/spinach.png',
       category: 'Vegetables',
       price: 167,
       description:
-          'Fresh spinach leaves loaded with iron and vitamins. Excellent for salads, smoothies, or sautéed dishes.',
+      'Fresh spinach leaves loaded with iron and vitamins. Excellent for salads, smoothies, or sautéed dishes.',
       rating: 4.3,
       unit: 'kg',
       reviewCount: 22,
@@ -170,12 +181,13 @@ class ProductData {
     Product(
       id: '12',
       name: 'Yardlong Bean',
+      farmerId: '5',
       farmName: 'Tindahan ni Evelin',
       imagePath: 'assets/images/yardlong_bean.png',
       category: 'Vegetables',
       price: 40,
       description:
-          'Fresh yardlong beans (sitaw), crisp and tender. Perfect for pinakbet, adobo, or stir-fried vegetables.',
+      'Fresh yardlong beans (sitaw), crisp and tender. Perfect for pinakbet, adobo, or stir-fried vegetables.',
       rating: 4.5,
       unit: 'kg',
       reviewCount: 29,
@@ -187,12 +199,13 @@ class ProductData {
     Product(
       id: '13',
       name: 'Sinandomeng',
+      farmerId: '2',
       farmName: 'De Castro Farms',
       imagePath: 'assets/images/sinandomeng.png',
       category: 'Grains',
       price: 50,
       description:
-          'Premium Sinandomeng rice, a popular variety known for its soft texture and aromatic fragrance. Perfect for everyday meals.',
+      'Premium Sinandomeng rice, known for its soft texture and aromatic fragrance.',
       rating: 4.8,
       unit: 'kg',
       reviewCount: 56,
@@ -202,12 +215,13 @@ class ProductData {
     Product(
       id: '14',
       name: 'Jasmine Rice',
+      farmerId: '1',
       farmName: 'Farmjuseyo',
       imagePath: 'assets/images/jasmine_rice.png',
       category: 'Grains',
       price: 50,
       description:
-          'Fragrant jasmine rice with a delicate floral aroma. Fluffy and slightly sticky when cooked, ideal for Asian cuisine.',
+      'Fragrant jasmine rice with a delicate floral aroma. Fluffy and slightly sticky when cooked.',
       rating: 4.7,
       unit: 'kg',
       reviewCount: 44,
@@ -217,12 +231,13 @@ class ProductData {
     Product(
       id: '15',
       name: 'Malagkit',
+      farmerId: '1',
       farmName: 'Farmjuseyo',
       imagePath: 'assets/images/malagkit.png',
       category: 'Grains',
       price: 300,
       description:
-          'Authentic glutinous rice (sticky rice) perfect for traditional Filipino desserts like suman, biko, and bibingka.',
+      'Authentic glutinous rice perfect for Filipino desserts like suman, biko, and bibingka.',
       rating: 4.6,
       unit: 'kg',
       reviewCount: 33,
@@ -232,12 +247,13 @@ class ProductData {
     Product(
       id: '16',
       name: 'Dinorado',
+      farmerId: '3',
       farmName: 'Farm Lourdes',
       imagePath: 'assets/images/dinorado.png',
       category: 'Grains',
       price: 70,
       description:
-          'Premium Dinorado rice with a unique nutty flavor and firm texture. A favorite for special occasions and family meals.',
+      'Premium Dinorado rice with a nutty flavor and firm texture.',
       rating: 4.9,
       unit: 'kg',
       reviewCount: 62,
@@ -247,12 +263,13 @@ class ProductData {
     Product(
       id: '17',
       name: 'Barley',
+      farmerId: '4',
       farmName: 'Fernandez Domingo',
       imagePath: 'assets/images/barley.png',
       category: 'Grains',
       price: 167,
       description:
-          'Nutritious whole grain barley, rich in fiber and minerals. Perfect for soups, salads, or as a healthy rice alternative.',
+      'Nutritious barley, rich in fiber and minerals. Great for soups or salads.',
       rating: 4.4,
       unit: 'kg',
       reviewCount: 19,
@@ -262,12 +279,13 @@ class ProductData {
     Product(
       id: '18',
       name: 'Oats',
+      farmerId: '5',
       farmName: 'Tindahan ni Evelin',
       imagePath: 'assets/images/oats.png',
       category: 'Grains',
       price: 40,
       description:
-          'Whole grain oats ideal for breakfast porridge, baking, or smoothies. High in fiber and heart-healthy nutrients.',
+      'Whole grain oats ideal for porridge, baking, or smoothies.',
       rating: 4.5,
       unit: 'kg',
       reviewCount: 37,
@@ -279,12 +297,13 @@ class ProductData {
     Product(
       id: '19',
       name: 'Beef',
+      farmerId: '2',
       farmName: 'De Castro Farms',
       imagePath: 'assets/images/beef.png',
       category: 'Livestock',
       price: 50,
       description:
-          'Premium quality beef from grass-fed cattle. Tender, flavorful, and perfect for grilling, stewing, or roasting.',
+      'Premium beef from grass-fed cattle. Tender and flavorful.',
       rating: 4.7,
       unit: 'kg',
       reviewCount: 41,
@@ -294,12 +313,13 @@ class ProductData {
     Product(
       id: '20',
       name: 'Chicken Whole',
+      farmerId: '1',
       farmName: 'Farmjuseyo',
       imagePath: 'assets/images/chicken.png',
       category: 'Livestock',
       price: 50,
       description:
-          'Fresh whole chicken from free-range farms. Tender meat suitable for roasting, grilling, or your favorite chicken recipes.',
+      'Fresh whole chicken from free-range farms.',
       rating: 4.6,
       unit: 'kg',
       reviewCount: 52,
@@ -309,12 +329,13 @@ class ProductData {
     Product(
       id: '21',
       name: 'Pork',
+      farmerId: '1',
       farmName: 'Farmjuseyo',
       imagePath: 'assets/images/pork.png',
       category: 'Livestock',
       price: 300,
       description:
-          'High-quality pork cuts from locally raised pigs. Fresh and versatile for various cooking methods and Filipino dishes.',
+      'Fresh pork cuts from locally raised pigs.',
       rating: 4.5,
       unit: 'kg',
       reviewCount: 48,
@@ -324,12 +345,13 @@ class ProductData {
     Product(
       id: '22',
       name: 'Eggs',
+      farmerId: '3',
       farmName: 'Farm Lourdes',
       imagePath: 'assets/images/eggs.png',
       category: 'Livestock',
       price: 70,
       description:
-          'Farm-fresh eggs from free-range chickens. Rich in protein and perfect for breakfast, baking, or cooking.',
+      'Farm-fresh eggs from free-range chickens.',
       rating: 4.8,
       unit: 'kg',
       reviewCount: 67,
@@ -339,12 +361,13 @@ class ProductData {
     Product(
       id: '23',
       name: 'Rabbit Meat',
+      farmerId: '4',
       farmName: 'Fernandez Domingo',
       imagePath: 'assets/images/rabbit.png',
       category: 'Livestock',
       price: 167,
       description:
-          'Lean and tender rabbit meat, a healthy alternative to traditional meats. High in protein and low in fat.',
+      'Lean and tender rabbit meat.',
       rating: 4.3,
       unit: 'kg',
       reviewCount: 14,
@@ -354,12 +377,13 @@ class ProductData {
     Product(
       id: '24',
       name: 'Ham',
+      farmerId: '5',
       farmName: 'Tindahan ni Evelin',
       imagePath: 'assets/images/ham.png',
       category: 'Livestock',
       price: 40,
       description:
-          'Cured and smoked ham with rich flavor. Perfect for sandwiches, breakfast, or special occasion meals.',
+      'Cured and smoked ham with rich flavor.',
       rating: 4.4,
       unit: 'kg',
       reviewCount: 25,
@@ -371,12 +395,12 @@ class ProductData {
     Product(
       id: '25',
       name: 'Parmesan',
+      farmerId: '2',
       farmName: 'De Castro Farms',
       imagePath: 'assets/images/parmesan.png',
       category: 'Dairy',
       price: 50,
-      description:
-          'Aged Parmesan cheese with a rich, nutty flavor. Perfect for grating over pasta, salads, or enjoying on its own.',
+      description: 'Aged Parmesan cheese.',
       rating: 4.7,
       unit: 'kg',
       reviewCount: 35,
@@ -386,12 +410,12 @@ class ProductData {
     Product(
       id: '26',
       name: 'Butter',
+      farmerId: '1',
       farmName: 'Farmjuseyo',
       imagePath: 'assets/images/butter.png',
       category: 'Dairy',
       price: 50,
-      description:
-          'Creamy farm-fresh butter made from high-quality milk. Essential for baking, cooking, or spreading on bread.',
+      description: 'Creamy farm-fresh butter.',
       rating: 4.6,
       unit: 'kg',
       reviewCount: 58,
@@ -401,12 +425,12 @@ class ProductData {
     Product(
       id: '27',
       name: 'Sour Cream',
+      farmerId: '1',
       farmName: 'Farmjuseyo',
       imagePath: 'assets/images/sour_cream.png',
       category: 'Dairy',
       price: 300,
-      description:
-          'Thick and tangy sour cream perfect for dips, toppings, or adding richness to sauces and baked goods.',
+      description: 'Thick and tangy sour cream.',
       rating: 4.4,
       unit: 'kg',
       reviewCount: 21,
@@ -416,12 +440,12 @@ class ProductData {
     Product(
       id: '28',
       name: 'Fresh Milk',
+      farmerId: '3',
       farmName: 'Farm Lourdes',
       imagePath: 'assets/images/fresh_milk.png',
       category: 'Dairy',
       price: 70,
-      description:
-          'Pure and fresh farm milk, pasteurized for safety. Rich in calcium and nutrients, perfect for drinking or cooking.',
+      description: 'Pure and fresh milk.',
       rating: 4.8,
       unit: 'kg',
       reviewCount: 73,
@@ -431,12 +455,12 @@ class ProductData {
     Product(
       id: '29',
       name: 'Cream Cheese',
+      farmerId: '4',
       farmName: 'Fernandez Domingo',
       imagePath: 'assets/images/cream_cheese.png',
       category: 'Dairy',
       price: 167,
-      description:
-          'Smooth and creamy cheese spread, ideal for bagels, cheesecakes, or as a versatile ingredient in desserts.',
+      description: 'Smooth and creamy cheese spread.',
       rating: 4.5,
       unit: 'kg',
       reviewCount: 28,
@@ -446,12 +470,12 @@ class ProductData {
     Product(
       id: '30',
       name: 'Mozzarella',
+      farmerId: '5',
       farmName: 'Tindahan ni Evelin',
       imagePath: 'assets/images/mozzarella.png',
       category: 'Dairy',
       price: 40,
-      description:
-          'Fresh mozzarella cheese with a mild, milky flavor. Perfect for pizzas, caprese salad, or melting over dishes.',
+      description: 'Fresh mozzarella cheese.',
       rating: 4.6,
       unit: 'kg',
       reviewCount: 46,
@@ -463,12 +487,13 @@ class ProductData {
     Product(
       id: '31',
       name: 'Lagundi',
+      farmerId: '2',
       farmName: 'De Castro Farms',
       imagePath: 'assets/images/lagundi.png',
       category: 'Others',
       price: 50,
       description:
-          'Organic lagundi leaves, a traditional medicinal herb known for its health benefits. Perfect for herbal teas and remedies.',
+      'Organic lagundi leaves, known for health benefits.',
       rating: 4.5,
       unit: 'kg',
       reviewCount: 23,
@@ -478,12 +503,12 @@ class ProductData {
     Product(
       id: '32',
       name: 'Roses',
+      farmerId: '1',
       farmName: 'Farmjuseyo',
       imagePath: 'assets/images/roses.png',
       category: 'Others',
       price: 50,
-      description:
-          'Beautiful fresh-cut roses from our flower farm. Perfect for gifts, decorations, or special occasions.',
+      description: 'Fresh-cut roses.',
       rating: 4.7,
       unit: 'kg',
       reviewCount: 39,
@@ -493,12 +518,12 @@ class ProductData {
     Product(
       id: '33',
       name: 'Mint',
+      farmerId: '1',
       farmName: 'Farmjuseyo',
       imagePath: 'assets/images/mint.png',
       category: 'Others',
       price: 300,
-      description:
-          'Fresh aromatic mint leaves, ideal for teas, cocktails, desserts, or as a garnish for various dishes.',
+      description: 'Fresh aromatic mint leaves.',
       rating: 4.6,
       unit: 'kg',
       reviewCount: 17,
@@ -508,12 +533,12 @@ class ProductData {
     Product(
       id: '34',
       name: 'Wool',
+      farmerId: '3',
       farmName: 'Farm Lourdes',
       imagePath: 'assets/images/wool.png',
       category: 'Others',
       price: 70,
-      description:
-          'Premium quality sheep wool, perfect for crafting, knitting, or textile production. Soft and naturally insulating.',
+      description: 'Premium sheep wool.',
       rating: 4.4,
       unit: 'kg',
       reviewCount: 12,
@@ -523,12 +548,12 @@ class ProductData {
     Product(
       id: '35',
       name: 'Feathers',
+      farmerId: '4',
       farmName: 'Fernandez Domingo',
       imagePath: 'assets/images/feathers.png',
       category: 'Others',
       price: 167,
-      description:
-          'Clean and sorted poultry feathers for crafts, pillows, or decorative purposes. Ethically sourced from our farms.',
+      description: 'Clean poultry feathers.',
       rating: 4.2,
       unit: 'kg',
       reviewCount: 8,
@@ -538,12 +563,12 @@ class ProductData {
     Product(
       id: '36',
       name: 'Beeswax',
+      farmerId: '5',
       farmName: 'Tindahan ni Evelin',
       imagePath: 'assets/images/beeswax.png',
       category: 'Others',
       price: 40,
-      description:
-          'Pure natural beeswax from local apiaries. Excellent for candle making, cosmetics, or wood conditioning.',
+      description: 'Pure natural beeswax.',
       rating: 4.8,
       unit: 'kg',
       reviewCount: 34,
@@ -565,7 +590,7 @@ class ProductData {
     return _allProducts.where((p) => p.category == category).toList();
   }
 
-  // Get popular products (for homepage)
+  // Get popular products
   static List<Product> getPopularProducts({int limit = 6}) {
     return _allProducts.take(limit).toList();
   }
