@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
+import 'package:bukidlink/utils/constants/AppColors.dart';
+import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import '../../services/TradeService.dart';
 import '../../models/TradeModels.dart';
+import '../../widgets/common/ProductImage.dart';
 import 'MakeTradePage.dart'; // Required for Edit Navigation
 
 class MyTradesPage extends StatefulWidget {
+  final bool embeddedInTab;
+
+  MyTradesPage({this.embeddedInTab = false});
+
   @override
   _MyTradesPageState createState() => _MyTradesPageState();
 }
@@ -16,21 +22,10 @@ class _MyTradesPageState extends State<MyTradesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text('My Trades', style: TextStyle(color: Colors.black)),
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          // Search Bar
+    final content = Column(
+      children: [
+        // Search Bar (only when not embedded in a parent tab to avoid duplicates)
+        if (!widget.embeddedInTab)
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: TextField(
@@ -46,53 +41,76 @@ class _MyTradesPageState extends State<MyTradesPage> {
             ),
           ),
 
-          // List of My Trades
-          Expanded(
-            child: StreamBuilder<List<TradeListing>>(
-              stream: _tradeService.getMyTrades(searchText),
-              builder: (context, snapshot) {
-                if (snapshot.hasError)
-                  return Center(child: Text('Error loading data'));
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
+        // List of My Trades
+        Expanded(
+          child: StreamBuilder<List<TradeListing>>(
+            stream: _tradeService.getMyTrades(searchText),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) return Center(child: Text('Error loading data'));
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
 
-                final docs = snapshot.data ?? [];
+              final docs = snapshot.data ?? [];
 
-                if (docs.isEmpty) {
-                  return Center(
-                    child: Text("You haven't posted any trades yet."),
-                  );
-                }
-
-                return SingleChildScrollView(
-                  padding: EdgeInsets.all(12),
-                  child: Column(
-                    children: List.generate(docs.length, (index) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: MyTradeItemCard(
-                          listing: docs[index],
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => TradeIncomingOffersPage(
-                                  listing: docs[index],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    }),
-                  ),
+              if (docs.isEmpty) {
+                return Center(
+                  child: Text("You haven't posted any trades yet."),
                 );
-              },
-            ),
+              }
+
+              return SingleChildScrollView(
+                padding: EdgeInsets.all(12),
+                child: Column(
+                  children: List.generate(docs.length, (index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: MyTradeItemCard(
+                        listing: docs[index],
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => TradeIncomingOffersPage(
+                                listing: docs[index],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  }),
+                ),
+              );
+            },
           ),
-        ],
+        ),
+      ],
+    );
+
+    if (widget.embeddedInTab) {
+      return Container(
+        color: Colors.white,
+        child: SafeArea(
+          top: false,
+          child: content,
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text('My Trades', style: TextStyle(color: Colors.black)),
+        centerTitle: true,
       ),
+      body: content,
     );
   }
 }
@@ -106,15 +124,6 @@ class MyTradeItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    ImageProvider imageProvider;
-    if (listing.image.startsWith('assets/')) {
-      imageProvider = AssetImage(listing.image);
-    } else if (listing.image.isNotEmpty) {
-      imageProvider = FileImage(File(listing.image));
-    } else {
-      imageProvider = AssetImage('assets/images/default_cover_photo.png');
-    }
-
     return GestureDetector(
       onTap: onTap,
       child: Card(
@@ -126,17 +135,13 @@ class MyTradeItemCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Image
-              Container(
-                height: 80,
-                width: 80,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  image: DecorationImage(
-                    image: imageProvider,
-                    fit: BoxFit.cover,
-                    onError: (e, s) =>
-                        AssetImage('assets/images/default_cover_photo.png'),
-                  ),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: ProductImage(
+                  imagePath: listing.image.isNotEmpty ? listing.image : 'assets/images/default_cover_photo.png',
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.cover,
                 ),
               ),
               SizedBox(width: 12),
@@ -234,27 +239,61 @@ class TradeIncomingOffersPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    ImageProvider imageProvider;
-    if (listing.image.startsWith('assets/')) {
-      imageProvider = AssetImage(listing.image);
-    } else if (listing.image.isNotEmpty) {
-      imageProvider = FileImage(File(listing.image));
-    } else {
-      imageProvider = AssetImage('assets/images/default_cover_photo.png');
-    }
+    
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Trade Details', style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                AppColors.HEADER_GRADIENT_START,
+                AppColors.HEADER_GRADIENT_END,
+              ],
+            ),
+          ),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.25),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.local_offer,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Trade Details',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontFamily: AppTextStyles.FONT_FAMILY,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ),
+          ],
+        ),
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
-          // --- EDIT / DELETE MENU ---
           PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.white),
             onSelected: (value) {
               if (value == 'edit') {
-                // Navigate to MakeTradePage in Edit Mode
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -297,63 +336,151 @@ class TradeIncomingOffersPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Item Info
+              // Header Item Info (improved visual style)
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF1F4A2C), Color(0xFFC3E956)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      height: 80,
-                      width: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        image: DecorationImage(
-                          image: imageProvider,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.12),
+                      blurRadius: 12,
+                      offset: Offset(0, 6),
                     ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            listing.name,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Image with overlayed name/qty and offers badge
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: ProductImage(
+                            imagePath: listing.image.isNotEmpty ? listing.image : 'assets/images/default_cover_photo.png',
+                            width: double.infinity,
+                            height: 160,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        // dark gradient at bottom for text contrast
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: 70,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.black.withOpacity(0.0), Colors.black.withOpacity(0.45)],
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                              ),
+                              borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
                             ),
                           ),
-                          Text(
-                            listing.quantity,
-                            style: TextStyle(color: Colors.white70),
+                        ),
+                        // Name and qty overlay (bottom-left)
+                        Positioned(
+                          left: 12,
+                          bottom: 12,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                listing.name,
+                                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 4),
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'Qty: ${listing.quantity}',
+                                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
                           ),
-                          // Show Description here too
-                          SizedBox(height: 4),
-                          Text(
-                            listing.description,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontStyle: FontStyle.italic,
+                        ),
+                        // Offers badge (bottom-right)
+                        Positioned(
+                          right: 12,
+                          bottom: 12,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                            child: Row(
+                              children: [
+                                Icon(Icons.local_offer, size: 14, color: Color(0xFF2F8A3E)),
+                                SizedBox(width: 6),
+                                Text('${listing.offersCount} Offers', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+                              ],
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
+                    ),
+
+                    SizedBox(height: 16),
+
+                    // Product Details header with icon
+                    Row(
+                      children: [
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(color: Color(0xFFEFFBEF), borderRadius: BorderRadius.circular(10)),
+                          child: Icon(Icons.info_outline, color: Color(0xFF2F8A3E), size: 20),
+                        ),
+                        SizedBox(width: 10),
+                        Text('Product Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    // Description box
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
+                      child: Text(listing.description, style: TextStyle(color: Colors.grey[800])),
+                    ),
+                    SizedBox(height: 16),
+                    // Preferred Trades header with heart icon
+                    Row(
+                      children: [
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(color: Color(0xFFFFF9F0), borderRadius: BorderRadius.circular(10)),
+                          child: Icon(Icons.favorite_border, color: Color(0xFF2F8A3E), size: 20),
+                        ),
+                        SizedBox(width: 10),
+                        Text('Preferred Trades', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: listing.preferredTrades.map((pref) {
+                        return Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(color: Color(0xFFF4F7EE), borderRadius: BorderRadius.circular(8)),
+                          child: Text(pref, style: TextStyle(color: Colors.black87)),
+                        );
+                      }).toList(),
                     ),
                   ],
                 ),
@@ -370,16 +497,18 @@ class TradeIncomingOffersPage extends StatelessWidget {
                 stream: _tradeService.getOffersForListing(listing.id),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) return Text("Error loading offers");
-                  if (snapshot.connectionState == ConnectionState.waiting)
+                  if (snapshot.connectionState == ConnectionState.waiting){
                     return Center(child: CircularProgressIndicator());
+                  }
 
                   final offers = snapshot.data ?? [];
 
-                  if (offers.isEmpty)
+                  if (offers.isEmpty) {
                     return Padding(
                       padding: EdgeInsets.symmetric(vertical: 20),
                       child: Text("No offers received yet."),
                     );
+                  }
 
                   return Column(
                     children: offers.map((offer) {
@@ -402,49 +531,69 @@ class _OfferTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
+    final offeredBy = (offer.offeredByName.trim().isEmpty) ? 'Anonymous' : offer.offeredByName;
+
+    return Container(
       margin: EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        contentPadding: EdgeInsets.all(12),
-        leading: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Color(0xFFF4F7EE),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: Offset(0, 3)),
+        ],
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            image: offer.imagePath.isNotEmpty
-                ? DecorationImage(
-                    image: FileImage(File(offer.imagePath)),
-                    fit: BoxFit.cover,
-                  )
-                : null,
-          ),
-          child: offer.imagePath.isEmpty
-              ? Icon(Icons.image, color: Colors.grey)
-              : null,
-        ),
-        title: Text(
-          offer.itemName,
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text('${offer.itemQuantity}\nBy: ${offer.offeredByName}'),
-        trailing: ElevatedButton(
-          onPressed: () {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text("Feature coming soon!")));
-          },
-          child: Text("Accept"),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFFC3E956),
-            foregroundColor: Colors.black,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+            child: ProductImage(
+              imagePath: offer.imagePath.isNotEmpty ? offer.imagePath : 'assets/images/default_cover_photo.png',
+              width: 64,
+              height: 64,
+              fit: BoxFit.cover,
             ),
           ),
-        ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  offer.itemName,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'Quantity: ${offer.itemQuantity}',
+                  style: TextStyle(color: Colors.grey[700]),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'By: $offeredBy',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 8),
+          SizedBox(
+            width: 96,
+            height: 38,
+            child: ElevatedButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Feature coming soon!")));
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFFBFEA6A),
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                elevation: 0,
+              ),
+              child: Text('Accept', style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ],
       ),
     );
   }

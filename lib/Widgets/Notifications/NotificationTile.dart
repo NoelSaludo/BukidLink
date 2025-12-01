@@ -62,20 +62,22 @@ class NotificationTile extends StatelessWidget {
     String imageUrl = 'assets/images/';
     switch (notification.type) {
       case 'post':
-        imageUrl += poster?.profilePic ?? 'default_profile.png';
-      break;
+        final pic = (poster?.profilePic ?? 'default_profile.png').replaceFirst(RegExp(r'^/+'), '');
+        imageUrl += pic;
+        break;
       case 'shipping':
         imageUrl = 'shipping.png';
-      break;
+        break;
       case 'message':
-        imageUrl += messenger?.profilePic ?? 'default_profile.png';
-      break;
+        final pic = (messenger?.profilePic ?? 'default_profile.png').replaceFirst(RegExp(r'^/+'), '');
+        imageUrl += pic;
+        break;
       case 'system':
         imageUrl = 'systemNotif.png';
-      break;
+        break;
       default:
         imageUrl = 'systemNotif.png';
-}
+    }
     return InkWell(
       onTap: () { onTapped(context, notification.type);},
       child: Container(

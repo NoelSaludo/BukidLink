@@ -17,7 +17,14 @@ class PostTimestamp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: Text(timestamp),
+      child: Text(
+      style: TextStyle(
+        fontSize: 12.0,         // smaller, subtle
+        color: Colors.grey[600], // muted gray
+        fontWeight: FontWeight.normal,
+      ),
+        timestamp
+        ),
     );
   }
 }

@@ -237,8 +237,8 @@ class UserService {
   }
 
   String getSafeUserId() {
-  return currentUser?.id ?? "unknown-user";
-}
+    return currentUser?.id ?? "unknown-user";
+  }
 
   // Fetch a Farm document given its DocumentReference. Returns null on error or if not found.
   Future<Farm?> getFarmByReference(DocumentReference? farmRef) async {
@@ -275,36 +275,142 @@ class UserService {
     return null;
   }
 
-  // Fetch a user model by Firestore document id. Returns null if not found.
-  Future<User?> getUserById(String id) async {
+  Future<User?> getUserById(String uid) async {
     try {
       final doc = await FirebaseFirestore.instance
           .collection('users')
-          .doc(id)
+          .doc(uid)
           .get();
+
       if (!doc.exists) return null;
-      return User.fromDocument(doc);
+
+      final data = doc.data() as Map<String, dynamic>;
+      return User(
+        id: uid,
+        username: data['username'] ?? '',
+        password: '', // leave empty; don't fetch stored password
+        firstName: data['firstName'] ?? '',
+        lastName: data['lastName'] ?? '',
+        // Support both legacy 'email' key and newer 'emailAddress'
+        emailAddress: data['emailAddress'] ?? data['email'] ?? '',
+        address: data['address'] ?? '',
+        contactNumber: data['contactNumber'] ?? '',
+        profilePic: data['profilePic'] ?? 'default_image.png',
+        createdAt: data['created_at'] != null
+            ? (data['created_at'] as Timestamp).toDate()
+            : DateTime.now(),
+        updatedAt: data['updated_at'] != null
+            ? (data['updated_at'] as Timestamp).toDate()
+            : DateTime.now(),
+        type: data['type'] ?? 'Consumer',
+        farmId: data['farmId'] as DocumentReference?,
+      );
     } catch (e) {
-      debugPrint('Error fetching user by id: $e');
+      debugPrint('Error fetching user by ID: $e');
       return null;
     }
   }
 
-  
-  Future<User> getUserWithFallback(String id) async {
-  return await UserService().getUserById(id) ??
-      User(
-        id: 'unknown',
-        username: 'Unknown User',
-        password: '',
-        firstName: '',
-        lastName: '',
-        emailAddress: '',
-        address: '',
-        contactNumber: '',
-        profilePic: '',
-        createdAt: DateTime.now(),
+  /// Update user document fields for [uid] with the provided [updates] map.
+  /// Also updates the in-memory `currentUser` if it matches [uid].
+  Future<void> updateUserProfile(
+    String uid,
+    Map<String, dynamic> updates,
+  ) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      await firestore.collection('users').doc(uid).update({
+        ...updates,
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      // If currentUser matches uid, update the in-memory copy
+      if (currentUser != null && currentUser!.id == uid) {
+        final old = currentUser!;
+        currentUser = User(
+          id: old.id,
+          username: updates['username'] ?? old.username,
+          password: old.password,
+          firstName: updates['firstName'] ?? old.firstName,
+          lastName: updates['lastName'] ?? old.lastName,
+          emailAddress: updates['emailAddress'] ?? old.emailAddress,
+          address: updates['address'] ?? old.address,
+          contactNumber: updates['contactNumber'] ?? old.contactNumber,
+          profilePic: updates['profilePic'] ?? old.profilePic,
+          createdAt: old.createdAt,
+          updatedAt: DateTime.now(),
+          type: old.type,
+          farmId: old.farmId,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error updating user profile: $e');
+      rethrow;
+    }
+  }
+
+  /// Replace/overwrite the entire user document for [user].
+  /// This writes all main user fields to Firestore and updates the in-memory
+  /// `currentUser` reference.
+  Future<void> updateUser(User user) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final docRef = firestore.collection('users').doc(user.id);
+
+      await docRef.set({
+        'username': user.username,
+        'firstName': user.firstName,
+        'lastName': user.lastName,
+        // write both keys for backward compatibility
+        'emailAddress': user.emailAddress,
+        'email': user.emailAddress,
+        'address': user.address,
+        'contactNumber': user.contactNumber,
+        'profilePic': user.profilePic,
+        'type': user.type ?? 'Consumer',
+        'farmId': user.farmId,
+        'created_at': Timestamp.fromDate(user.createdAt),
+        'updated_at': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: false));
+
+      // update in-memory currentUser
+      currentUser = User(
+        id: user.id,
+        username: user.username,
+        password: (currentUser != null && currentUser!.id == user.id)
+            ? currentUser!.password
+            : user.password,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        emailAddress: user.emailAddress,
+        address: user.address,
+        contactNumber: user.contactNumber,
+        profilePic: user.profilePic,
+        createdAt: user.createdAt,
         updatedAt: DateTime.now(),
+        type: user.type,
+        farmId: user.farmId,
       );
-}
+    } catch (e) {
+      debugPrint('Error replacing user document: $e');
+      rethrow;
+    }
+  }
+
+  Future<User> getUserWithFallback(String id) async {
+    return await UserService().getUserById(id) ??
+        User(
+          id: 'unknown',
+          username: 'Unknown User',
+          password: '',
+          firstName: '',
+          lastName: '',
+          emailAddress: '',
+          address: '',
+          contactNumber: '',
+          profilePic: '',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+  }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/TradeModels.dart';
@@ -62,68 +63,182 @@ class TradeService {
   }
 
   // --- 1. READ LISTINGS (Public Feed - Excludes Me) ---
-  Stream<List<TradeListing>> getTradeListings(String searchText) async* {
+  Stream<List<TradeListing>> getTradeListings(String searchText) {
     if (isTesting) {
-      var filtered = _mockListings
+      // Return a single-subscription stream that immediately emits mock data
+      final controller = StreamController<List<TradeListing>>();
+      final filtered = _mockListings
           .where(
             (item) =>
                 item.name.toLowerCase().contains(searchText.toLowerCase()),
           )
           .toList();
-      yield filtered;
-    } else {
-      // 1. Get the current ID so we know who to exclude
-      String currentFarmerId = await _getCurrentFarmerId();
+      // Delay to mimic async behavior
+      Future.microtask(() {
+        controller.add(filtered);
+        controller.close();
+      });
+      return controller.stream;
+    }
 
-      // 2. Return the stream
-      yield* _db
+    // Use a broadcast controller so multiple listeners (hot reload, tab switches)
+    // won't cause 'Stream has already been listened to' errors.
+    final controller = StreamController<List<TradeListing>>.broadcast();
+    StreamSubscription? sub;
+
+    controller.onListen = () async {
+      final currentFarmerId = await _getCurrentFarmerId();
+
+      sub = _db
           .collection('trade_listings')
           .orderBy('created_at', descending: true)
           .snapshots()
-          .map((snapshot) {
-            return snapshot.docs
-                .map((doc) {
-                  return TradeListing.fromMap(doc.data(), doc.id);
-                })
-                .where((item) {
-                  // FILTER: Matches Search AND is NOT my own post
-                  bool matchesSearch = item.name.toLowerCase().contains(
-                    searchText.toLowerCase(),
-                  );
-                  bool isNotMe = item.farmerId != currentFarmerId;
-                  return matchesSearch && isNotMe;
-                })
-                .toList();
-          });
-    }
+          .listen(
+            (snapshot) {
+              final results = snapshot.docs
+                  .map((doc) => TradeListing.fromMap(doc.data(), doc.id))
+                  .where((item) {
+                    final matchesSearch = item.name.toLowerCase().contains(
+                      searchText.toLowerCase(),
+                    );
+                    final isNotMe = item.farmerId != currentFarmerId;
+                    return matchesSearch && isNotMe;
+                  })
+                  .toList();
+
+              controller.add(results);
+            },
+            onError: (err, stack) {
+              controller.addError(err, stack);
+            },
+          );
+    };
+
+    controller.onCancel = () async {
+      await sub?.cancel();
+      sub = null;
+    };
+
+    return controller.stream;
   }
 
   // --- 2. READ MY TRADES (Private Feed - Only Me) ---
-  Stream<List<TradeListing>> getMyTrades(String searchText) async* {
+  Stream<List<TradeListing>> getMyTrades(String searchText) {
     if (isTesting) {
-      yield [];
-    } else {
-      // 1. Get the current ID
-      String currentFarmerId = await _getCurrentFarmerId();
-
-      // 2. Return stream filtered by 'farmer_id'
-      yield* _db
-          .collection('trade_listings')
-          .where('farmer_id', isEqualTo: currentFarmerId) // <--- Uses Farmer ID
-          .snapshots()
-          .map((snapshot) {
-            return snapshot.docs
-                .map((doc) {
-                  return TradeListing.fromMap(doc.data(), doc.id);
-                })
-                .where((item) {
-                  return item.name.toLowerCase().contains(
-                    searchText.toLowerCase(),
-                  );
-                })
-                .toList();
-          });
+      final controller = StreamController<List<TradeListing>>();
+      Future.microtask(() {
+        controller.add([]);
+        controller.close();
+      });
+      return controller.stream;
     }
+
+    final controller = StreamController<List<TradeListing>>.broadcast();
+    StreamSubscription? sub;
+
+    controller.onListen = () async {
+      final currentFarmerId = await _getCurrentFarmerId();
+
+      sub = _db
+          .collection('trade_listings')
+          .where('farmer_id', isEqualTo: currentFarmerId)
+          .snapshots()
+          .listen(
+            (snapshot) {
+              final results = snapshot.docs
+                  .map((doc) => TradeListing.fromMap(doc.data(), doc.id))
+                  .where(
+                    (item) => item.name.toLowerCase().contains(
+                      searchText.toLowerCase(),
+                    ),
+                  )
+                  .toList();
+
+              controller.add(results);
+            },
+            onError: (err, stack) {
+              controller.addError(err, stack);
+            },
+          );
+    };
+
+    controller.onCancel = () async {
+      await sub?.cancel();
+      sub = null;
+    };
+
+    return controller.stream;
+  }
+
+  // --- NEW: FETCH MY LISTINGS (Future) ---
+  Future<List<TradeListing>> fetchMyListingsFuture() async {
+    if (isTesting) return [];
+
+    try {
+      final currentFarmerId = await _getCurrentFarmerId();
+      final snapshot = await _db
+          .collection('trade_listings')
+          .where('farmer_id', isEqualTo: currentFarmerId)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => TradeListing.fromMap(doc.data(), doc.id))
+          .toList();
+    } catch (e) {
+      print("Error fetching my listings: $e");
+      return [];
+    }
+  }
+
+  // --- NEW: FETCH OFFERS FOR A LISTING (Future) ---
+  Future<List<TradeOfferRequest>> fetchOffersForListingFuture(
+    String listingId,
+  ) async {
+    if (isTesting) return [];
+
+    try {
+      final snapshot = await _db
+          .collection('trade_offers')
+          .where('listing_id', isEqualTo: listingId)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => TradeOfferRequest.fromMap(doc.data(), doc.id))
+          .toList();
+    } catch (e) {
+      print("Error fetching offers for listing $listingId: $e");
+      return [];
+    }
+  }
+
+  // --- NEW: DECLINE OFFER (Delete Offer & Decrement Count) ---
+  Future<void> declineOffer(String offerId, String listingId) async {
+    if (isTesting) return;
+
+    WriteBatch batch = _db.batch();
+
+    // 1. Delete the offer
+    DocumentReference offerRef = _db.collection('trade_offers').doc(offerId);
+    batch.delete(offerRef);
+
+    // 2. Decrement offers_count on the listing
+    DocumentReference listingRef = _db
+        .collection('trade_listings')
+        .doc(listingId);
+    batch.update(listingRef, {'offers_count': FieldValue.increment(-1)});
+
+    await batch.commit();
+  }
+
+  // --- NEW: ACCEPT OFFER (Update Status) ---
+  Future<void> acceptOffer(String offerId) async {
+    if (isTesting) return;
+
+    // For now, just update the status to 'accepted'.
+    // Logic for inventory deduction or messaging can be added here.
+    await _db.collection('trade_offers').doc(offerId).update({
+      'status': 'accepted',
+    });
   }
 
   // --- 3. CREATE LISTING (Uses Farmer ID) ---

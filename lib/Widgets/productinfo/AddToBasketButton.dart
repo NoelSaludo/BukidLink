@@ -71,7 +71,7 @@ class _AddToBasketButtonState extends State<AddToBasketButton>
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [
@@ -81,7 +81,7 @@ class _AddToBasketButtonState extends State<AddToBasketButton>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
                 color: AppColors.primaryGreen.withValues(alpha: 0.4),
@@ -105,7 +105,7 @@ class _AddToBasketButtonState extends State<AddToBasketButton>
               const Icon(
                 Icons.shopping_cart_outlined,
                 color: Colors.white,
-                size: 20,
+                size: 18,
               ),
               const SizedBox(width: 8),
               Flexible(

@@ -6,7 +6,9 @@ import 'package:bukidlink/widgets/common/CustomBottomNavBar.dart';
 import 'package:bukidlink/models/Post.dart';
 import 'package:bukidlink/Widgets/Posts/PostTile.dart';
 import 'package:bukidlink/services/PostService.dart';
+import 'package:bukidlink/services/UserService.dart';
 import 'package:bukidlink/Widgets/farmer/FarmerBottomNavBar.dart';
+import 'package:bukidlink/models/User.dart';
 
 class FarmerProfilePage extends StatefulWidget {
   final String profileID;
@@ -23,6 +25,7 @@ class FarmerProfilePage extends StatefulWidget {
 class _FarmerProfilePageState extends State<FarmerProfilePage> {
   List<Post> posts = [];
   bool isLoading = true;
+  final user = UserService().getCurrentUser();
 
   @override
   void initState() {
@@ -46,7 +49,7 @@ class _FarmerProfilePageState extends State<FarmerProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundYellow,
+      backgroundColor: AppColors.APP_BACKGROUND,
       body: CustomScrollView(
         slivers: [
           // --- Profile Info ---
@@ -55,16 +58,17 @@ class _FarmerProfilePageState extends State<FarmerProfilePage> {
           ),
 
           // --- Header ---
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.symmetric(vertical: 10),
               child: Column(
                 children: [
-                  Divider(thickness: 1),
-                  SizedBox(height: 5),
+                  const SizedBox(height: 5),
                   Text(
-                    'Posts History',
-                    style: AppTextStyles.PRODUCT_NAME_HEADER,
+                    'Posts & Activity',
+                    style: AppTextStyles.PRODUCT_NAME_HEADER.copyWith(
+                      color: AppColors.HEADER_GRADIENT_START,
+                    ),
                   ),
                 ],
               ),
@@ -73,20 +77,26 @@ class _FarmerProfilePageState extends State<FarmerProfilePage> {
 
           // --- Posts Section ---
           if (isLoading)
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Center(child: CircularProgressIndicator()),
+                padding: const EdgeInsets.all(20),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryGreen,
+                  ),
+                ),
               ),
             )
           else if (posts.isEmpty)
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20),
                 child: Center(
                   child: Text(
-                    'No posts yet',
-                    style: AppTextStyles.sectionTitle,
+                    'No posts yet — check back later.',
+                    style: AppTextStyles.EMPTY_STATE_TITLE.copyWith(
+                      color: AppColors.TEXT_SECONDARY,
+                    ),
                   ),
                 ),
               ),
@@ -103,7 +113,6 @@ class _FarmerProfilePageState extends State<FarmerProfilePage> {
             ),
         ],
       ),
-      bottomNavigationBar: const FarmerBottomNavBar(currentIndex: 2),
     );
   }
 }

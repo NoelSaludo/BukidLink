@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileInfo.dart';
+import 'package:bukidlink/Widgets/Profile/StorePreview.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/common/CustomBottomNavBar.dart';
@@ -10,10 +11,7 @@ import 'package:bukidlink/services/PostService.dart';
 class ProfilePage extends StatefulWidget {
   final String profileID;
 
-  const ProfilePage({
-    super.key,
-    required this.profileID,
-  });
+  const ProfilePage({super.key, required this.profileID});
 
   @override
   _ProfilePageState createState() => _ProfilePageState();
@@ -30,8 +28,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> loadUserPosts() async {
-    final fetchedPosts =
-        await PostService().fetchPostsByUser(widget.profileID);
+    final fetchedPosts = await PostService().fetchPostsByUser(widget.profileID);
 
     setState(() {
       posts = fetchedPosts;
@@ -46,9 +43,10 @@ class _ProfilePageState extends State<ProfilePage> {
       body: CustomScrollView(
         slivers: [
           // Profile header
-          SliverToBoxAdapter(
-            child: ProfileInfo(profileID: widget.profileID),
-          ),
+          SliverToBoxAdapter(child: ProfileInfo(profileID: widget.profileID)),
+
+          // Store preview section
+          SliverToBoxAdapter(child: StorePreview(profileID: widget.profileID)),
 
           // Title section
           const SliverToBoxAdapter(
@@ -63,7 +61,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
 
-          // Loading indicator
+          // Loading indicator / posts list
           if (isLoading)
             const SliverToBoxAdapter(
               child: Center(
@@ -74,7 +72,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             )
           else if (posts.isEmpty)
-            // No posts found
             const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.all(20),
@@ -87,20 +84,13 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             )
           else
-            // List of posts
             SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final post = posts[index];
-                  return PostTile(post: post);
-                },
-                childCount: posts.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final post = posts[index];
+                return PostTile(post: post);
+              }, childCount: posts.length),
             ),
         ],
-      ),
-      bottomNavigationBar: const CustomBottomNavBar(
-        currentIndex: 1,
       ),
     );
   }

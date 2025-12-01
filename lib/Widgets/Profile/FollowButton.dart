@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:bukidlink/Utils/constants/AppColors.dart';
+import 'package:bukidlink/Utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/services/follow_service.dart';
 import 'package:bukidlink/services/UserService.dart';
 
@@ -48,9 +50,15 @@ class _FollowButtonState extends State<FollowButton> {
   Future<void> _toggleFollow() async {
     final currentUser = UserService.currentUser;
     if (currentUser == null) {
-      // Not logged in - show a simple snackbar
+      // Not logged in - show a simple snackbar (informational)
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please sign in to follow farms')),
+        SnackBar(
+          backgroundColor: AppColors.primaryGreen,
+          content: const Text(
+            'Please sign in to follow farms',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
       );
       return;
     }
@@ -62,23 +70,35 @@ class _FollowButtonState extends State<FollowButton> {
 
     try {
       if (_isFollowing) {
-        final int updated = await _followService.follow(
+          await _followService.follow(
           farmId: widget.farmId,
           userId: currentUser.id,
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Followed — $updated followers')),
+            SnackBar(
+              backgroundColor: AppColors.primaryGreen,
+              content: const Text(
+                'You are now following this farm',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
           );
         }
       } else {
-        final int updated = await _followService.unfollow(
+          await _followService.unfollow(
           farmId: widget.farmId,
           userId: currentUser.id,
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Unfollowed — $updated followers')),
+            SnackBar(
+              backgroundColor: AppColors.primaryGreen,
+              content: const Text(
+                'You have unfollowed this farm',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
           );
         }
       }
@@ -87,9 +107,15 @@ class _FollowButtonState extends State<FollowButton> {
       setState(() {
         _isFollowing = !_isFollowing;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to update follow: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.redAccent,
+          content: Text(
+            'Failed to update follow: $e',
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -102,11 +128,11 @@ class _FollowButtonState extends State<FollowButton> {
   @override
   Widget build(BuildContext context) {
     final label = _isFollowing ? 'Following' : 'Follow';
-    final bg = _isFollowing ? Colors.white : const Color(0xFFDCEF6A);
-    final fg = _isFollowing ? Colors.black : Colors.black;
+    final bg = _isFollowing ? Colors.white : AppColors.primaryGreen;
+    final fg = _isFollowing ? AppColors.primaryGreen : Colors.white;
 
     return SizedBox(
-      width: widget.width ?? 110,
+      width: widget.width,
       height: 42,
       child: ElevatedButton(
         onPressed: _loading ? null : _toggleFollow,
@@ -117,9 +143,10 @@ class _FollowButtonState extends State<FollowButton> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
             side: _isFollowing
-                ? const BorderSide(color: Colors.grey)
+                ? BorderSide(color: AppColors.primaryGreen)
                 : BorderSide.none,
           ),
+          padding: const EdgeInsets.symmetric(vertical: 12),
         ),
         child: _loading
             ? const SizedBox(
@@ -127,7 +154,14 @@ class _FollowButtonState extends State<FollowButton> {
                 height: 18,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+            : Text(
+                label,
+                style: AppTextStyles.BUTTON_TEXT.copyWith(
+                  fontSize: 13.0,
+                  fontWeight: FontWeight.w700,
+                  color: fg,
+                ),
+              ),
       ),
     );
   }

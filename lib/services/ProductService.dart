@@ -3,9 +3,101 @@ import 'package:bukidlink/models/ProductReview.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProductService {
+  // ADD: Singleton pattern
+  static final ProductService shared = ProductService._internal();
+  ProductService._internal();
+  factory ProductService() => shared;
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   List<Product> _productsCache = [];
+
+  // ADD: Method to get product by ID
+  Future<Product?> getProductById(String productId) async {
+    try {
+      print('🔍 getProductById called for: $productId');
+
+      // First check cache
+      final cachedIndex = _productsCache.indexWhere((p) => p.id == productId);
+      if (cachedIndex != -1) {
+        print('✅ Found in cache: ${_productsCache[cachedIndex].name}');
+        return _productsCache[cachedIndex];
+      }
+
+      print('💾 Not in cache, fetching from Firestore...');
+
+      // If not in cache, fetch from Firestore
+      DocumentSnapshot doc = await _firestore
+          .collection('products')
+          .doc(productId)
+          .get();
+
+      if (!doc.exists) {
+        print('❌ Product $productId not found in Firestore');
+        return null;
+      }
+
+      print('📄 Document exists, parsing data...');
+
+      // Parse product from DocumentSnapshot
+      final data = doc.data() as Map<String, dynamic>;
+
+      // Stock/amount may be stored under different keys
+      final dynamic rawAmount = data['amount'] ?? data['stock_count'] ?? data['stockCount'] ?? 0;
+      final int stockCount = rawAmount is int ? rawAmount : int.tryParse(rawAmount?.toString() ?? '0') ?? 0;
+
+      // Price/cost may be stored under 'cost' or 'price'
+      final dynamic rawPrice = data['cost'] ?? data['price'];
+      final double price = rawPrice != null ? double.tryParse(rawPrice.toString()) ?? 0.0 : 0.0;
+
+      // Image path
+      final String rawImage = (data['image_url'] ?? data['imagePath'] ?? '').toString();
+      final String imagePath = rawImage.isNotEmpty ? rawImage : 'assets/images/default_cover_photo.png';
+
+      // Rating
+      final dynamic rawRating = data['rating'];
+      final double? rating = rawRating != null ? double.tryParse(rawRating.toString()) ?? 0.0 : null;
+
+      // Availability
+      final String availability = (data['availability'] as String?) ?? (stockCount > 0 ? 'In Stock' : 'Out of Stock');
+
+      final product = Product(
+        id: doc.id,
+        name: data['name'] ?? '',
+        farmerId: data['farmerId'] ?? '',
+        farmName: data['farm_name'] ?? '',
+        farmId: data['farm_id'] is DocumentReference
+            ? (data['farm_id'] as DocumentReference).id
+            : data['farm_id']?.toString(),
+        imagePath: imagePath,
+        category: data['category'] ?? '',
+        price: price,
+        description: data['description'],
+        rating: rating,
+        unit: data['unit'],
+        reviewCount: (data['review_count'] != null) ? int.tryParse(data['review_count'].toString()) : null,
+        availability: availability,
+        stockCount: stockCount,
+        reviews: data['reviews'] != null
+            ? (data['reviews'] as List<dynamic>).map((reviewData) {
+          final reviewMap = reviewData as Map<String, dynamic>;
+          return ProductReview.fromDocument(reviewMap);
+        }).toList()
+            : null,
+        isVisible: data['isVisible'] ?? true,
+      );
+
+      // Add to cache
+      _productsCache.add(product);
+
+      print('✅ Product loaded successfully: ${product.name}');
+
+      return product;
+    } catch (e) {
+      print('❌ Error fetching product by ID $productId: $e');
+      return null;
+    }
+  }
 
   Future<List<Product>> fetchProducts() async {
     List<Product> products = [];
@@ -28,11 +120,128 @@ class ProductService {
     return products;
   }
 
+  /// Returns a stream of visible products from Firestore that updates in
+  /// real-time when the `products` collection changes.
+  Stream<List<Product>> streamProducts() {
+    return _firestore.collection('products').snapshots().map((snapshot) {
+      final products = <Product>[];
+      for (var doc in snapshot.docs) {
+        final product = Product.fromDocument(doc);
+        if (product.isVisible) products.add(product);
+      }
+      // update cache on each snapshot
+      _productsCache = products;
+      return products;
+    });
+  }
+
+  /// Fetches the average rating for visible products belonging to the
+  /// farm identified by [farmName]. Returns `null` when no ratings are
+  /// available or an error occurs.
+  Future<double?> fetchAverageRatingForFarm({required String farmName}) async {
+    try {
+      QuerySnapshot snapshot = await _firestore
+          .collection('products')
+          .where('farm_name', isEqualTo: farmName)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        return null;
+      }
+
+      double sum = 0.0;
+      int count = 0;
+
+      for (var doc in snapshot.docs) {
+        final prod = Product.fromDocument(doc);
+        if (prod.isVisible && prod.rating != null) {
+          sum += prod.rating!;
+          count += 1;
+        }
+      }
+
+      if (count == 0) return null;
+      return sum / count;
+    } catch (e) {
+      print('Error fetching average rating for farm: $e');
+      return null;
+    }
+  }
+
+  /// Fetches up to [limit] visible products for the given [farmId],
+  /// ordered by `created_at` descending when available.
+  Future<List<Product>> fetchProductsByFarm({
+    required String farmId,
+    int limit = 5,
+  }) async {
+    List<Product> products = [];
+    try {
+      // Perform a simple single-field query to avoid requiring a composite index.
+      // We'll query by `farm_id` only, then filter `isVisible` and sort by
+      // `created_at` on the client side.
+      QuerySnapshot snapshot = await _firestore
+          .collection('products')
+          .where('farm_id', isEqualTo: farmId)
+          .get();
+
+      // If no results, it's possible `farm_id` is stored as a DocumentReference.
+      // Try that as a fallback.
+      if (snapshot.docs.isEmpty && farmId.isNotEmpty) {
+        final farmRef = _firestore.collection('farms').doc(farmId);
+        final altSnapshot = await _firestore
+            .collection('products')
+            .where('farm_id', isEqualTo: farmRef)
+            .get();
+        snapshot = altSnapshot;
+      }
+
+      // Map docs to Product + created_at timestamp for client-side filtering/sorting
+      final List<MapEntry<Product, DateTime>> withDates = [];
+      for (var doc in snapshot.docs) {
+        final prod = Product.fromDocument(doc);
+        final data = doc.data() as Map<String, dynamic>;
+        final rawCreated = data['created_at'];
+        DateTime created;
+        if (rawCreated is Timestamp) {
+          created = rawCreated.toDate();
+        } else if (rawCreated is String) {
+          created =
+              DateTime.tryParse(rawCreated) ??
+                  DateTime.fromMillisecondsSinceEpoch(0);
+        } else {
+          created = DateTime.fromMillisecondsSinceEpoch(0);
+        }
+
+        if (prod.isVisible) {
+          withDates.add(MapEntry(prod, created));
+        }
+      }
+
+      // Sort descending by created date and apply the requested limit
+      withDates.sort((a, b) => b.value.compareTo(a.value));
+      products = withDates.take(limit).map((e) => e.key).toList();
+
+      // Merge results into cache: replace existing entries or append.
+      for (var p in products) {
+        final index = _productsCache.indexWhere((c) => c.id == p.id);
+        if (index != -1) {
+          _productsCache[index] = p;
+        } else {
+          _productsCache.add(p);
+        }
+      }
+    } catch (e) {
+      print('Error fetching products by farm: $e');
+    }
+
+    return products;
+  }
+
   // Accept a ProductReview and persist it as a Map to Firestore.
   Future<void> addReviewToProduct(
-    String productId,
-    ProductReview review,
-  ) async {
+      String productId,
+      ProductReview review,
+      ) async {
     try {
       DocumentReference productRef = _firestore
           .collection('products')
@@ -177,8 +386,8 @@ class ProductService {
         }
 
         final rIndex = updatedReviews.indexWhere(
-          (r) =>
-              r.userName == review.userName &&
+              (r) =>
+          r.userName == review.userName &&
               r.comment == review.comment &&
               r.date == review.date,
         );

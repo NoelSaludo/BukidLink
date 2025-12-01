@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProductReview {
   final String userName;
-  final String userAvatar; // Initials or image path
+  final String userAvatar;
   final double rating;
   final String comment;
   final DateTime date;

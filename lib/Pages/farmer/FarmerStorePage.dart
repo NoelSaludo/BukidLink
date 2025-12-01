@@ -7,13 +7,20 @@ import 'package:bukidlink/widgets/farmer/FarmerBottomNavBar.dart';
 import 'package:bukidlink/widgets/farmer/StoreProductCard.dart';
 import 'package:bukidlink/widgets/farmer/SoldOutProductCard.dart';
 import 'package:bukidlink/widgets/farmer/TradeOfferCard.dart';
-import 'package:bukidlink/data/TradeOfferData.dart';
 import 'package:bukidlink/models/Product.dart';
-import 'package:bukidlink/models/TradeOffer.dart';
+import 'package:bukidlink/models/TradeModels.dart';
 import 'package:bukidlink/pages/farmer/SellPage.dart';
 import 'package:bukidlink/pages/farmer/EditPage.dart';
 import 'package:bukidlink/services/FarmService.dart';
 import 'package:bukidlink/services/UserService.dart';
+import 'package:bukidlink/services/TradeService.dart';
+
+// Helper class to hold the pair for display
+class TradeOfferPair {
+  final TradeListing listing;
+  final TradeOfferRequest offer;
+  TradeOfferPair({required this.listing, required this.offer});
+}
 
 class FarmerStorePage extends StatefulWidget {
   const FarmerStorePage({super.key});
@@ -26,12 +33,13 @@ class _FarmerStorePageState extends State<FarmerStorePage>
     with TickerProviderStateMixin {
   late TabController _tabController;
   final FarmService _farmService = FarmService();
+  final TradeService _tradeService = TradeService();
   bool _isLoading = true;
 
   List<Product> _onSaleProducts = [];
   List<Product> _soldOutProducts = [];
   List<Product> _archivedProducts = [];
-  List<TradeOffer> get _tradeOffers => TradeOfferData.getPendingTradeOffers();
+  List<TradeOfferPair> _tradeOffers = []; // Changed to use Firebase wrapper
 
   @override
   void initState() {
@@ -45,16 +53,13 @@ class _FarmerStorePageState extends State<FarmerStorePage>
       _isLoading = true;
     });
 
+    // 1. Fetch Store Products
     try {
       final user = UserService().getCurrentUser();
-      // If user has a farmId (DocumentReference), we use its ID string.
-      // If farmId is null, we can't fetch farm-specific products.
       final String? farmId = user?.farmId?.id;
 
       if (farmId != null) {
-        // Fetch all products for the farm (FarmService filters nothing now, returns all)
         final products = await _farmService.fetchProductsByFarm(farmId);
-
         final onSale = <Product>[];
         final soldOut = <Product>[];
         final archived = <Product>[];
@@ -70,28 +75,52 @@ class _FarmerStorePageState extends State<FarmerStorePage>
         }
 
         if (mounted) {
-          setState(() {
-            _onSaleProducts = onSale;
-            _soldOutProducts = soldOut;
-            _archivedProducts = archived;
-            _isLoading = false;
-          });
+          _onSaleProducts = onSale;
+          _soldOutProducts = soldOut;
+          _archivedProducts = archived;
         }
       } else {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
         print('User has no farm ID linked.');
       }
     } catch (e) {
       print('Error fetching products: $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+    }
+
+    // 2. Fetch Trade Offers
+    try {
+      await _fetchTradeOffers();
+    } catch (e) {
+      print('Error fetching trades: $e');
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _fetchTradeOffers() async {
+    // 1. Get all listings created by this farmer
+    final listings = await _tradeService.fetchMyListingsFuture();
+    final List<TradeOfferPair> allOffers = [];
+
+    // 2. For each listing, get the offers
+    for (var listing in listings) {
+      final offers = await _tradeService.fetchOffersForListingFuture(
+        listing.id,
+      );
+
+      for (var offer in offers) {
+        // Only show pending offers for now
+        if (offer.status == 'pending') {
+          allOffers.add(TradeOfferPair(listing: listing, offer: offer));
+        }
       }
+    }
+
+    if (mounted) {
+      _tradeOffers = allOffers;
     }
   }
 
@@ -103,14 +132,11 @@ class _FarmerStorePageState extends State<FarmerStorePage>
 
   // Calculate sold count based on stock difference (mock calculation)
   int _getSoldCount(Product product) {
-    // For now, returning 0 or placeholder logic as we don't have historical sales data linked here yet
-    // In a real scenario, this might come from an Orders collection
     return 0;
   }
 
   // Calculate total earnings for a sold out product
   double _getTotalEarnings(Product product) {
-    // Placeholder logic
     return 0.0;
   }
 
@@ -122,10 +148,8 @@ class _FarmerStorePageState extends State<FarmerStorePage>
   void _handleEditProduct(Product product) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => EditPage(product: product),
-      ),
-    ).then((_) => _fetchProducts()); // Refresh after edit
+      MaterialPageRoute(builder: (context) => EditPage(product: product)),
+    ).then((_) => _fetchProducts());
   }
 
   void _handleRemoveProduct(Product product) {
@@ -133,13 +157,8 @@ class _FarmerStorePageState extends State<FarmerStorePage>
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.CARD_BACKGROUND,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Text(
-          'Remove Product',
-          style: AppTextStyles.DIALOG_TITLE,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Remove Product', style: AppTextStyles.DIALOG_TITLE),
         content: Text(
           'Are you sure you want to remove "${product.name}"? This will archive the product.',
           style: AppTextStyles.BODY_TEXT,
@@ -154,22 +173,16 @@ class _FarmerStorePageState extends State<FarmerStorePage>
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context); // Close dialog
+              Navigator.pop(context);
               try {
-                // Show loading indicator
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Archiving product...'),
-                      duration: Duration(seconds: 1),
-                    ),
+                    const SnackBar(content: Text('Archiving product...')),
                   );
                 }
-
                 await _farmService.archiveProduct(product.id);
-
                 if (mounted) {
-                  _fetchProducts(); // Refresh list
+                  _fetchProducts();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('${product.name} archived successfully'),
@@ -181,7 +194,7 @@ class _FarmerStorePageState extends State<FarmerStorePage>
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Error archiving product: $e'),
+                      content: Text('Error archiving: $e'),
                       backgroundColor: AppColors.ERROR_RED,
                     ),
                   );
@@ -201,16 +214,11 @@ class _FarmerStorePageState extends State<FarmerStorePage>
   void _handleRestoreProduct(Product product) async {
     try {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Restoring product...'),
-            duration: Duration(seconds: 1),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Restoring product...')));
       }
-
       await _farmService.restoreProduct(product.id);
-
       if (mounted) {
         _fetchProducts();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -224,7 +232,7 @@ class _FarmerStorePageState extends State<FarmerStorePage>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error restoring product: $e'),
+            content: Text('Error restoring: $e'),
             backgroundColor: AppColors.ERROR_RED,
           ),
         );
@@ -233,13 +241,10 @@ class _FarmerStorePageState extends State<FarmerStorePage>
   }
 
   void _handleSellProduct() {
-    // Navigate to Sell Page
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const SellPage(),
-      ),
-    ).then((_) => _fetchProducts()); // Refresh after adding new product
+      MaterialPageRoute(builder: (context) => const SellPage()),
+    ).then((_) => _fetchProducts());
   }
 
   @override
@@ -269,7 +274,10 @@ class _FarmerStorePageState extends State<FarmerStorePage>
               children: [
                 // Tab Bar
                 Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: TabBar(
                     controller: _tabController,
                     isScrollable: true,
@@ -283,7 +291,8 @@ class _FarmerStorePageState extends State<FarmerStorePage>
                     labelColor: AppColors.DARK_TEXT,
                     unselectedLabelColor: Colors.white,
                     labelStyle: AppTextStyles.FARMER_TAB_LABEL,
-                    unselectedLabelStyle: AppTextStyles.FARMER_TAB_LABEL_UNSELECTED,
+                    unselectedLabelStyle:
+                    AppTextStyles.FARMER_TAB_LABEL_UNSELECTED,
                     tabs: [
                       Tab(
                         child: Padding(
@@ -306,8 +315,10 @@ class _FarmerStorePageState extends State<FarmerStorePage>
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.remove_shopping_cart_outlined,
-                                  size: 20),
+                              const Icon(
+                                Icons.remove_shopping_cart_outlined,
+                                size: 20,
+                              ),
                               const SizedBox(width: 8),
                               const Text('Sold Out'),
                               const SizedBox(width: 4),
@@ -403,22 +414,16 @@ class _FarmerStorePageState extends State<FarmerStorePage>
                 : TabBarView(
               controller: _tabController,
               children: [
-                // On Sale Tab
                 _buildOnSaleList(),
-                // Sold Out Tab
                 _buildSoldOutList(),
-                // Archived Tab
                 _buildArchivedList(),
-                // Trades Tab
                 _buildTradesList(),
               ],
             ),
           ),
         ],
       ),
-      bottomNavigationBar: const FarmerBottomNavBar(
-        currentIndex: 0,
-      ),
+      bottomNavigationBar: const FarmerBottomNavBar(currentIndex: 0),
     );
   }
 
@@ -500,38 +505,125 @@ class _FarmerStorePageState extends State<FarmerStorePage>
       padding: const EdgeInsets.all(16),
       itemCount: _tradeOffers.length,
       itemBuilder: (context, index) {
-        final offer = _tradeOffers[index];
+        final pair = _tradeOffers[index];
+
+        // Convert Listing/Offer to dummy Products for UI compatibility
+        final myProduct = _createDummyProductFromListing(pair.listing);
+        final offerProduct = _createDummyProductFromOffer(pair.offer);
+
+        // Parse quantities
+        final myQty = _parseQuantity(pair.listing.quantity);
+        final offerQty = _parseQuantity(pair.offer.itemQuantity);
 
         return TradeOfferCard(
-          myProduct: offer.myProduct,
-          offerProduct: offer.offerProduct,
-          myQuantity: offer.myQuantity,
-          offerQuantity: offer.offerQuantity,
-          onAccept: () => _handleAcceptTrade(offer),
-          onDecline: () => _handleDeclineTrade(offer),
+          myProduct: myProduct,
+          offerProduct: offerProduct,
+          myQuantity: myQty,
+          offerQuantity: offerQty,
+          onAccept: () => _handleAcceptTrade(pair),
+          onDecline: () => _handleDeclineTrade(pair),
         );
       },
     );
   }
 
-  void _handleAcceptTrade(TradeOffer offer) {
-    // TODO: Implement accept trade logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Accepted trade: ${offer.myProduct.name} for ${offer.offerProduct.name}'),
-        duration: const Duration(seconds: 2),
-      ),
+  // --- HELPERS to parse quantities and map models ---
+
+  double _parseQuantity(String q) {
+    final parts = q.trim().split(' ');
+    if (parts.isNotEmpty) {
+      return double.tryParse(parts.first) ?? 1.0;
+    }
+    return 1.0;
+  }
+
+  String _parseUnit(String q) {
+    final parts = q.trim().split(' ');
+    if (parts.length > 1) {
+      return parts.sublist(1).join(' ');
+    }
+    return 'Unit';
+  }
+
+  Product _createDummyProductFromListing(TradeListing listing) {
+    final user = UserService().getCurrentUser();
+    return Product(
+      id: listing.id,
+      name: listing.name,
+      farmerId: user?.id ?? '', // ADDED: Get farmer ID from current user
+      farmName: user?.username ?? ".", // Or fetch current user farm name
+      imagePath: listing.image.isNotEmpty
+          ? listing.image
+          : 'assets/images/default_cover_photo.png',
+      category: 'Trade',
+      price: 0,
+      availability: 'In Stock',
+      stockCount: 1,
+      unit: _parseUnit(listing.quantity),
     );
   }
 
-  void _handleDeclineTrade(TradeOffer offer) {
-    // TODO: Implement decline trade logic
+  Product _createDummyProductFromOffer(TradeOfferRequest offer) {
+    return Product(
+      id: offer.id,
+      name: offer.itemName,
+      farmerId: offer.offeredByUid ?? '', // ADDED: Get farmer ID from offer
+      farmName: offer.offeredByName,
+      imagePath: offer.imagePath.isNotEmpty
+          ? offer.imagePath
+          : 'assets/images/default_cover_photo.png',
+      category: 'Trade Offer',
+      price: 0,
+      availability: 'Pending',
+      stockCount: 1,
+      unit: _parseUnit(offer.itemQuantity),
+    );
+  }
+
+  void _handleAcceptTrade(TradeOfferPair pair) async {
+    // TODO: Implement full accept logic (messaging, inventory)
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Declined trade: ${offer.myProduct.name} for ${offer.offerProduct.name}'),
-        duration: const Duration(seconds: 2),
+      const SnackBar(
+        content: Text('Accepting trade... (Logic to be implemented)'),
       ),
     );
+
+    // For now, let's just update status in FB so it disappears from 'pending' list
+    await _tradeService.acceptOffer(pair.offer.id);
+    _fetchProducts(); // Refresh
+  }
+
+  void _handleDeclineTrade(TradeOfferPair pair) async {
+    try {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Declining trade offer...')),
+        );
+      }
+
+      await _tradeService.declineOffer(pair.offer.id, pair.listing.id);
+
+      if (mounted) {
+        _fetchProducts(); // Refresh list
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Trade offer from ${pair.offer.offeredByName} declined',
+            ),
+            backgroundColor: AppColors.SUCCESS_GREEN,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error declining trade: $e'),
+            backgroundColor: AppColors.ERROR_RED,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildEmptyState(String message) {

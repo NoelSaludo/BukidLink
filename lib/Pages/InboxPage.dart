@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
-import 'package:bukidlink/pages/ChatPage.dart';
+import 'package:bukidlink/Pages/ChatPage.dart';
 import 'package:bukidlink/services/ChatService.dart';
 import 'package:bukidlink/services/UserService.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
@@ -20,7 +20,6 @@ class _InboxPageState extends State<InboxPage> {
   final ChatService _chatService = ChatService();
   final Map<String, String> _usernameCache = {};
   final Set<String> _loadingUsernames = {};
-
 
   String formatTime(DateTime time) {
     final now = DateTime.now();
@@ -137,7 +136,11 @@ class _InboxPageState extends State<InboxPage> {
                         !_loadingUsernames.contains(id),
                   )
                   .toList();
-              if (missing.isNotEmpty) _prefetchUsernames(missing);
+              if (missing.isNotEmpty) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) _prefetchUsernames(missing);
+                });
+              }
 
               return ListView.builder(
                 itemCount: convos.length,
@@ -173,7 +176,10 @@ class _InboxPageState extends State<InboxPage> {
                       ? updated.toDate()
                       : DateTime.now();
 
-                  final displayName = _usernameCache[otherId] ?? otherId;
+                  // Prefer cached username. If it's not yet available, show
+                  // a non-ID placeholder while we fetch the real name so
+                  // the UI doesn't flash the raw user id.
+                  final displayName = _usernameCache[otherId] ?? 'Loading...';
 
                   return ListTile(
                     leading: CircleAvatar(
@@ -209,10 +215,18 @@ class _InboxPageState extends State<InboxPage> {
                       ),
                     ),
                     onTap: () {
+                      final cachedName = _usernameCache.containsKey(otherId)
+                          ? _usernameCache[otherId]
+                          : null;
+                      final passName =
+                          (cachedName != null && cachedName != 'Loading...')
+                          ? cachedName
+                          : null;
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => ChatPage(sender: otherId),
+                          builder: (_) =>
+                              ChatPage(sender: otherId, senderName: passName),
                         ),
                       );
                     },
@@ -223,21 +237,34 @@ class _InboxPageState extends State<InboxPage> {
           );
         },
       ),
-      bottomNavigationBar: (UserService.currentUser?.type ?? 'Consumer') == 'Consumer'
+      bottomNavigationBar:
+          (UserService.currentUser?.type ?? 'Consumer') == 'Consumer'
           ? const CustomBottomNavBar(currentIndex: 2)
           : null,
     );
   }
 
   Future<void> _prefetchUsernames(List<String> ids) async {
+    // Collect IDs that actually need fetching (not cached and not already loading)
+    final List<String> toFetch = [];
     for (final id in ids) {
       if (_usernameCache.containsKey(id) || _loadingUsernames.contains(id))
         continue;
       _loadingUsernames.add(id);
+      toFetch.add(id);
     }
 
-    final List<Future<void>> futures = ids.map((id) async {
-      if (_usernameCache.containsKey(id)) return;
+    // Insert lightweight placeholders into the cache so the UI doesn't
+    // show the raw id while we perform async fetches.
+    if (toFetch.isNotEmpty && mounted) {
+      setState(() {
+        for (final id in toFetch) {
+          _usernameCache[id] = 'Loading...';
+        }
+      });
+    }
+
+    final List<Future<void>> futures = toFetch.map((id) async {
       try {
         final user = await UserService().getUserById(id);
         final name = user?.username ?? id;
