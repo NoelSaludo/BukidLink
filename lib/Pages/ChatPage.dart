@@ -11,8 +11,9 @@ import 'package:bukidlink/utils/constants/AppColors.dart';
 
 class ChatPage extends StatefulWidget {
   final String sender;
+  final String? senderName;
 
-  const ChatPage({super.key, required this.sender});
+  const ChatPage({super.key, required this.sender, this.senderName});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -39,7 +40,13 @@ class _ChatPageState extends State<ChatPage> {
       _currentUid!,
       widget.sender,
     );
-    _fetchSenderName();
+    // If caller provided a senderName, use it immediately to avoid UI flashing the id.
+    _senderName = widget.senderName;
+    if (_senderName == null ||
+        _senderName!.isEmpty ||
+        _senderName == 'Loading...') {
+      _fetchSenderName();
+    }
     _scrollController.addListener(_onScroll);
     _initConversation();
   }
