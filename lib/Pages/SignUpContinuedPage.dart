@@ -4,6 +4,7 @@ import 'package:bukidlink/widgets/auth/AuthTextField.dart';
 import 'package:bukidlink/widgets/auth/AuthButton.dart';
 import 'package:bukidlink/utils/PageNavigator.dart';
 import 'package:bukidlink/Pages/LoadingPage.dart';
+import 'package:bukidlink/Pages/EmailVerificationPage.dart';
 import 'package:bukidlink/models/User.dart';
 import 'package:bukidlink/models/Farm.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -36,7 +37,8 @@ class SignUpContinuedPage extends StatefulWidget {
 class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
   final TextEditingController farmAddressController = TextEditingController();
   final TextEditingController farmNameController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -78,23 +80,41 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
         updatedAt: DateTime.now(),
       );
 
-      final userCredential = widget.accountType == 'Farmer'
-          ? await UserService().registerFarm(
-              user,
-              Farm(
-                id: '',
-                name: farmNameController.text,
-                address: farmAddressController.text,
-                ownerId: FirebaseFirestore.instance.doc('users/placeholder'),
-                createdAt: DateTime.now(),
-                updatedAt: DateTime.now(),
-              ),
+      // First create the Firebase Auth user (send verification). Firestore
+      // documents will be created after the user verifies their email.
+      final farmObj = widget.accountType == 'Farmer'
+          ? Farm(
+              id: '',
+              name: farmNameController.text,
+              address: farmAddressController.text,
+              ownerId: FirebaseFirestore.instance.doc('users/placeholder'),
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
             )
-          : await UserService().registerUser(user);
+          : null;
+
+      // Use explicit if/else to call the appropriate registration method
+      // and capture the returned UserCredential (or null on failure).
+      var userCredential;
+      if (widget.accountType == 'Farmer') {
+        userCredential = await UserService().registerFarm(user, farmObj!);
+      } else {
+        userCredential = await UserService().registerUser(user);
+      }
 
       if (mounted) {
         if (userCredential != null) {
-          PageNavigator().goTo(context, LoadingPage(userType: widget.accountType));
+          // On successful auth creation, show email verification flow and
+          // pass the user/farm objects so they can be saved after verification.
+          PageNavigator().goTo(
+            context,
+            EmailVerificationPage(
+              userType: widget.accountType,
+              emailAddress: widget.emailAddress,
+              pendingUser: user,
+              pendingFarm: farmObj,
+            ),
+          );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Sign-up failed. Please try again.')),
@@ -103,8 +123,9 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
       }
     } finally {
       if (mounted) {
@@ -242,7 +263,9 @@ class _SignUpContinuedPageState extends State<SignUpContinuedPage> {
                 hintText: 'Confirm Password',
                 obscureText: true,
                 validator: (value) {
-                  final baseValidation = formValidator.confirmPasswordValidator(value);
+                  final baseValidation = formValidator.confirmPasswordValidator(
+                    value,
+                  );
                   if (baseValidation != null) return baseValidation;
                   if (value != passwordController.text) {
                     return 'Value must be the same as Password field';
