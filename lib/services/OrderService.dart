@@ -176,6 +176,64 @@ class OrderService {
     return orders.isNotEmpty ? orders.first : null;
   }
 
+  // FIXED: Cancel order by customer - sets farmer_stage to 'cancelled'
+  Future<bool> cancelOrder({
+    required String orderId,
+    required String reason,
+    String? comment,
+  }) async {
+    try {
+      await _ordersCollection.doc(orderId).update({
+        'status': 'cancelled',
+        'farmer_stage': 'cancelled', // ✅ Fixed: Set to 'cancelled' instead of keeping current
+        'cancellation_reason': reason,
+        'cancellation_comment': comment,
+        'cancelled_by': 'customer',
+        'cancellation_date': FieldValue.serverTimestamp(),
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      // Update local order list
+      final index = _orders.indexWhere((o) => o.id == orderId);
+      if (index != -1) {
+        _orders[index].status = OrderStatus.cancelled;
+        _orders[index].cancellationReason = reason;
+        _orders[index].cancellationComment = comment;
+        _orders[index].cancelledBy = 'customer';
+        _orders[index].cancellationDate = DateTime.now();
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('Error cancelling order: $e');
+      return false;
+    }
+  }
+
+  // FIXED: Reject order by farmer - sets farmer_stage to 'cancelled'
+  Future<bool> rejectOrder({
+    required String orderId,
+    required String reason,
+    String? comment,
+  }) async {
+    try {
+      await _ordersCollection.doc(orderId).update({
+        'status': 'cancelled',
+        'farmer_stage': 'cancelled', // ✅ Fixed: Set to 'cancelled' instead of keeping current
+        'cancellation_reason': reason,
+        'cancellation_comment': comment,
+        'cancelled_by': 'farmer',
+        'cancellation_date': FieldValue.serverTimestamp(),
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      return true;
+    } catch (e) {
+      debugPrint('Error rejecting order: $e');
+      return false;
+    }
+  }
+
   Future<bool> updateToShipping(String orderId) async {
     return await _updateOrderStatus(orderId, 'to_ship');
   }
@@ -283,6 +341,7 @@ class OrderService {
 
       final datePlaced = (data['date_placed'] as Timestamp?)?.toDate() ?? DateTime.now();
       final dateDelivered = (data['date_delivered'] as Timestamp?)?.toDate();
+      final cancellationDate = (data['cancellation_date'] as Timestamp?)?.toDate();
 
       final order = Order(
         id: doc.id,
@@ -296,6 +355,10 @@ class OrderService {
         datePlaced: datePlaced,
         dateDelivered: dateDelivered,
         status: status,
+        cancellationReason: data['cancellation_reason'] as String?,
+        cancellationComment: data['cancellation_comment'] as String?,
+        cancelledBy: data['cancelled_by'] as String?,
+        cancellationDate: cancellationDate,
       );
 
       return order;
@@ -318,6 +381,8 @@ class OrderService {
         return OrderStatus.toRate;
       case 'completed':
         return OrderStatus.completed;
+      case 'cancelled':
+        return OrderStatus.cancelled;
       default:
         return OrderStatus.toPay;
     }
@@ -335,6 +400,8 @@ class OrderService {
         return 'to_rate';
       case OrderStatus.completed:
         return 'completed';
+      case OrderStatus.cancelled:
+        return 'cancelled';
     }
   }
 
@@ -379,6 +446,8 @@ class OrderService {
         return 'Rate';
       case OrderStatus.completed:
         return 'Completed';
+      case OrderStatus.cancelled:
+        return 'Cancelled';
     }
   }
 
@@ -394,6 +463,8 @@ class OrderService {
         return OrderStatus.toRate;
       case 'Completed':
         return OrderStatus.completed;
+      case 'Cancelled':
+        return OrderStatus.cancelled;
       default:
         return OrderStatus.toPay;
     }
@@ -425,6 +496,26 @@ class OrderService {
     return _ordersCollection
         .where('farmer_id', isEqualTo: farmerId)
         .where('farmer_stage', isEqualTo: stageString)
+        .orderBy('date_placed', descending: true)
+        .snapshots()
+        .asyncMap((snapshot) async {
+      final ordersWithProducts = <Order>[];
+      for (var doc in snapshot.docs) {
+        final order = await _orderFromDocument(doc);
+        if (order != null) {
+          ordersWithProducts.add(order);
+        }
+      }
+
+      return ordersWithProducts;
+    });
+  }
+
+  // Stream for cancelled orders (farmer view)
+  Stream<List<Order>> farmerCancelledOrdersStream(String farmerId) {
+    return _ordersCollection
+        .where('farmer_id', isEqualTo: farmerId)
+        .where('status', isEqualTo: 'cancelled')
         .orderBy('date_placed', descending: true)
         .snapshots()
         .asyncMap((snapshot) async {
