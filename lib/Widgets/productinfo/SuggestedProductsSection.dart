@@ -5,12 +5,19 @@ import 'package:bukidlink/widgets/common/ProductCard.dart';
 
 class SuggestedProductsSection extends StatelessWidget {
   final List<Product> products;
+  final String? excludeProductId;
 
-  const SuggestedProductsSection({super.key, required this.products});
+  const SuggestedProductsSection({
+    super.key,
+    required this.products,
+    this.excludeProductId,
+  });
 
   @override
   Widget build(BuildContext context) {
-    if (products.isEmpty) {
+    final filtered = products.where((p) => p.id != excludeProductId).toList();
+
+    if (filtered.isEmpty) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Padding(
@@ -43,11 +50,11 @@ class SuggestedProductsSection extends StatelessWidget {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 4),
-              itemCount: products.length,
+              itemCount: filtered.length,
               separatorBuilder: (context, index) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
                 return ProductCard(
-                  product: products[index],
+                  product: filtered[index],
                   layout: ProductCardLayout.compact,
                   showAddButton: true,
                 );

@@ -299,7 +299,10 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
                     padding: EdgeInsets.all(16.0),
                     child: Center(child: CircularProgressIndicator()),
                   )
-                : SuggestedProductsSection(products: _aiSuggestedProducts),
+                : SuggestedProductsSection(
+                    products: _aiSuggestedProducts,
+                    excludeProductId: widget.product.id,
+                  ),
             FutureBuilder<List<ProductReview>>(
               future: _reviewsFuture,
               builder: (context, snapshot) {
