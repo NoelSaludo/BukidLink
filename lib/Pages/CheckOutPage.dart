@@ -3,7 +3,7 @@ import 'package:bukidlink/models/CartItem.dart';
 import 'package:bukidlink/services/OrderService.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
-import 'package:bukidlink/widgets/common/PesoText.dart'; // NEW IMPORT
+import 'package:bukidlink/widgets/common/PesoText.dart';
 
 class CheckoutPage extends StatefulWidget {
   final List<CartItem> cartItems;
