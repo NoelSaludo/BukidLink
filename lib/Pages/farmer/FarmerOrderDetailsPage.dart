@@ -7,8 +7,8 @@ import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/models/CartItem.dart';
 import 'package:bukidlink/pages/farmer/FarmerRejectOrderPage.dart';
-import 'package:bukidlink/widgets/common/ProductImage.dart'; // NEW IMPORT
-import 'package:bukidlink/widgets/common/PesoText.dart'; // NEW IMPORT
+import 'package:bukidlink/widgets/common/ProductImage.dart';
+import 'package:bukidlink/widgets/common/PesoText.dart';
 
 class FarmerOrderDetailsPage extends StatefulWidget {
   final Order order;
@@ -137,7 +137,7 @@ class _FarmerOrderDetailsPageState extends State<FarmerOrderDetailsPage> {
             _buildTotalCard(),
             const SizedBox(height: 24),
 
-            // NEW: Show cancellation details if cancelled
+            // Show cancellation details if cancelled
             if (order.status == OrderStatus.cancelled) ...[
               _buildSectionTitle("Cancellation Details"),
               Container(
@@ -182,7 +182,7 @@ class _FarmerOrderDetailsPageState extends State<FarmerOrderDetailsPage> {
 
             // Action Buttons
             if (order.status != OrderStatus.cancelled) ...[
-              // NEW: Reject button for pending orders
+              // Reject button for pending orders
               if (order.canBeRejectedByFarmer) ...[
                 SizedBox(
                   width: double.infinity,

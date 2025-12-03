@@ -3,7 +3,7 @@ import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/common/CustomBottomNavBar.dart';
 import 'package:bukidlink/widgets/common/ProductImage.dart';
-import 'package:bukidlink/widgets/common/PesoText.dart'; // NEW IMPORT
+import 'package:bukidlink/widgets/common/PesoText.dart';
 import 'package:bukidlink/services/OrderService.dart';
 import 'package:bukidlink/services/ProductService.dart';
 import 'package:bukidlink/models/Order.dart';
@@ -164,7 +164,7 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final tabLabels = stages.map((s) => _statusLabel(s)).toList();
 
-    debugPrint('🎨 Building OrdersPage. Total orders: ${_orderService.orders.length}');
+    debugPrint('Building OrdersPage. Total orders: ${_orderService.orders.length}');
 
     return Scaffold(
       backgroundColor: AppColors.backgroundYellow,

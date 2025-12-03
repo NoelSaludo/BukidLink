@@ -176,7 +176,6 @@ class OrderService {
     return orders.isNotEmpty ? orders.first : null;
   }
 
-  // FIXED: Cancel order by customer - sets farmer_stage to 'cancelled'
   Future<bool> cancelOrder({
     required String orderId,
     required String reason,
@@ -185,7 +184,7 @@ class OrderService {
     try {
       await _ordersCollection.doc(orderId).update({
         'status': 'cancelled',
-        'farmer_stage': 'cancelled', // ✅ Fixed: Set to 'cancelled' instead of keeping current
+        'farmer_stage': 'cancelled',
         'cancellation_reason': reason,
         'cancellation_comment': comment,
         'cancelled_by': 'customer',
@@ -210,7 +209,6 @@ class OrderService {
     }
   }
 
-  // FIXED: Reject order by farmer - sets farmer_stage to 'cancelled'
   Future<bool> rejectOrder({
     required String orderId,
     required String reason,
@@ -219,7 +217,7 @@ class OrderService {
     try {
       await _ordersCollection.doc(orderId).update({
         'status': 'cancelled',
-        'farmer_stage': 'cancelled', // ✅ Fixed: Set to 'cancelled' instead of keeping current
+        'farmer_stage': 'cancelled',
         'cancellation_reason': reason,
         'cancellation_comment': comment,
         'cancelled_by': 'farmer',

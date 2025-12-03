@@ -8,7 +8,7 @@ enum OrderStatus {
   toReceive,
   toRate,
   completed,
-  cancelled,  // NEW: Added cancelled status
+  cancelled,
 }
 
 class Order {
@@ -24,7 +24,7 @@ class Order {
   DateTime? dateDelivered;
   OrderStatus status;
 
-  // NEW: Cancellation fields
+  // Cancellation fields
   String? cancellationReason;
   String? cancellationComment;
   String? cancelledBy; // 'customer' or 'farmer'
@@ -54,12 +54,12 @@ class Order {
     return items.every((item) => (item.product?.rating ?? 0) > 0);
   }
 
-  // NEW: Check if order can be cancelled by customer
+  // Check if order can be cancelled by customer
   bool get canBeCancelledByCustomer {
     return status == OrderStatus.toPay || status == OrderStatus.toShip;
   }
 
-  // NEW: Check if order can be rejected by farmer
+  // Check if order can be rejected by farmer
   bool get canBeRejectedByFarmer {
     return farmerStage == FarmerSubStatus.pending;
   }
@@ -112,7 +112,7 @@ class Order {
       'date_placed': Timestamp.fromDate(datePlaced),
       'date_delivered': dateDelivered != null ? Timestamp.fromDate(dateDelivered!) : null,
       'status': status.toString().split('.').last,
-      // NEW: Cancellation fields
+      // Cancellation fields
       'cancellation_reason': cancellationReason,
       'cancellation_comment': cancellationComment,
       'cancelled_by': cancelledBy,
@@ -145,7 +145,7 @@ class Order {
     final dateDeliveredTimestamp = data['date_delivered'] as Timestamp?;
     final dateDelivered = dateDeliveredTimestamp?.toDate();
 
-    // NEW: Parse cancellation date
+    // Parse cancellation date
     final cancellationDateTimestamp = data['cancellation_date'] as Timestamp?;
     final cancellationDate = cancellationDateTimestamp?.toDate();
 
@@ -165,7 +165,7 @@ class Order {
       datePlaced: datePlaced,
       dateDelivered: dateDelivered,
       status: _statusFromString(statusStr),
-      // NEW: Cancellation fields
+      // Cancellation fields
       cancellationReason: data['cancellation_reason'] as String?,
       cancellationComment: data['cancellation_comment'] as String?,
       cancelledBy: data['cancelled_by'] as String?,
@@ -221,7 +221,7 @@ class OrderWithFarmerStage {
       status: OrderStatus.values.firstWhere(
               (e) => e.toString() == 'OrderStatus.${data['status']}',
           orElse: () => OrderStatus.toPay),
-      // NEW: Cancellation fields
+      // Cancellation fields
       cancellationReason: data['cancellation_reason'] as String?,
       cancellationComment: data['cancellation_comment'] as String?,
       cancelledBy: data['cancelled_by'] as String?,
