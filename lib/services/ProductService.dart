@@ -43,23 +43,35 @@ class ProductService {
       final data = doc.data() as Map<String, dynamic>;
 
       // Stock/amount may be stored under different keys
-      final dynamic rawAmount = data['amount'] ?? data['stock_count'] ?? data['stockCount'] ?? 0;
-      final int stockCount = rawAmount is int ? rawAmount : int.tryParse(rawAmount?.toString() ?? '0') ?? 0;
+      final dynamic rawAmount =
+          data['amount'] ?? data['stock_count'] ?? data['stockCount'] ?? 0;
+      final int stockCount = rawAmount is int
+          ? rawAmount
+          : int.tryParse(rawAmount?.toString() ?? '0') ?? 0;
 
       // Price/cost may be stored under 'cost' or 'price'
       final dynamic rawPrice = data['cost'] ?? data['price'];
-      final double price = rawPrice != null ? double.tryParse(rawPrice.toString()) ?? 0.0 : 0.0;
+      final double price = rawPrice != null
+          ? double.tryParse(rawPrice.toString()) ?? 0.0
+          : 0.0;
 
       // Image path
-      final String rawImage = (data['image_url'] ?? data['imagePath'] ?? '').toString();
-      final String imagePath = rawImage.isNotEmpty ? rawImage : 'assets/images/default_cover_photo.png';
+      final String rawImage = (data['image_url'] ?? data['imagePath'] ?? '')
+          .toString();
+      final String imagePath = rawImage.isNotEmpty
+          ? rawImage
+          : 'assets/images/default_cover_photo.png';
 
       // Rating
       final dynamic rawRating = data['rating'];
-      final double? rating = rawRating != null ? double.tryParse(rawRating.toString()) ?? 0.0 : null;
+      final double? rating = rawRating != null
+          ? double.tryParse(rawRating.toString()) ?? 0.0
+          : null;
 
       // Availability
-      final String availability = (data['availability'] as String?) ?? (stockCount > 0 ? 'In Stock' : 'Out of Stock');
+      final String availability =
+          (data['availability'] as String?) ??
+          (stockCount > 0 ? 'In Stock' : 'Out of Stock');
 
       final product = Product(
         id: doc.id,
@@ -75,14 +87,16 @@ class ProductService {
         description: data['description'],
         rating: rating,
         unit: data['unit'],
-        reviewCount: (data['review_count'] != null) ? int.tryParse(data['review_count'].toString()) : null,
+        reviewCount: (data['review_count'] != null)
+            ? int.tryParse(data['review_count'].toString())
+            : null,
         availability: availability,
         stockCount: stockCount,
         reviews: data['reviews'] != null
             ? (data['reviews'] as List<dynamic>).map((reviewData) {
-          final reviewMap = reviewData as Map<String, dynamic>;
-          return ProductReview.fromDocument(reviewMap);
-        }).toList()
+                final reviewMap = reviewData as Map<String, dynamic>;
+                return ProductReview.fromDocument(reviewMap);
+              }).toList()
             : null,
         isVisible: data['isVisible'] ?? true,
       );
@@ -207,7 +221,7 @@ class ProductService {
         } else if (rawCreated is String) {
           created =
               DateTime.tryParse(rawCreated) ??
-                  DateTime.fromMillisecondsSinceEpoch(0);
+              DateTime.fromMillisecondsSinceEpoch(0);
         } else {
           created = DateTime.fromMillisecondsSinceEpoch(0);
         }
@@ -239,9 +253,9 @@ class ProductService {
 
   // Accept a ProductReview and persist it as a Map to Firestore.
   Future<void> addReviewToProduct(
-      String productId,
-      ProductReview review,
-      ) async {
+    String productId,
+    ProductReview review,
+  ) async {
     try {
       DocumentReference productRef = _firestore
           .collection('products')
@@ -305,6 +319,23 @@ class ProductService {
     }
 
     return reviews;
+  }
+
+  /// Fetch multiple products by a list of ids. Returns only visible products.
+  Future<List<Product>> fetchProductsByIds(List<String> ids) async {
+    final List<Product> results = [];
+    if (ids.isEmpty) return results;
+
+    try {
+      for (final id in ids) {
+        final prod = await getProductById(id);
+        if (prod != null && prod.isVisible) results.add(prod);
+      }
+    } catch (e) {
+      print('Error fetching products by ids: $e');
+    }
+
+    return results;
   }
 
   List<Product> getCachedProducts() {
@@ -386,8 +417,8 @@ class ProductService {
         }
 
         final rIndex = updatedReviews.indexWhere(
-              (r) =>
-          r.userName == review.userName &&
+          (r) =>
+              r.userName == review.userName &&
               r.comment == review.comment &&
               r.date == review.date,
         );

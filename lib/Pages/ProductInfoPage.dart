@@ -7,6 +7,9 @@ import 'package:bukidlink/services/ProductService.dart';
 import 'package:bukidlink/services/CartService.dart';
 import 'package:bukidlink/pages/CartPage.dart';
 import 'package:bukidlink/pages/AllReviewsPage.dart';
+import 'package:bukidlink/services/OrderService.dart';
+import 'package:bukidlink/services/GeminiAIService.dart';
+import 'package:bukidlink/widgets/productinfo/SuggestedProductsSection.dart';
 import 'package:bukidlink/widgets/productinfo/ProductInfoAppBar.dart';
 import 'package:bukidlink/widgets/productinfo/ProductHeaderWithQuantity.dart';
 import 'package:bukidlink/widgets/productinfo/ProductDetailsCard.dart';
@@ -41,7 +44,9 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
   late double _totalPrice;
   late Future<List<ProductReview>> _reviewsFuture = Future.value([]);
   List<Product> _recommendedProducts = [];
+  List<Product> _aiSuggestedProducts = [];
   bool _isRecommendedLoading = true;
+  bool _isAISuggestionsLoading = true;
   String? _resolvedFarmId;
 
   @override
@@ -87,6 +92,55 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
       debugPrint('Error loading recommended products: $e');
     } finally {
       setState(() => _isRecommendedLoading = false);
+      // kick off AI suggestions but don't block the UI
+      debugPrint('Loading AI suggestions for product ${widget.product.id}');
+      _loadAISuggestions(allProducts: await _productService.fetchProducts());
+    }
+  }
+
+  Future<void> _loadAISuggestions({required List<Product> allProducts}) async {
+    setState(() {
+      _isAISuggestionsLoading = true;
+    });
+
+    try {
+      // fetch all orders across users to compute co-purchase frequencies
+      final orders = await OrderService.shared.fetchAllOrders();
+
+      // Transform orders into lists of product ids
+      final ordersProductIds = orders
+          .map(
+            (o) => o.items
+                .map((it) => it.productId)
+                .where((id) => id.isNotEmpty)
+                .toList(),
+          )
+          .where((list) => list.isNotEmpty)
+          .toList();
+
+      final catalogIds = allProducts.map((p) => p.id).toList();
+
+      final suggestedIds = await GeminiAIService.shared
+          .suggestProductIdsFromOrders(
+            orders: ordersProductIds,
+            catalogIds: catalogIds,
+            currentProductId: widget.product.id,
+            limit: _recommendedProductsLimit,
+          );
+
+      if (suggestedIds.isNotEmpty) {
+        final suggestedProducts = await _productService.fetchProductsByIds(
+          suggestedIds,
+        );
+        debugPrint(
+          'AI suggested products for ${widget.product.id}: ${suggestedProducts.map((p) => p.id).toList()}',
+        );
+        setState(() => _aiSuggestedProducts = suggestedProducts);
+      }
+    } catch (e) {
+      debugPrint('Error loading AI suggestions: $e');
+    } finally {
+      setState(() => _isAISuggestionsLoading = false);
     }
   }
 
@@ -239,6 +293,13 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
               farmName: widget.product.farmName,
               farmId: _resolvedFarmId,
             ),
+            // AI suggested products shown above the reviews
+            _isAISuggestionsLoading
+                ? const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : SuggestedProductsSection(products: _aiSuggestedProducts),
             FutureBuilder<List<ProductReview>>(
               future: _reviewsFuture,
               builder: (context, snapshot) {
