@@ -8,6 +8,7 @@ enum OrderStatus {
   toReceive,
   toRate,
   completed,
+  cancelled,  // NEW: Added cancelled status
 }
 
 class Order {
@@ -23,6 +24,12 @@ class Order {
   DateTime? dateDelivered;
   OrderStatus status;
 
+  // NEW: Cancellation fields
+  String? cancellationReason;
+  String? cancellationComment;
+  String? cancelledBy; // 'customer' or 'farmer'
+  DateTime? cancellationDate;
+
   Order({
     required this.id,
     required this.userId,
@@ -35,6 +42,10 @@ class Order {
     required this.datePlaced,
     this.dateDelivered,
     required this.status,
+    this.cancellationReason,
+    this.cancellationComment,
+    this.cancelledBy,
+    this.cancellationDate,
   });
 
   double get total => items.fold(0, (sum, item) => sum + item.totalPrice);
@@ -43,7 +54,17 @@ class Order {
     return items.every((item) => (item.product?.rating ?? 0) > 0);
   }
 
-  // ADD: Convert FarmerSubStatus enum to string for Firestore
+  // NEW: Check if order can be cancelled by customer
+  bool get canBeCancelledByCustomer {
+    return status == OrderStatus.toPay || status == OrderStatus.toShip;
+  }
+
+  // NEW: Check if order can be rejected by farmer
+  bool get canBeRejectedByFarmer {
+    return farmerStage == FarmerSubStatus.pending;
+  }
+
+  // Convert FarmerSubStatus enum to string for Firestore
   static String farmerStageToString(FarmerSubStatus stage) {
     switch (stage) {
       case FarmerSubStatus.pending:
@@ -59,7 +80,7 @@ class Order {
     }
   }
 
-  // ADD: Convert string from Firestore to FarmerSubStatus enum
+  // Convert string from Firestore to FarmerSubStatus enum
   static FarmerSubStatus farmerStageFromString(String stage) {
     switch (stage) {
       case 'pending':
@@ -91,6 +112,11 @@ class Order {
       'date_placed': Timestamp.fromDate(datePlaced),
       'date_delivered': dateDelivered != null ? Timestamp.fromDate(dateDelivered!) : null,
       'status': status.toString().split('.').last,
+      // NEW: Cancellation fields
+      'cancellation_reason': cancellationReason,
+      'cancellation_comment': cancellationComment,
+      'cancelled_by': cancelledBy,
+      'cancellation_date': cancellationDate != null ? Timestamp.fromDate(cancellationDate!) : null,
     };
   }
 
@@ -119,6 +145,10 @@ class Order {
     final dateDeliveredTimestamp = data['date_delivered'] as Timestamp?;
     final dateDelivered = dateDeliveredTimestamp?.toDate();
 
+    // NEW: Parse cancellation date
+    final cancellationDateTimestamp = data['cancellation_date'] as Timestamp?;
+    final cancellationDate = cancellationDateTimestamp?.toDate();
+
     // Parse status
     final statusStr = data['status'] as String? ?? 'to_pay';
     final farmerStageStr = data['farmer_stage'] as String? ?? 'pending';
@@ -135,6 +165,11 @@ class Order {
       datePlaced: datePlaced,
       dateDelivered: dateDelivered,
       status: _statusFromString(statusStr),
+      // NEW: Cancellation fields
+      cancellationReason: data['cancellation_reason'] as String?,
+      cancellationComment: data['cancellation_comment'] as String?,
+      cancelledBy: data['cancelled_by'] as String?,
+      cancellationDate: cancellationDate,
     );
   }
 
@@ -150,6 +185,8 @@ class Order {
         return OrderStatus.toRate;
       case 'completed':
         return OrderStatus.completed;
+      case 'cancelled':
+        return OrderStatus.cancelled;
       default:
         return OrderStatus.toPay;
     }
@@ -184,6 +221,13 @@ class OrderWithFarmerStage {
       status: OrderStatus.values.firstWhere(
               (e) => e.toString() == 'OrderStatus.${data['status']}',
           orElse: () => OrderStatus.toPay),
+      // NEW: Cancellation fields
+      cancellationReason: data['cancellation_reason'] as String?,
+      cancellationComment: data['cancellation_comment'] as String?,
+      cancelledBy: data['cancelled_by'] as String?,
+      cancellationDate: data['cancellation_date'] != null
+          ? (data['cancellation_date'] as Timestamp).toDate()
+          : null,
     );
   }
 }

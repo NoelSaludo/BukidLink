@@ -25,12 +25,15 @@ class OrderManagementPage extends StatefulWidget {
 class _FarmerOrderManagementPageState extends State<OrderManagementPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+
+  // UPDATED: Added Cancelled tab
   final List<String> tabs = [
     'Pending',
     'To Pack',
     'To Handover',
     'Shipping',
-    'Completed'
+    'Completed',
+    'Cancelled',
   ];
 
   String get currentFarmId {
@@ -52,7 +55,7 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
     super.dispose();
   }
 
-  FarmerSubStatus _farmerStageFromTabLabel(String label) {
+  FarmerSubStatus? _farmerStageFromTabLabel(String label) {
     switch (label) {
       case 'Pending':
         return FarmerSubStatus.pending;
@@ -64,6 +67,8 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
         return FarmerSubStatus.shipping;
       case 'Completed':
         return FarmerSubStatus.completed;
+      case 'Cancelled':
+        return null; // Cancelled orders handled separately
       default:
         return FarmerSubStatus.pending;
     }
@@ -445,7 +450,70 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
       body: TabBarView(
         controller: _tabController,
         children: tabs.map((tabLabel) {
+          // UPDATED: Handle cancelled tab separately
+          if (tabLabel == 'Cancelled') {
+            return StreamBuilder<List<Order>>(
+              stream: OrderService.shared.farmerCancelledOrdersStream(currentFarmId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Error loading orders',
+                          style: const TextStyle(
+                            fontFamily: 'Outfit',
+                            fontSize: 16,
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${snapshot.error}',
+                          style: const TextStyle(
+                            fontFamily: 'Outfit',
+                            fontSize: 14,
+                            color: Colors.red,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final orders = snapshot.data ?? [];
+
+                return orders.isEmpty
+                    ? Center(
+                  child: Text(
+                    'No cancelled orders',
+                    style: const TextStyle(
+                      fontFamily: 'Outfit',
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
+                  ),
+                )
+                    : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: orders.length,
+                  itemBuilder: (context, index) {
+                    return FarmerOrderCard(order: orders[index]);
+                  },
+                );
+              },
+            );
+          }
+
           final stage = _farmerStageFromTabLabel(tabLabel);
+          if (stage == null) return const SizedBox.shrink();
 
           return StreamBuilder<List<Order>>(
             stream: OrderService.shared.farmerOrdersStream(currentFarmId, stage),
