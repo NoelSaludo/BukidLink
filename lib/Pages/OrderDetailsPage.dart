@@ -1,10 +1,11 @@
-//Customer Order Details Page
 import 'package:flutter/material.dart';
 import 'package:bukidlink/models/Order.dart';
 import 'package:bukidlink/models/FarmerOrderSubStatus.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/common/ProductImage.dart';
+import 'package:bukidlink/widgets/common/PesoText.dart';
+import 'package:bukidlink/pages/CancelOrderPage.dart';
 
 class OrderDetailsPage extends StatelessWidget {
   final Order order;
@@ -31,7 +32,6 @@ class OrderDetailsPage extends StatelessWidget {
       }
     }
 
-    // fallback: original OrderStatus
     switch (order.status) {
       case OrderStatus.toPay:
         return ('Waiting for seller approval', Icons.access_time, Colors.orange);
@@ -39,6 +39,8 @@ class OrderDetailsPage extends StatelessWidget {
         return ('Seller is preparing your order', Icons.inventory_2, Colors.blue);
       case OrderStatus.toReceive:
         return ('Package is in transit', Icons.local_shipping_outlined, Colors.teal);
+      case OrderStatus.cancelled:
+        return ('Order cancelled', Icons.cancel, Colors.red);
       case OrderStatus.completed:
         final deliveredDate = order.dateDelivered != null
             ? _formatDate(order.dateDelivered!)
@@ -61,6 +63,8 @@ class OrderDetailsPage extends StatelessWidget {
         return 'To Rate';
       case OrderStatus.completed:
         return 'Completed';
+      case OrderStatus.cancelled:
+        return 'Cancelled';
     }
   }
 
@@ -76,6 +80,8 @@ class OrderDetailsPage extends StatelessWidget {
         return Colors.amber;
       case OrderStatus.completed:
         return Colors.green;
+      case OrderStatus.cancelled:
+        return Colors.red;
     }
   }
 
@@ -130,15 +136,89 @@ class OrderDetailsPage extends StatelessWidget {
             const SizedBox(height: 16),
             _buildSectionTitle("Order Total"),
             _buildTotalCard(),
+
+            // Cancel Order Button
+            if (order.canBeCancelledByCustomer) ...[
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CancelOrderPage(order: order),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.cancel_outlined, size: 20),
+                  label: const Text(
+                    'Cancel Order',
+                    style: TextStyle(
+                      fontFamily: 'Outfit',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red.shade700,
+                    side: BorderSide(color: Colors.red.shade400, width: 2),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+
+            // Show cancellation details if cancelled
+            if (order.status == OrderStatus.cancelled) ...[
+              const SizedBox(height: 16),
+              _buildSectionTitle("Cancellation Details"),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: _whiteBoxDecoration(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _infoRow('Cancelled By', order.cancelledBy ?? 'Unknown'),
+                    if (order.cancellationDate != null)
+                      _infoRow('Cancellation Date', _formatDate(order.cancellationDate!)),
+                    if (order.cancellationReason != null)
+                      _infoRow('Reason', order.cancellationReason!),
+                    if (order.cancellationComment != null &&
+                        order.cancellationComment!.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Additional Comments:',
+                        style: TextStyle(
+                          fontFamily: 'Outfit',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        order.cancellationComment!,
+                        style: const TextStyle(
+                          fontFamily: 'Outfit',
+                          fontSize: 14,
+                          color: Colors.black87,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
-
-  // ------------------------------
-  // Section Builders
-  // ------------------------------
 
   Widget _buildSectionTitle(String title) {
     return Container(
@@ -245,12 +325,9 @@ class OrderDetailsPage extends StatelessWidget {
   }
 
   Widget _buildOrderItems() {
-    // Group items by farm
     final Map<String, List<dynamic>> groupedItems = {};
     for (var item in order.items) {
-      // Handle null product
       if (item.product == null) continue;
-
       final farm = item.product!.farmName;
       groupedItems.putIfAbsent(farm, () => []).add(item);
     }
@@ -278,7 +355,6 @@ class OrderDetailsPage extends StatelessWidget {
   }
 
   Widget _buildProductRow(dynamic item) {
-    // Handle null product
     if (item.product == null) {
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 6),
@@ -325,8 +401,8 @@ class OrderDetailsPage extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            "₱${item.totalPrice.toStringAsFixed(2)}",
+          PesoText(
+            amount: item.totalPrice,
             style: AppTextStyles.CHECKOUT_PRICE,
           ),
         ],
@@ -461,8 +537,8 @@ class OrderDetailsPage extends StatelessWidget {
                 ? AppTextStyles.CHECKOUT_TOTAL_LABEL
                 : AppTextStyles.CHECKOUT_LABEL,
           ),
-          Text(
-            "₱${value.toStringAsFixed(2)}",
+          PesoText(
+            amount: value,
             style: isBold
                 ? AppTextStyles.CHECKOUT_TOTAL_VALUE
                 : AppTextStyles.CHECKOUT_VALUE,

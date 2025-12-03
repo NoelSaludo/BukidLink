@@ -3,6 +3,7 @@ import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/widgets/common/CustomBottomNavBar.dart';
 import 'package:bukidlink/widgets/common/ProductImage.dart';
+import 'package:bukidlink/widgets/common/PesoText.dart';
 import 'package:bukidlink/services/OrderService.dart';
 import 'package:bukidlink/services/ProductService.dart';
 import 'package:bukidlink/models/Order.dart';
@@ -28,6 +29,7 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
     OrderStatus.toReceive,
     OrderStatus.toRate,
     OrderStatus.completed,
+    OrderStatus.cancelled,
   ];
 
   @override
@@ -35,11 +37,10 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
     super.initState();
     _tabController = TabController(length: stages.length, vsync: this);
 
-    debugPrint(' OrdersPage initialized');
+    debugPrint('📱 OrdersPage initialized');
 
-    // Initialize orders for current user
     _orderService.initializeForCurrentUser().then((_) {
-      debugPrint(' Orders loaded in OrdersPage');
+      debugPrint('✅ Orders loaded in OrdersPage');
       debugPrint('   Total orders: ${_orderService.orders.length}');
       if (_orderService.orders.isNotEmpty) {
         for (var order in _orderService.orders) {
@@ -81,7 +82,8 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
         nextStatus = OrderStatus.completed;
         break;
       case OrderStatus.completed:
-        nextStatus = OrderStatus.completed;
+      case OrderStatus.cancelled:
+        nextStatus = currentStatus;
         break;
     }
 
@@ -109,6 +111,8 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
         return 'Rate';
       case OrderStatus.completed:
         return 'Completed';
+      case OrderStatus.cancelled:
+        return 'Cancelled';
     }
   }
 
@@ -124,6 +128,8 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
         return Colors.amber;
       case OrderStatus.completed:
         return Colors.green;
+      case OrderStatus.cancelled:
+        return Colors.red;
     }
   }
 
@@ -139,6 +145,8 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
         return Icons.star_rate;
       case OrderStatus.completed:
         return Icons.check_circle;
+      case OrderStatus.cancelled:
+        return Icons.cancel;
     }
   }
 
@@ -156,7 +164,7 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final tabLabels = stages.map((s) => _statusLabel(s)).toList();
 
-    debugPrint('🎨 Building OrdersPage. Total orders: ${_orderService.orders.length}');
+    debugPrint('Building OrdersPage. Total orders: ${_orderService.orders.length}');
 
     return Scaffold(
       backgroundColor: AppColors.backgroundYellow,
@@ -179,6 +187,7 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
         ),
         bottom: TabBar(
           controller: _tabController,
+          isScrollable: true,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           indicatorColor: Colors.white,
@@ -190,7 +199,6 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
           tabs: tabLabels.map((t) => Tab(text: t)).toList(),
         ),
       ),
-      // StreamBuilder for real-time updates
       body: StreamBuilder<List<Order>>(
         stream: _orderService.ordersStream(),
         builder: (context, snapshot) {
@@ -273,8 +281,7 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
                 padding: const EdgeInsets.all(16),
                 itemCount: stageOrders.length,
                 itemBuilder: (context, index) {
-                  final order = stageOrders[index];
-                  return _buildOrderCard(order);
+                  return _buildOrderCard(stageOrders[index]);
                 },
               );
             }).toList(),
@@ -436,8 +443,9 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
                                             ),
                                           ),
                                           const SizedBox(height: 4),
-                                          Text(
-                                            '₱${item.product!.price.toStringAsFixed(2)} each',
+                                          PesoText(
+                                            amount: item.product!.price,
+                                            suffix: ' each',
                                             style: const TextStyle(
                                               fontFamily: 'Outfit',
                                               fontSize: 13,
@@ -477,7 +485,6 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
                                           color: Colors.amber,
                                         ),
                                         onPressed: () async {
-
                                           final result = await Navigator.push<bool>(
                                             context,
                                             MaterialPageRoute(
@@ -505,11 +512,71 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
                     );
                   }).toList(),
 
+                  // Show cancellation info if cancelled
+                  if (order.status == OrderStatus.cancelled) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.info_outline,
+                                size: 16,
+                                color: Colors.red.shade700,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Cancelled by ${order.cancelledBy ?? "unknown"}',
+                                style: TextStyle(
+                                  fontFamily: 'Outfit',
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.red.shade900,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (order.cancellationReason != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              'Reason: ${order.cancellationReason}',
+                              style: TextStyle(
+                                fontFamily: 'Outfit',
+                                fontSize: 12,
+                                color: Colors.red.shade800,
+                              ),
+                            ),
+                          ],
+                          if (order.cancellationComment != null &&
+                              order.cancellationComment!.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              order.cancellationComment!,
+                              style: TextStyle(
+                                fontFamily: 'Outfit',
+                                fontSize: 12,
+                                color: Colors.red.shade700,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+
                   // Total Amount
                   Align(
                     alignment: Alignment.centerRight,
-                    child: Text(
-                      'Total: ₱${order.total.toStringAsFixed(2)}',
+                    child: PesoText(
+                      amount: order.total,
                       style: const TextStyle(
                         fontFamily: 'Outfit',
                         fontWeight: FontWeight.bold,

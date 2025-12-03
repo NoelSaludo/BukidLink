@@ -6,6 +6,9 @@ import 'package:bukidlink/services/OrderService.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/models/CartItem.dart';
+import 'package:bukidlink/pages/farmer/FarmerRejectOrderPage.dart';
+import 'package:bukidlink/widgets/common/ProductImage.dart';
+import 'package:bukidlink/widgets/common/PesoText.dart';
 
 class FarmerOrderDetailsPage extends StatefulWidget {
   final Order order;
@@ -133,16 +136,95 @@ class _FarmerOrderDetailsPageState extends State<FarmerOrderDetailsPage> {
             _buildSectionTitle("Order Total"),
             _buildTotalCard(),
             const SizedBox(height: 24),
-            _buildActionButton(),
+
+            // Show cancellation details if cancelled
+            if (order.status == OrderStatus.cancelled) ...[
+              _buildSectionTitle("Cancellation Details"),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: _whiteBoxDecoration(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _infoRow('Cancelled By', order.cancelledBy ?? 'Unknown'),
+                    if (order.cancellationDate != null)
+                      _infoRow('Cancellation Date', _formatDate(order.cancellationDate!)),
+                    if (order.cancellationReason != null)
+                      _infoRow('Reason', order.cancellationReason!),
+                    if (order.cancellationComment != null &&
+                        order.cancellationComment!.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Additional Comments:',
+                        style: TextStyle(
+                          fontFamily: 'Outfit',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        order.cancellationComment!,
+                        style: const TextStyle(
+                          fontFamily: 'Outfit',
+                          fontSize: 14,
+                          color: Colors.black87,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // Action Buttons
+            if (order.status != OrderStatus.cancelled) ...[
+              // Reject button for pending orders
+              if (order.canBeRejectedByFarmer) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _isUpdating ? null : () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => FarmerRejectOrderPage(order: order),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.cancel_outlined, size: 20),
+                    label: const Text(
+                      'Reject Order',
+                      style: TextStyle(
+                        fontFamily: 'Outfit',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red.shade700,
+                      side: BorderSide(color: Colors.red.shade400, width: 2),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+
+              // Accept/Update button
+              _buildActionButton(),
+            ],
           ],
         ),
       ),
     );
   }
-
-  // ------------------------------
-  // Section Builders
-  // ------------------------------
 
   Widget _buildSectionTitle(String title) {
     return Container(
@@ -253,19 +335,11 @@ class _FarmerOrderDetailsPageState extends State<FarmerOrderDetailsPage> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              item.product!.imagePath,
+            child: ProductImage(
+              imagePath: item.product!.imagePath,
               width: 60,
               height: 60,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 60,
-                  height: 60,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.image_not_supported),
-                );
-              },
             ),
           ),
           const SizedBox(width: 12),
@@ -281,8 +355,8 @@ class _FarmerOrderDetailsPageState extends State<FarmerOrderDetailsPage> {
               ],
             ),
           ),
-          Text(
-            "₱${item.totalPrice.toStringAsFixed(2)}",
+          PesoText(
+            amount: item.totalPrice,
             style: AppTextStyles.CHECKOUT_PRICE,
           ),
         ],
@@ -305,11 +379,15 @@ class _FarmerOrderDetailsPageState extends State<FarmerOrderDetailsPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: _getStatusColor(order.farmerStage),
+                  color: order.status == OrderStatus.cancelled
+                      ? Colors.red
+                      : _getStatusColor(order.farmerStage),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  _getStatusLabel(order.farmerStage),
+                  order.status == OrderStatus.cancelled
+                      ? 'Cancelled'
+                      : _getStatusLabel(order.farmerStage),
                   style: const TextStyle(
                     fontFamily: 'Outfit',
                     color: Colors.white,
@@ -321,7 +399,8 @@ class _FarmerOrderDetailsPageState extends State<FarmerOrderDetailsPage> {
             ],
           ),
           const SizedBox(height: 16),
-          _buildStatusTimeline(),
+          if (order.status != OrderStatus.cancelled)
+            _buildStatusTimeline(),
         ],
       ),
     );
@@ -415,8 +494,8 @@ class _FarmerOrderDetailsPageState extends State<FarmerOrderDetailsPage> {
                 ? AppTextStyles.CHECKOUT_TOTAL_LABEL
                 : AppTextStyles.CHECKOUT_LABEL,
           ),
-          Text(
-            "₱${value.toStringAsFixed(2)}",
+          PesoText(
+            amount: value,
             style: isBold
                 ? AppTextStyles.CHECKOUT_TOTAL_VALUE
                 : AppTextStyles.CHECKOUT_VALUE,

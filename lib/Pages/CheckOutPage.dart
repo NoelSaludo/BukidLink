@@ -1,9 +1,9 @@
-//CheckOutPage.dart
 import 'package:flutter/material.dart';
 import 'package:bukidlink/models/CartItem.dart';
 import 'package:bukidlink/services/OrderService.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
+import 'package:bukidlink/widgets/common/PesoText.dart';
 
 class CheckoutPage extends StatefulWidget {
   final List<CartItem> cartItems;
@@ -245,8 +245,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ],
             ),
           ),
-          Text("₱${item.totalPrice.toStringAsFixed(2)}",
-              style: AppTextStyles.CHECKOUT_PRICE),
+          PesoText(
+            amount: item.totalPrice,
+            style: AppTextStyles.CHECKOUT_PRICE,
+          ),
         ],
       ),
     );
@@ -320,10 +322,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
               style: isBold
                   ? AppTextStyles.CHECKOUT_TOTAL_LABEL
                   : AppTextStyles.CHECKOUT_LABEL),
-          Text("₱${value.toStringAsFixed(2)}",
-              style: isBold
-                  ? AppTextStyles.CHECKOUT_TOTAL_VALUE
-                  : AppTextStyles.CHECKOUT_VALUE),
+          PesoText(
+            amount: value,
+            style: isBold
+                ? AppTextStyles.CHECKOUT_TOTAL_VALUE
+                : AppTextStyles.CHECKOUT_VALUE,
+          ),
         ],
       ),
     );
