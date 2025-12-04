@@ -18,7 +18,8 @@ class OrderService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final _uuid = const Uuid();
 
-  String? get _effectiveUserId => UserService.currentUser?.id ?? _auth.currentUser?.uid;
+  String? get _effectiveUserId =>
+      UserService.currentUser?.id ?? _auth.currentUser?.uid;
 
   List<Order> _orders = [];
   List<Order> get orders => _orders;
@@ -123,12 +124,16 @@ class OrderService {
         final orderRef = _firestore.collection('orders').doc();
         final orderId = orderRef.id;
 
-        final itemsData = farmerItems.map((item) => {
-          'product_id': item.productId,
-          'amount': item.amount,
-        }).toList();
+        final itemsData = farmerItems
+            .map(
+              (item) => {'product_id': item.productId, 'amount': item.amount},
+        )
+            .toList();
 
-        final total = farmerItems.fold<double>(0, (sum, item) => sum + item.totalPrice);
+        final total = farmerItems.fold<double>(
+          0,
+              (sum, item) => sum + item.totalPrice,
+        );
 
         await orderRef.set({
           'user_id': _effectiveUserId,
@@ -150,7 +155,6 @@ class OrderService {
       }
 
       return createdOrderIds;
-
     } catch (e, stackTrace) {
       debugPrint('Error adding orders: $e');
       debugPrint('Stack trace: $stackTrace');
@@ -306,6 +310,27 @@ class OrderService {
     return await fetchAllOrdersOfUser(_effectiveUserId!);
   }
 
+  /// Fetches all orders in the `orders` collection regardless of user.
+  /// This is used for global analytics such as co-purchase frequency.
+  Future<List<Order>> fetchAllOrders() async {
+    try {
+      final querySnapshot = await _ordersCollection
+          .orderBy('date_placed', descending: true)
+          .get();
+
+      final orders = <Order>[];
+      for (var doc in querySnapshot.docs) {
+        final order = await _orderFromDocument(doc);
+        if (order != null) orders.add(order);
+      }
+
+      return orders;
+    } catch (e) {
+      debugPrint('Error fetching all orders: $e');
+      return [];
+    }
+  }
+
   Future<Order?> _orderFromDocument(DocumentSnapshot doc) async {
     try {
       final data = doc.data() as Map<String, dynamic>;
@@ -337,9 +362,11 @@ class OrderService {
       final farmerStageStr = data['farmer_stage'] as String? ?? 'pending';
       final farmerStage = Order.farmerStageFromString(farmerStageStr);
 
-      final datePlaced = (data['date_placed'] as Timestamp?)?.toDate() ?? DateTime.now();
+      final datePlaced =
+          (data['date_placed'] as Timestamp?)?.toDate() ?? DateTime.now();
       final dateDelivered = (data['date_delivered'] as Timestamp?)?.toDate();
-      final cancellationDate = (data['cancellation_date'] as Timestamp?)?.toDate();
+      final cancellationDate = (data['cancellation_date'] as Timestamp?)
+          ?.toDate();
 
       final order = Order(
         id: doc.id,
@@ -411,7 +438,8 @@ class OrderService {
         'updated_at': FieldValue.serverTimestamp(),
       };
 
-      if (newStatus == OrderStatus.toRate || newStatus == OrderStatus.completed) {
+      if (newStatus == OrderStatus.toRate ||
+          newStatus == OrderStatus.completed) {
         updateData['date_delivered'] = FieldValue.serverTimestamp();
       }
 
@@ -420,7 +448,8 @@ class OrderService {
       final index = _orders.indexWhere((o) => o.id == orderId);
       if (index != -1) {
         _orders[index].status = newStatus;
-        if (newStatus == OrderStatus.toRate || newStatus == OrderStatus.completed) {
+        if (newStatus == OrderStatus.toRate ||
+            newStatus == OrderStatus.completed) {
           _orders[index].dateDelivered = DateTime.now();
         }
       }
@@ -488,7 +517,10 @@ class OrderService {
     }
   }
 
-  Stream<List<Order>> farmerOrdersStream(String farmerId, FarmerSubStatus stage) {
+  Stream<List<Order>> farmerOrdersStream(
+      String farmerId,
+      FarmerSubStatus stage,
+      ) {
     final stageString = Order.farmerStageToString(stage);
 
     return _ordersCollection
@@ -529,7 +561,10 @@ class OrderService {
     });
   }
 
-  Future<void> updateFarmerStage(String orderId, FarmerSubStatus newStage) async {
+  Future<void> updateFarmerStage(
+      String orderId,
+      FarmerSubStatus newStage,
+      ) async {
     try {
       final stageString = Order.farmerStageToString(newStage);
       final customerStatus = _mapFarmerStageToCustomerStatus(newStage);
