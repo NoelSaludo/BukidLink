@@ -2,6 +2,13 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+/// Result returned by [GeminiAIService.suggestPrice].
+class SuggestPriceResult {
+  final String message;
+  final bool isFarmProduce;
+  SuggestPriceResult({required this.message, required this.isFarmProduce});
+}
+
 /// A small wrapper to call a Gemini-like REST endpoint.
 ///
 /// Notes:
@@ -123,6 +130,153 @@ class GeminiAIService {
       return found;
     } catch (e) {
       return [];
+    }
+  }
+
+  /// Ask the AI to suggest a retail price for a product in the Philippines.
+  ///
+  /// Returns a [SuggestPriceResult] containing a short message and a boolean
+  /// indicating whether the product is a farm produce. If the AI determines
+  /// the product is not a farm produce, [isFarmProduce] will be false and the
+  /// message should explain that the product is not farm produce.
+  Future<SuggestPriceResult> suggestPrice({
+    required String name,
+    required String unit,
+  }) async {
+    if (_apiUrl == null || _apiUrl.isEmpty) {
+      return SuggestPriceResult(
+        message: 'AI service not configured',
+        isFarmProduce: false,
+      );
+    }
+
+    final prompt = StringBuffer();
+    prompt.writeln(
+      'You are a pricing assistant for Philippine markets (farm-to-consumer, smallholder sellers).',
+    );
+    prompt.writeln(
+      'Given a product name and the selling unit, decide whether the item is a farm produce (e.g., fruits, vegetables, grains, livestock, dairy) or not.',
+    );
+    prompt.writeln(
+      'If it is a farm produce, return a single reasonable suggested retail price in Philippine Peso and nothing else (just the price, you may include the ₱ symbol).',
+    );
+    prompt.writeln(
+      'If it is NOT a farm produce, return the exact sentence: "The product is not a farm produce".',
+    );
+    prompt.writeln(
+      'Use `.` as decimal separator and up to two decimal places.',
+    );
+    prompt.writeln('Product: $name');
+    prompt.writeln('Unit: $unit');
+
+    final requestBody = {
+      'contents': [
+        {
+          'parts': [
+            {'text': prompt.toString()},
+          ],
+        },
+      ],
+      'generationConfig': {'maxOutputTokens': 64, 'candidateCount': 1},
+    };
+
+    final body = json.encode(requestBody);
+
+    try {
+      final headers = {'Content-Type': 'application/json'};
+      if (_apiKey != null && _apiKey.isNotEmpty) {
+        headers['X-goog-api-key'] = _apiKey;
+      }
+
+      final resp = await http.post(
+        Uri.parse(_apiUrl),
+        headers: headers,
+        body: body,
+      );
+
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        return SuggestPriceResult(
+          message: 'AI request failed (status ${resp.statusCode})',
+          isFarmProduce: false,
+        );
+      }
+
+      final dynamic parsed = json.decode(resp.body);
+      final List<String> texts = [];
+      if (parsed is Map && parsed['candidates'] is Iterable) {
+        for (var cand in parsed['candidates']) {
+          try {
+            final content = cand['content'];
+            if (content is Map && content['parts'] is Iterable) {
+              for (var part in content['parts']) {
+                if (part is Map && part['text'] is String) {
+                  texts.add(part['text']);
+                }
+              }
+            }
+          } catch (_) {
+            // ignore
+          }
+        }
+      }
+
+      final combined = texts.join(' ').trim();
+      final lc = combined.toLowerCase();
+
+      // If AI explicitly says it's not a farm produce, honor that.
+      if (lc.contains('the product is not a farm produce') ||
+          lc.contains('not a farm produce') ||
+          lc.contains('not a farm product') ||
+          lc.contains('is not a farm')) {
+        return SuggestPriceResult(
+          message: 'The product is not a farm produce',
+          isFarmProduce: false,
+        );
+      }
+
+      // Try to extract a peso amount like ₱123.45 or 123.45
+      final pesoRegex = RegExp(r'₱\s*([0-9,]+(?:\.[0-9]{1,2})?)');
+      final numRegex = RegExp(r'([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?)');
+
+      String? found;
+      final pesoMatch = pesoRegex.firstMatch(combined);
+      if (pesoMatch != null && pesoMatch.groupCount >= 1) {
+        found = pesoMatch.group(1);
+      } else {
+        final numMatch = numRegex.firstMatch(combined);
+        if (numMatch != null && numMatch.groupCount >= 1) {
+          found = numMatch.group(1);
+        }
+      }
+
+      if (found != null) {
+        var cleaned = found.replaceAll(',', '');
+        final value = double.tryParse(cleaned);
+        if (value != null) {
+          final priceStr = value
+              .toStringAsFixed(2)
+              .replaceAll(RegExp(r"\.00$"), '.00');
+          return SuggestPriceResult(
+            message: 'The retail price of $name is ₱$priceStr/$unit',
+            isFarmProduce: true,
+          );
+        }
+      }
+
+      // Fallback: return the AI text and assume it's farm produce unless it said otherwise.
+      if (combined.isEmpty) {
+        return SuggestPriceResult(
+          message: 'AI did not return a suggestion',
+          isFarmProduce: false,
+        );
+      }
+
+      return SuggestPriceResult(message: combined, isFarmProduce: true);
+    } catch (e) {
+      return SuggestPriceResult(
+        message: 'AI error: ${e.toString()}',
+        isFarmProduce: false,
+      );
     }
   }
 }
