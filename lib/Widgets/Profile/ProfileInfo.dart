@@ -6,7 +6,7 @@ import 'package:bukidlink/services/UserService.dart';
 import 'package:bukidlink/services/follow_service.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileCoverPicture.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileIcon.dart';
-import 'package:bukidlink/Widgets/Profile/MessageButton.dart';
+// MessageButton is not used here; removed unused import
 import 'package:bukidlink/Widgets/Profile/FollowButton.dart';
 import 'package:bukidlink/Utils/constants/AppColors.dart';
 import 'package:bukidlink/Utils/constants/AppTextStyles.dart';

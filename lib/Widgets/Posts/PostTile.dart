@@ -10,7 +10,6 @@ import 'package:bukidlink/Widgets/Posts/PostUsername.dart';
 import 'package:bukidlink/Widgets/Posts/PostTimestamp.dart';
 import 'package:bukidlink/Pages/ProfilePage.dart';
 import 'package:bukidlink/Pages/farmer/FarmerProfilePage.dart'; // <-- Only if needed
-import 'package:bukidlink/utils/constants/AppColors.dart';
 
 class PostTile extends StatefulWidget {
   final Post post;
