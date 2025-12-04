@@ -5,6 +5,7 @@ import '../../services/TradeService.dart';
 import '../../models/TradeModels.dart';
 import '../../widgets/common/ProductImage.dart';
 import 'MakeTradePage.dart'; // Required for Edit Navigation
+import 'package:bukidlink/Pages/farmer/TradeCheckoutPage.dart';
 
 class MyTradesPage extends StatefulWidget {
   final bool embeddedInTab;
@@ -512,7 +513,10 @@ class TradeIncomingOffersPage extends StatelessWidget {
 
                   return Column(
                     children: offers.map((offer) {
-                      return _OfferTile(offer: offer);
+                      return _OfferTile(
+                          offer: offer,
+                          listing:listing,
+                      );
                     }).toList(),
                   );
                 },
@@ -525,22 +529,55 @@ class TradeIncomingOffersPage extends StatelessWidget {
   }
 }
 
-class _OfferTile extends StatelessWidget {
+class _OfferTile extends StatefulWidget {
   final TradeOfferRequest offer;
-  const _OfferTile({required this.offer});
+  final TradeListing listing; // Add this to pass the listing info
+
+  const _OfferTile({
+    required this.offer,
+    required this.listing,
+  });
+
+  @override
+  State<_OfferTile> createState() => _OfferTileState();
+}
+
+class _OfferTileState extends State<_OfferTile> {
+  void _handleAcceptOffer(BuildContext context) {
+    // Navigate to checkout page
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TradeCheckoutPage(
+          listing: widget.listing,
+          offer: widget.offer,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final offeredBy = (offer.offeredByName.trim().isEmpty) ? 'Anonymous' : offer.offeredByName;
+    final offeredBy = (widget.offer.offeredByName.trim().isEmpty)
+        ? 'Anonymous'
+        : widget.offer.offeredByName;
+
+    // Check if offer is already accepted
+    final isAccepted = widget.offer.status == 'accepted';
+    final isCancelled = widget.offer.status == 'cancelled';
 
     return Container(
-      margin: EdgeInsets.only(bottom: 12),
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Color(0xFFF4F7EE),
+        color: const Color(0xFFF4F7EE),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: Offset(0, 3)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
         ],
       ),
       child: Row(
@@ -548,53 +585,114 @@ class _OfferTile extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: ProductImage(
-              imagePath: offer.imagePath.isNotEmpty ? offer.imagePath : 'assets/images/default_cover_photo.png',
+              imagePath: widget.offer.imagePath.isNotEmpty
+                  ? widget.offer.imagePath
+                  : 'assets/images/default_cover_photo.png',
               width: 64,
               height: 64,
               fit: BoxFit.cover,
             ),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  offer.itemName,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  widget.offer.itemName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Text(
-                  'Quantity: ${offer.itemQuantity}',
+                  'Quantity: ${widget.offer.itemQuantity}',
                   style: TextStyle(color: Colors.grey[700]),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Text(
                   'By: $offeredBy',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
                 ),
+                if (isAccepted) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green[100],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Accepted',
+                      style: TextStyle(
+                        color: Colors.green[800],
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+                if (isCancelled) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Cancelled',
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-          SizedBox(width: 8),
-          SizedBox(
-            width: 96,
-            height: 38,
-            child: ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Feature coming soon!")));
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFFBFEA6A),
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                elevation: 0,
+          const SizedBox(width: 8),
+          if (!isAccepted && !isCancelled)
+            SizedBox(
+              width: 96,
+              height: 38,
+              child: ElevatedButton(
+                onPressed: () => _handleAcceptOffer(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFBFEA6A),
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Accept',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
-              child: Text('Accept', style: TextStyle(fontWeight: FontWeight.w600)),
             ),
-          ),
+          if (isAccepted)
+            Icon(
+              Icons.check_circle,
+              color: Colors.green[600],
+              size: 24,
+            ),
         ],
       ),
     );
   }
 }
+
