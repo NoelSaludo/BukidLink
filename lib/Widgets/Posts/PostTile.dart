@@ -10,7 +10,6 @@ import 'package:bukidlink/Widgets/Posts/PostUsername.dart';
 import 'package:bukidlink/Widgets/Posts/PostTimestamp.dart';
 import 'package:bukidlink/Pages/ProfilePage.dart';
 import 'package:bukidlink/Pages/farmer/FarmerProfilePage.dart'; // <-- Only if needed
-import 'package:bukidlink/utils/constants/AppColors.dart';
 
 class PostTile extends StatefulWidget {
   final Post post;
@@ -21,7 +20,8 @@ class PostTile extends StatefulWidget {
   State<PostTile> createState() => _PostTileState();
 }
 
-class _PostTileState extends State<PostTile> with SingleTickerProviderStateMixin {
+class _PostTileState extends State<PostTile>
+    with SingleTickerProviderStateMixin {
   double _scale = 1.0;
   final Duration _duration = const Duration(milliseconds: 120);
   late final AnimationController _shimmerController;
@@ -37,11 +37,7 @@ class _PostTileState extends State<PostTile> with SingleTickerProviderStateMixin
 
     final currentUser = await UserService().getCurrentUser();
 
-    return {
-      'poster': poster,
-      'farm': farm,
-      'currentUser': currentUser,
-    };
+    return {'poster': poster, 'farm': farm, 'currentUser': currentUser};
   }
 
   void _onPointerDown(_) {
@@ -55,7 +51,10 @@ class _PostTileState extends State<PostTile> with SingleTickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    _shimmerController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400))..repeat();
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
     _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
       CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
     );
@@ -107,9 +106,17 @@ class _PostTileState extends State<PostTile> with SingleTickerProviderStateMixin
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(height: 12, width: double.infinity, color: Colors.grey[300]),
+                                Container(
+                                  height: 12,
+                                  width: double.infinity,
+                                  color: Colors.grey[300],
+                                ),
                                 const SizedBox(height: 6),
-                                Container(height: 10, width: 120, color: Colors.grey[300]),
+                                Container(
+                                  height: 10,
+                                  width: 120,
+                                  color: Colors.grey[300],
+                                ),
                               ],
                             ),
                           ),
@@ -118,9 +125,17 @@ class _PostTileState extends State<PostTile> with SingleTickerProviderStateMixin
                       const SizedBox(height: 12),
                       Container(height: 0.5, color: Colors.grey[200]),
                       const SizedBox(height: 12),
-                      Container(height: 10, width: double.infinity, color: Colors.grey[300]),
+                      Container(
+                        height: 10,
+                        width: double.infinity,
+                        color: Colors.grey[300],
+                      ),
                       const SizedBox(height: 8),
-                      Container(height: 10, width: MediaQuery.of(context).size.width * 0.6, color: Colors.grey[300]),
+                      Container(
+                        height: 10,
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        color: Colors.grey[300],
+                      ),
                       const SizedBox(height: 12),
                       Container(
                         height: 140,
@@ -140,7 +155,6 @@ class _PostTileState extends State<PostTile> with SingleTickerProviderStateMixin
 
         final poster = snapshot.data!['poster'] as User?;
         final farm = snapshot.data!['farm'] as Farm?;
-        final currentUser = snapshot.data!['currentUser'] as User?;
 
         if (poster == null) return const SizedBox();
 
@@ -149,7 +163,7 @@ class _PostTileState extends State<PostTile> with SingleTickerProviderStateMixin
             : poster.profilePic;
 
         final farmName = farm?.name ?? '';
-        final currentType = currentUser?.type?.trim().toLowerCase() ?? 'user';
+        final posterIsFarmer = poster.isFarmer();
 
         final card = Container(
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -175,7 +189,7 @@ class _PostTileState extends State<PostTile> with SingleTickerProviderStateMixin
                   PostIcon(
                     imageUrl: imageUrl,
                     onTapped: () {
-                      if (currentType == 'farmer') {
+                      if (posterIsFarmer) {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -255,7 +269,11 @@ class _Shimmer extends StatelessWidget {
   final Widget child;
   final double gradientPosition;
 
-  const _Shimmer({Key? key, required this.child, required this.gradientPosition}) : super(key: key);
+  const _Shimmer({
+    Key? key,
+    required this.child,
+    required this.gradientPosition,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

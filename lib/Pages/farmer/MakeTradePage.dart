@@ -55,6 +55,7 @@ class _MakeTradePageState extends State<MakeTradePage> {
     HapticFeedback.lightImpact();
     final String? path = await _imagePickerService.showImageSourceBottomSheet(
       context,
+      'Select Product Image Source',
     );
     if (path != null) setState(() => _imagePath = path);
   }

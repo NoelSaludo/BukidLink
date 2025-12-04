@@ -10,6 +10,8 @@ import 'package:bukidlink/pages/MyAddressPage.dart';
 import 'package:bukidlink/pages/AccountSecurityPage.dart';
 import 'package:bukidlink/pages/EditProfilePage.dart';
 import 'package:bukidlink/Pages/LoginPage.dart';
+import 'package:bukidlink/Pages/farmer/FarmerStorePage.dart';
+import 'package:bukidlink/Pages/farmer/OrderManagementPage.dart';
 
 class AccountPage extends StatefulWidget {
   final User? currentUser;
@@ -40,6 +42,10 @@ class _AccountPageState extends State<AccountPage> {
     super.initState();
     _user = widget.currentUser;
     _initializeControllers(_user);
+    // Always reload the current user from Firestore to ensure fresh data
+    // (prevents a cached/local `widget.currentUser` from hiding updates).
+    // _reloadCurrentUser will re-init controllers if fresh data is returned.
+    _reloadCurrentUser();
   }
 
   void _initializeControllers([User? userParam]) {
@@ -57,8 +63,10 @@ class _AccountPageState extends State<AccountPage> {
   }
 
   User? _user;
+  bool _isLoadingUser = true;
 
   Future<void> _reloadCurrentUser() async {
+    setState(() => _isLoadingUser = true);
     try {
       final uid = UserService().getSafeUserId();
       final fresh = await UserService().getUserById(uid);
@@ -79,6 +87,8 @@ class _AccountPageState extends State<AccountPage> {
       }
     } catch (e) {
       debugPrint('Failed to reload user: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingUser = false);
     }
   }
 
@@ -97,7 +107,7 @@ class _AccountPageState extends State<AccountPage> {
     HapticFeedback.lightImpact();
 
     final String? imagePath = await _imagePickerService
-        .showImageSourceBottomSheet(context);
+        .showImageSourceBottomSheet(context, 'Select Profile Picture Source');
 
     if (imagePath != null) {
       // If the picker returned a remote URL (Cloudinary), don't try to copy it locally.
@@ -210,7 +220,7 @@ class _AccountPageState extends State<AccountPage> {
   @override
   Widget build(BuildContext context) {
     final user = _user ?? widget.currentUser;
-    debugPrint('User: $user');
+    debugPrint('AccountPage build — user id:${user?.id} type:${user?.type}');
 
     return Scaffold(
       backgroundColor: AppColors.backgroundYellow,
@@ -312,7 +322,7 @@ class _AccountPageState extends State<AccountPage> {
 
                   // Username
                   Text(
-                    '@${user?.username ?? 'User'}',
+                    '@${_isLoadingUser ? 'Loading...' : (user?.username ?? 'User')}',
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -324,7 +334,9 @@ class _AccountPageState extends State<AccountPage> {
 
                   // Email
                   Text(
-                    user?.emailAddress ?? 'email@example.com',
+                    _isLoadingUser
+                        ? 'Loading...'
+                        : (user?.emailAddress ?? 'email@example.com'),
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.white.withOpacity(0.9),
@@ -342,6 +354,9 @@ class _AccountPageState extends State<AccountPage> {
   }
 
   Widget _buildAccountContent() {
+    final user = _user ?? widget.currentUser;
+    final isFarmer = user?.isFarmer() ?? false;
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -358,7 +373,9 @@ class _AccountPageState extends State<AccountPage> {
               _buildMenuItem(
                 icon: Icons.location_on_outlined,
                 title: 'My Address',
-                subtitle: _user?.address ?? widget.currentUser?.address,
+                subtitle: _isLoadingUser
+                    ? 'Loading...'
+                    : (_user?.address ?? widget.currentUser?.address),
                 onTap: () async {
                   HapticFeedback.lightImpact();
                   final result = await Navigator.push<bool?>(
@@ -393,6 +410,36 @@ class _AccountPageState extends State<AccountPage> {
             ],
           ),
           const SizedBox(height: 16),
+          // Conditional Farmer Tools section
+          if (isFarmer) ...[
+            const SizedBox(height: 16),
+            _buildSection(
+              title: 'Farmer Tools',
+              children: [
+                _buildMenuItem(
+                  icon: Icons.store,
+                  title: 'My Store',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const FarmerStorePage(),
+                    ),
+                  ),
+                ),
+                _buildDivider(),
+                _buildMenuItem(
+                  icon: Icons.list_alt,
+                  title: 'Order Management',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const OrderManagementPage(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
 
           _buildSection(
             title: 'Settings',

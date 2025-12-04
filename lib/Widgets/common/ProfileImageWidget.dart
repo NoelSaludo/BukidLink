@@ -117,7 +117,7 @@ class ProfileImageWidget extends StatelessWidget {
             child: CircularProgressIndicator(
               value: loadingProgress.expectedTotalBytes != null
                   ? loadingProgress.cumulativeBytesLoaded /
-                      loadingProgress.expectedTotalBytes!
+                        loadingProgress.expectedTotalBytes!
                   : null,
               color: AppColors.primaryGreen,
             ),
@@ -127,9 +127,19 @@ class ProfileImageWidget extends StatelessWidget {
       );
     }
 
-    // Default: treat as asset with assets/images/ prefix
+    // Default: treat as asset with assets/images/ prefix but sanitize incoming
+    final sanitized = imageUrl!.trim().replaceFirst(RegExp(r'^/+'), '');
+    String assetPath;
+    if (sanitized.startsWith('assets/')) {
+      assetPath = sanitized;
+    } else if (sanitized.startsWith('images/')) {
+      assetPath = 'assets/' + sanitized; // images/... -> assets/images/...
+    } else {
+      assetPath = 'assets/images/' + sanitized;
+    }
+
     return Image.asset(
-      'assets/images/$imageUrl',
+      assetPath,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
     );

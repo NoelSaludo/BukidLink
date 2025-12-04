@@ -8,8 +8,8 @@ import 'package:bukidlink/Pages/SignUpPage.dart';
 import 'package:bukidlink/Widgets/ForgotPassword.dart';
 import 'package:bukidlink/Widgets/SignUpAndLogin/LoginLogo.dart';
 import 'package:bukidlink/Widgets/SignUpAndLogin/GoToSignUp.dart';
-import 'package:bukidlink/services/google_auth.dart';
 import 'package:bukidlink/services/UserService.dart';
+import 'package:bukidlink/Pages/GoogleSignUpPage.dart';
 import 'package:bukidlink/Utils/constants/AppColors.dart';
 
 class LoginPage extends StatefulWidget {
@@ -75,11 +75,19 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final RenderBox fieldBox = fieldContext.findRenderObject() as RenderBox;
-      final scrollBox = _scrollController.position.context.storageContext.findRenderObject() as RenderBox;
-      final fieldOffset = fieldBox.localToGlobal(Offset.zero, ancestor: scrollBox);
+      final scrollBox =
+          _scrollController.position.context.storageContext.findRenderObject()
+              as RenderBox;
+      final fieldOffset = fieldBox.localToGlobal(
+        Offset.zero,
+        ancestor: scrollBox,
+      );
       final target = _scrollController.offset + fieldOffset.dy - 20.0;
 
-      final clamped = target.clamp(0.0, _scrollController.position.maxScrollExtent);
+      final clamped = target.clamp(
+        0.0,
+        _scrollController.position.maxScrollExtent,
+      );
       await _scrollController.animateTo(
         clamped,
         duration: const Duration(milliseconds: 250),
@@ -94,29 +102,27 @@ class _LoginPageState extends State<LoginPage> {
   void handleGoogleSignIn(BuildContext context) async {
     setState(() => isLoading = true);
     try {
-      final userCredential = await FirebaseService().signInWithGoogle();
-      if (context.mounted) {
-        setState(() => isLoading = false);
-        if (userCredential != null) {
-          // Proceed to loading / main flow on successful Google sign-in
-          PageNavigator().goTo(
-              context,
-              LoadingPage(
-                userType: UserService().getCurrentUser()!.type ?? "Consumer",
-              ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Google sign-in failed')),
-          );
-        }
+      final existed = await UserService().signInWithGoogle();
+
+      if (!mounted) return;
+      setState(() => isLoading = false);
+
+      if (existed) {
+        final user = UserService().getCurrentUser();
+        PageNavigator().goTo(
+          context,
+          LoadingPage(userType: user?.type ?? "Consumer"),
+        );
+      } else {
+        // New Google user: collect additional details
+        PageNavigator().goTo(context, const GoogleSignUpPage());
       }
     } catch (e) {
       if (context.mounted) {
         setState(() => isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Google sign-in error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Google sign-in error: $e')));
       }
     }
   }
@@ -223,11 +229,16 @@ class _LoginPageState extends State<LoginPage> {
               key: formKey,
               child: Builder(
                 builder: (context) {
-                  final bool keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+                  final bool keyboardVisible =
+                      MediaQuery.of(context).viewInsets.bottom > 0;
                   return SingleChildScrollView(
                     controller: _scrollController,
-                    padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-                    physics: keyboardVisible ? const BouncingScrollPhysics() : const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom,
+                    ),
+                    physics: keyboardVisible
+                        ? const BouncingScrollPhysics()
+                        : const NeverScrollableScrollPhysics(),
                     keyboardDismissBehavior: keyboardVisible
                         ? ScrollViewKeyboardDismissBehavior.onDrag
                         : ScrollViewKeyboardDismissBehavior.manual,

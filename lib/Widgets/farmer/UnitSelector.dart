@@ -20,12 +20,7 @@ class UnitSelector extends StatelessWidget {
     this.customUnitController,
   });
 
-  static const List<String> units = [
-    'Whole',
-    'Kilogram',
-    'Piece',
-    'Other',
-  ];
+  static const List<String> units = ['Whole', 'Kilogram', 'Liter', 'Other'];
 
   @override
   Widget build(BuildContext context) {
@@ -78,10 +73,10 @@ class UnitSelector extends StatelessWidget {
                           ),
                           child: isSelected
                               ? const Icon(
-                            Icons.circle,
-                            size: 12,
-                            color: Colors.white,
-                          )
+                                  Icons.circle,
+                                  size: 12,
+                                  color: Colors.white,
+                                )
                               : null,
                         ),
                         const SizedBox(width: 12),
@@ -90,7 +85,9 @@ class UnitSelector extends StatelessWidget {
                             unit,
                             style: AppTextStyles.BODY_MEDIUM.copyWith(
                               fontSize: 15,
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
                               color: isSelected
                                   ? AppColors.DARK_TEXT
                                   : AppColors.TEXT_SECONDARY,

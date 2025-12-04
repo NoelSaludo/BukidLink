@@ -6,7 +6,7 @@ import 'package:bukidlink/services/UserService.dart';
 import 'package:bukidlink/services/follow_service.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileCoverPicture.dart';
 import 'package:bukidlink/Widgets/Profile/ProfileIcon.dart';
-import 'package:bukidlink/Widgets/Profile/MessageButton.dart';
+// MessageButton is not used here; removed unused import
 import 'package:bukidlink/Widgets/Profile/FollowButton.dart';
 import 'package:bukidlink/Utils/constants/AppColors.dart';
 import 'package:bukidlink/Utils/constants/AppTextStyles.dart';
@@ -130,9 +130,14 @@ class _ProfileInfoState extends State<ProfileInfo> {
     }
 
     final profile = _profile!;
-    final String profileImage = '{profile.profilePic}';
+    final String profileImage = profile.profilePic;
     final String username = profile.username;
     final String? currentUid = UserService.currentUser?.id;
+    final roleLabel = profile.isFarmer()
+        ? 'Farmer'
+        : (profile.type != null && profile.type!.trim().isNotEmpty
+              ? profile.type!.trim()
+              : 'Consumer');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,12 +208,12 @@ class _ProfileInfoState extends State<ProfileInfo> {
               ProfileUsername(username: username),
               const SizedBox(height: 4),
               Text(
-                "Farmer • Local Producer",
+                "$roleLabel • ${roleLabel.toLowerCase() == 'farmer' ? 'Local Producer' : 'Local Shopper'}",
                 style: TextStyle(fontSize: 14, color: Colors.grey[700]),
               ),
               const SizedBox(height: 8),
               // Followers count
-              if (profile.farmId != null)
+              if (profile.isFarmer())
                 StreamBuilder<int>(
                   stream: FollowService().followerCountStream(
                     farmId: profile.farmId!.id,

@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:bukidlink/services/ImagePickerService.dart';
 import 'package:bukidlink/Utils/constants/AppTextStyles.dart';
 import 'package:bukidlink/models/Post.dart';
 import 'package:bukidlink/services/PostService.dart';
@@ -10,7 +10,11 @@ class MakePost extends StatefulWidget {
   final String text; // Text shown in the tappable container
   final VoidCallback? onPostCreated;
 
-  const MakePost({Key? key, this.text = "This is the single scrollable container", this.onPostCreated}) : super(key: key);
+  const MakePost({
+    Key? key,
+    this.text = "This is the single scrollable container",
+    this.onPostCreated,
+  }) : super(key: key);
 
   @override
   _MakePostState createState() => _MakePostState();
@@ -22,21 +26,28 @@ class _MakePostState extends State<MakePost> {
   final _imageUrlController = TextEditingController();
 
   File? _imageFile;
-  final ImagePicker _picker = ImagePicker();
 
   final user = UserService().getCurrentUser();
 
   Future<void> _pickImage() async {
-    final XFile? pickedFile = await _picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 600,
-    );
+    // Use ImagePickerService which uploads the picked image to Cloudinary
+    // and returns the secure URL. This ensures image URLs are stored
+    // in the Post model instead of raw local file paths.
+    try {
+      final String? uploadedUrl = await ImagePickerService().pickFromGallery(
+        imageQuality: 85,
+        maxWidth: 1200,
+      );
 
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-        _imageUrlController.clear(); // Clear URL if a file is picked
-      });
+      if (uploadedUrl != null && uploadedUrl.isNotEmpty) {
+        setState(() {
+          _imageFile = null; // we use the uploaded URL instead of local file
+          _imageUrlController.text = uploadedUrl;
+        });
+      }
+    } catch (e) {
+      // If upload/pick failed, keep UI responsive and optionally show a message
+      debugPrint('Image pick/upload failed: $e');
     }
   }
 
@@ -103,27 +114,40 @@ class _MakePostState extends State<MakePost> {
                           builder: (context) {
                             final modalProfile = user?.profilePic;
                             return Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundImage: (modalProfile != null && modalProfile.isNotEmpty)
-                                  ? (modalProfile.toLowerCase().startsWith('http')
-                                      ? NetworkImage(modalProfile)
-                                      : AssetImage('assets' + modalProfile) as ImageProvider)
-                                  : const AssetImage('assets/images/default_profile.png'),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                "Create Post",
-                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.grey[900]),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Close'),
-                            ),
-                          ],
+                              children: [
+                                CircleAvatar(
+                                  radius: 20,
+                                  backgroundImage:
+                                      (modalProfile != null &&
+                                          modalProfile.isNotEmpty)
+                                      ? (modalProfile.toLowerCase().startsWith(
+                                              'http',
+                                            )
+                                            ? NetworkImage(modalProfile)
+                                            : AssetImage(
+                                                    'assets' + modalProfile,
+                                                  )
+                                                  as ImageProvider)
+                                      : const AssetImage(
+                                          'assets/images/default_profile.png',
+                                        ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    "Create Post",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey[900],
+                                    ),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Close'),
+                                ),
+                              ],
                             );
                           },
                         ),
@@ -138,12 +162,20 @@ class _MakePostState extends State<MakePost> {
                             hintText: "What's on your mind?",
                             filled: true,
                             fillColor: Colors.grey[100],
-                            contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 12,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
                           onChanged: (_) => modalSetState(() {}),
                           validator: (value) {
-                            if ((value == null || value.trim().isEmpty) && _imageFile == null && _imageUrlController.text.isEmpty) {
+                            if ((value == null || value.trim().isEmpty) &&
+                                _imageFile == null &&
+                                _imageUrlController.text.isEmpty) {
                               return 'Please enter text or attach an image';
                             }
                             return null;
@@ -161,7 +193,10 @@ class _MakePostState extends State<MakePost> {
                                 await _pickImage();
                                 modalSetState(() {});
                               },
-                              icon: const Icon(Icons.photo_library, color: Colors.green),
+                              icon: const Icon(
+                                Icons.photo_library,
+                                color: Colors.green,
+                              ),
                             ),
                             IconButton(
                               tooltip: 'Paste image URL',
@@ -170,11 +205,14 @@ class _MakePostState extends State<MakePost> {
                                   _imageFile = null;
                                 });
                                 // Focus the URL field for quick paste
-                                FocusScope.of(context).requestFocus(FocusNode());
+                                FocusScope.of(
+                                  context,
+                                ).requestFocus(FocusNode());
                               },
                               icon: const Icon(Icons.link, color: Colors.blue),
                             ),
-                            if (_imageFile != null || _imageUrlController.text.isNotEmpty)
+                            if (_imageFile != null ||
+                                _imageUrlController.text.isNotEmpty)
                               IconButton(
                                 tooltip: 'Remove image',
                                 onPressed: () {
@@ -183,13 +221,19 @@ class _MakePostState extends State<MakePost> {
                                     _imageUrlController.clear();
                                   });
                                 },
-                                icon: const Icon(Icons.delete_forever, color: Colors.red),
+                                icon: const Icon(
+                                  Icons.delete_forever,
+                                  color: Colors.red,
+                                ),
                               ),
                             const Spacer(),
                             // character count
                             Text(
                               '${_textController.text.trim().length}/1000',
-                              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ),
@@ -203,18 +247,27 @@ class _MakePostState extends State<MakePost> {
                             hintText: "Image URL (optional)",
                             filled: true,
                             fillColor: Colors.grey[50],
-                            contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             suffixIcon: _imageUrlController.text.isNotEmpty
                                 ? IconButton(
-                                    icon: const Icon(Icons.check_circle, color: Colors.green),
+                                    icon: const Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green,
+                                    ),
                                     onPressed: () => modalSetState(() {}),
                                   )
                                 : null,
                           ),
                           onChanged: (value) {
                             modalSetState(() {
-                              if (value.isNotEmpty) _imageFile = null; // Clear picked file
+                              if (value.isNotEmpty)
+                                _imageFile = null; // Clear picked file
                             });
                           },
                         ),
@@ -240,19 +293,34 @@ class _MakePostState extends State<MakePost> {
                               height: 200,
                               width: double.infinity,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                height: 120,
-                                color: Colors.grey[200],
-                                child: const Center(child: Icon(Icons.broken_image, size: 48, color: Colors.grey)),
-                              ),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                    height: 120,
+                                    color: Colors.grey[200],
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.broken_image,
+                                        size: 48,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
                             ),
                           )
                         else
                           Container(
                             height: 80,
                             width: double.infinity,
-                            decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(12)),
-                            child: const Center(child: Text('No image selected', style: TextStyle(color: Colors.grey))),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[50],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'No image selected',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ),
                           ),
 
                         const SizedBox(height: 16),
@@ -267,7 +335,10 @@ class _MakePostState extends State<MakePost> {
                             ),
                             const SizedBox(width: 12),
                             ElevatedButton(
-                              onPressed: (_textController.text.trim().isNotEmpty || _imageFile != null || _imageUrlController.text.isNotEmpty)
+                              onPressed:
+                                  (_textController.text.trim().isNotEmpty ||
+                                      _imageFile != null ||
+                                      _imageUrlController.text.isNotEmpty)
                                   ? () async {
                                       if (_formKey.currentState!.validate()) {
                                         final post = _createNewPost();
@@ -277,11 +348,16 @@ class _MakePostState extends State<MakePost> {
                                       }
                                     }
                                   : null,
-                              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                              ),
                               child: const Text("Post"),
                             ),
                           ],
-                        )
+                        ),
                       ],
                     ),
                   ),
@@ -301,57 +377,56 @@ class _MakePostState extends State<MakePost> {
     super.dispose();
   }
 
- @override
-Widget build(BuildContext context) {
-  final profileImage = user?.profilePic;
+  @override
+  Widget build(BuildContext context) {
+    final profileImage = user?.profilePic;
 
-  return GestureDetector(
-    onTap: _showModal,
-    child: Container(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 240, 244, 230),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15), // more visible shadow
-            blurRadius: 12,
-            spreadRadius: 1,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // --- Profile Image ---
-          CircleAvatar(
-            radius: 22,
-            backgroundImage: (profileImage != null && profileImage.isNotEmpty)
-            ? (profileImage.toLowerCase().startsWith('http')
-            ? NetworkImage(profileImage)
-            : AssetImage('assets' + profileImage) as ImageProvider)
-            : const AssetImage('assets/images/default_profile.png'),
-          ),
+    return GestureDetector(
+      onTap: _showModal,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(255, 240, 244, 230),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15), // more visible shadow
+              blurRadius: 12,
+              spreadRadius: 1,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // --- Profile Image ---
+            CircleAvatar(
+              radius: 22,
+              backgroundImage: (profileImage != null && profileImage.isNotEmpty)
+                  ? (profileImage.toLowerCase().startsWith('http')
+                        ? NetworkImage(profileImage)
+                        : AssetImage('assets' + profileImage) as ImageProvider)
+                  : const AssetImage('assets/images/default_profile.png'),
+            ),
 
-          const SizedBox(width: 16),
+            const SizedBox(width: 16),
 
-          // --- Text ---
-          Expanded(
-            child: Text(
-              widget.text,
-              style: AppTextStyles.FORM_LABEL.copyWith(
-                fontSize: 14,       // slightly smaller than username
-                color: Colors.black87,
-                height: 1.4,
+            // --- Text ---
+            Expanded(
+              child: Text(
+                widget.text,
+                style: AppTextStyles.FORM_LABEL.copyWith(
+                  fontSize: 14, // slightly smaller than username
+                  color: Colors.black87,
+                  height: 1.4,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 }

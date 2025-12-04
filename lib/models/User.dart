@@ -68,4 +68,10 @@ class User {
       farmId: data['farmId'],
     );
   }
+
+  /// Returns true when this user is explicitly marked as a Farmer via the
+  /// `type` field. Normalizes casing and surrounding whitespace.
+  bool isFarmer() {
+    return (type ?? '').toString().trim().toLowerCase() == 'farmer';
+  }
 }

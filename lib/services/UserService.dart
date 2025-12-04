@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
+import 'package:bukidlink/services/google_auth.dart';
 import 'package:bukidlink/models/User.dart';
 import 'package:bukidlink/models/Farm.dart';
 import 'package:flutter/material.dart';
@@ -16,17 +17,15 @@ class UserService {
   // Sign in with email and password
   Future<UserCredential?> registerUser(User user) async {
     try {
+      // Only create the Firebase Auth user. Firestore user document will be
+      // created after email verification.
       UserCredential userCredential = await _auth
           .createUserWithEmailAndPassword(
-            email: user.emailAddress,
-            password: user.password,
+            email: user.emailAddress.trim(),
+            password: user.password.trim(),
           );
 
-      //verify email
-      if (!userCredential.user!.emailVerified) {
-        await userCredential.user!.sendEmailVerification();
-      }
-
+      // Set minimal in-memory currentUser (no Firestore writes yet).
       currentUser = User(
         id: userCredential.user!.uid,
         farmId: user.farmId,
@@ -43,31 +42,9 @@ class UserService {
         updatedAt: DateTime.now(),
       );
 
-      // store additional user info in Firestore if needed
-      FirebaseFirestore firestore = FirebaseFirestore.instance;
-      DocumentSnapshot userDoc = await firestore
-          .collection('users')
-          .doc(userCredential.user?.uid)
-          .get();
-
-      if (!userDoc.exists) {
-        await firestore.collection('users').doc(userCredential.user?.uid).set({
-          'username': user.username,
-          'email': user.emailAddress,
-          'firstName': user.firstName,
-          'lastName': user.lastName,
-          'address': user.address,
-          'contactNumber': user.contactNumber,
-          'type': user.type,
-          'profilePic': user.profilePic,
-          'created_at': FieldValue.serverTimestamp(),
-          'updated_at': FieldValue.serverTimestamp(),
-        });
-      }
-
       return userCredential;
     } on FirebaseAuthException catch (e) {
-      print('Error during email/password sign-in: $e');
+      debugPrint('Error during email/password sign-in: $e');
       return null;
     }
   }
@@ -80,52 +57,18 @@ class UserService {
   // 4. Update user document's farmId to point to the created farm document
   Future<UserCredential?> registerFarm(User user, Farm farm) async {
     try {
+      // Only create the Firebase Auth user. Firestore farm/user will be
+      // created after verification by caller.
       UserCredential userCredential = await _auth
           .createUserWithEmailAndPassword(
-            email: user.emailAddress,
-            password: user.password,
+            email: user.emailAddress.trim(),
+            password: user.password.trim(),
           );
-
-      // verify email
-      if (!userCredential.user!.emailVerified) {
-        await userCredential.user!.sendEmailVerification();
-      }
 
       final String uid = userCredential.user!.uid;
 
-      FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-      final DocumentReference userRef = firestore.collection('users').doc(uid);
-
-      // Create the user document first with no farm reference
-      await userRef.set({
-        'username': user.username,
-        'email': user.emailAddress,
-        'firstName': user.firstName,
-        'lastName': user.lastName,
-        'address': user.address,
-        'contactNumber': user.contactNumber,
-        'profilePic': user.profilePic,
-        'type': user.type,
-        'farmId': null,
-        'created_at': FieldValue.serverTimestamp(),
-        'updated_at': FieldValue.serverTimestamp(),
-      });
-
-      // Create the farm document with ownerId set to the user document reference
-      final DocumentReference farmRef = firestore.collection('farms').doc();
-      await farmRef.set({
-        'name': farm.name,
-        'address': farm.address,
-        'ownerId': userRef,
-        'created_at': FieldValue.serverTimestamp(),
-        'updated_at': FieldValue.serverTimestamp(),
-      });
-
-      // Update the user's farmId to point to the created farm reference
-      await userRef.update({'farmId': farmRef});
-
-      // Update local currentUser
+      // Set minimal in-memory currentUser (Firestore farm/user will be
+      // created after verification by caller).
       currentUser = User(
         id: uid,
         username: user.username,
@@ -139,13 +82,117 @@ class UserService {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         type: user.type,
-        farmId: farmRef,
+        farmId: null,
       );
 
       return userCredential;
     } on FirebaseAuthException catch (e) {
-      print('Error during farm registration: $e');
+      debugPrint('Error during farm registration: $e');
       return null;
+    }
+  }
+
+  /// Save consumer user info to Firestore for the currently authenticated
+  /// Firebase user. This should be called after email verification.
+  Future<void> saveUserToFirestore(User user) async {
+    try {
+      final fbUser = _auth.currentUser;
+      if (fbUser == null) throw Exception('No authenticated Firebase user');
+
+      final uid = fbUser.uid;
+      final firestore = FirebaseFirestore.instance;
+
+      final docRef = firestore.collection('users').doc(uid);
+      await docRef.set({
+        'username': user.username,
+        'emailAddress': user.emailAddress,
+        'firstName': user.firstName,
+        'lastName': user.lastName,
+        'address': user.address,
+        'contactNumber': user.contactNumber,
+        'profilePic': user.profilePic,
+        'type': user.type ?? 'Consumer',
+        'farmId': null,
+        'created_at': FieldValue.serverTimestamp(),
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      // update in-memory currentUser
+      currentUser = User(
+        id: uid,
+        username: user.username,
+        password: '',
+        firstName: user.firstName,
+        lastName: user.lastName,
+        emailAddress: user.emailAddress,
+        address: user.address,
+        contactNumber: user.contactNumber,
+        profilePic: user.profilePic,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        type: user.type ?? 'Consumer',
+        farmId: null,
+      );
+    } catch (e) {
+      debugPrint('Error saving user to Firestore: $e');
+      rethrow;
+    }
+  }
+
+  /// Create a farmer user document and associated farm document for the
+  /// currently authenticated Firebase user. Call this after email verification.
+  Future<void> saveFarmToFirestore(User user, Farm farm) async {
+    try {
+      final fbUser = _auth.currentUser;
+      if (fbUser == null) throw Exception('No authenticated Firebase user');
+
+      final uid = fbUser.uid;
+      final firestore = FirebaseFirestore.instance;
+      final userRef = firestore.collection('users').doc(uid);
+
+      // create farm doc
+      final farmRef = firestore.collection('farms').doc();
+      await farmRef.set({
+        'name': farm.name,
+        'address': farm.address,
+        'ownerId': userRef,
+        'created_at': FieldValue.serverTimestamp(),
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      // create user doc with farmId pointing to the farm ref
+      await userRef.set({
+        'username': user.username,
+        'email': user.emailAddress,
+        'firstName': user.firstName,
+        'lastName': user.lastName,
+        'address': user.address,
+        'contactNumber': user.contactNumber,
+        'profilePic': user.profilePic,
+        'type': user.type ?? 'Farmer',
+        'farmId': farmRef,
+        'created_at': FieldValue.serverTimestamp(),
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      currentUser = User(
+        id: uid,
+        username: user.username,
+        password: '',
+        firstName: user.firstName,
+        lastName: user.lastName,
+        emailAddress: user.emailAddress,
+        address: user.address,
+        contactNumber: user.contactNumber,
+        profilePic: user.profilePic,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        type: user.type ?? 'Farmer',
+        farmId: farmRef,
+      );
+    } catch (e) {
+      debugPrint('Error saving farm and user to Firestore: $e');
+      rethrow;
     }
   }
 
@@ -226,9 +273,258 @@ class UserService {
     }
   }
 
+  /// Sign in with Google using [FirebaseService].
+  // (Removed older implementation; see newer `signInWithGoogle` below.)
+
   // Sign out
   Future<void> signOut() async {
     await _auth.signOut();
+    // clear in-memory current user when signing out
+    currentUser = null;
+  }
+
+  /// Send a verification email to the currently authenticated Firebase user.
+  /// No-op if there is no current user or the email is already verified.
+  Future<void> sendEmailVerificationToCurrentUser() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return;
+      if (!user.emailVerified) {
+        await user.sendEmailVerification();
+      }
+    } catch (e) {
+      debugPrint('Error sending email verification: $e');
+      rethrow;
+    }
+  }
+
+  /// Reload the Firebase auth current user to get the latest state (emailVerified, etc.).
+  Future<void> reloadFirebaseUser() async {
+    try {
+      await _auth.currentUser?.reload();
+    } catch (e) {
+      debugPrint('Error reloading firebase user: $e');
+      rethrow;
+    }
+  }
+
+  /// Returns whether the current firebase auth user is email verified.
+  /// If [reloadFirst] is true, performs a reload before checking.
+  Future<bool> isFirebaseCurrentUserEmailVerified({
+    bool reloadFirst = false,
+  }) async {
+    try {
+      if (reloadFirst) await reloadFirebaseUser();
+      return _auth.currentUser?.emailVerified ?? false;
+    } catch (e) {
+      debugPrint('Error checking emailVerified: $e');
+      return false;
+    }
+  }
+
+  /// Returns the email of the currently authenticated firebase user, or null.
+  String? getFirebaseCurrentUserEmail() {
+    return _auth.currentUser?.email;
+  }
+
+  /// Sign in with Google using [FirebaseService].
+  ///
+  /// Returns `true` if a matching Firestore `users` document already exists,
+  /// `false` if the Firebase user signed in but no Firestore document was found
+  /// (caller should present a signup form and then call the dedicated
+  /// creation methods below).
+  Future<bool> signInWithGoogle() async {
+    try {
+      final userCredential = await FirebaseService().signInWithGoogle();
+
+      if (userCredential == null) {
+        debugPrint('Google sign-in returned null');
+        return false;
+      }
+
+      final fbUser = userCredential.user;
+      if (fbUser == null) {
+        debugPrint('Google sign-in did not return a Firebase user');
+        return false;
+      }
+
+      final String uid = fbUser.uid;
+      final firestore = FirebaseFirestore.instance;
+      final userRef = firestore.collection('users').doc(uid);
+      final doc = await userRef.get();
+
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        currentUser = User(
+          id: uid,
+          username: data['username'] ?? '',
+          password: '',
+          firstName: data['firstName'] ?? '',
+          lastName: data['lastName'] ?? '',
+          emailAddress:
+              data['emailAddress'] ?? data['email'] ?? fbUser.email ?? '',
+          address: data['address'] ?? '',
+          contactNumber: data['contactNumber'] ?? '',
+          profilePic: data['profilePic'] ?? fbUser.photoURL ?? '',
+          createdAt: data['created_at'] != null
+              ? (data['created_at'] as Timestamp).toDate()
+              : DateTime.now(),
+          updatedAt: data['updated_at'] != null
+              ? (data['updated_at'] as Timestamp).toDate()
+              : DateTime.now(),
+          type: data['type'] ?? 'Consumer',
+          farmId: data['farmId'] as DocumentReference?,
+        );
+
+        return true;
+      } else {
+        // No Firestore user document: set a minimal in-memory currentUser and
+        // return false so the UI can collect additional fields and create the
+        // full user record.
+        final displayName = fbUser.displayName ?? '';
+        final firstName = displayName.split(' ').isNotEmpty
+            ? displayName.split(' ').first
+            : '';
+        final lastName = displayName.split(' ').length > 1
+            ? displayName.split(' ').skip(1).join(' ')
+            : '';
+
+        currentUser = User(
+          id: uid,
+          username: '',
+          password: '',
+          firstName: firstName,
+          lastName: lastName,
+          emailAddress: fbUser.email ?? '',
+          address: '',
+          contactNumber: '',
+          profilePic: fbUser.photoURL ?? '',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          type: 'Consumer',
+          farmId: null,
+        );
+
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Error signing in with Google: $e');
+      return false;
+    }
+  }
+
+  /// Create a consumer user document for the currently-signed Firebase user
+  /// (used after Google sign-in when no Firestore user existed).
+  Future<void> createConsumerAccount({
+    required String username,
+    required String firstName,
+    required String lastName,
+    required String address,
+    required String contactNumber,
+  }) async {
+    try {
+      if (currentUser == null) throw Exception('No authenticated user');
+      final uid = currentUser!.id;
+      final firestore = FirebaseFirestore.instance;
+      final userRef = firestore.collection('users').doc(uid);
+
+      await userRef.set({
+        'username': username,
+        'email': currentUser!.emailAddress,
+        'firstName': firstName,
+        'lastName': lastName,
+        'address': address,
+        'contactNumber': contactNumber,
+        'profilePic': currentUser!.profilePic,
+        'type': 'Consumer',
+        'farmId': null,
+        'created_at': FieldValue.serverTimestamp(),
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      currentUser = User(
+        id: uid,
+        username: username,
+        password: '',
+        firstName: firstName,
+        lastName: lastName,
+        emailAddress: currentUser!.emailAddress,
+        address: address,
+        contactNumber: contactNumber,
+        profilePic: currentUser!.profilePic,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        type: 'Consumer',
+        farmId: null,
+      );
+    } catch (e) {
+      debugPrint('Error creating consumer account: $e');
+      rethrow;
+    }
+  }
+
+  /// Create a farmer user document and associated farm document for the
+  /// currently-signed Firebase user (used after Google sign-in when no Firestore
+  /// user existed).
+  Future<void> createFarmerAccount({
+    required String username,
+    required String firstName,
+    required String lastName,
+    required String address,
+    required String contactNumber,
+    required String farmName,
+    required String farmAddress,
+  }) async {
+    try {
+      if (currentUser == null) throw Exception('No authenticated user');
+      final uid = currentUser!.id;
+      final firestore = FirebaseFirestore.instance;
+      final userRef = firestore.collection('users').doc(uid);
+
+      // create farm doc
+      final farmRef = firestore.collection('farms').doc();
+      await farmRef.set({
+        'name': farmName,
+        'address': farmAddress,
+        'ownerId': userRef,
+        'created_at': FieldValue.serverTimestamp(),
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      // create user doc with farmId pointing to the farm ref
+      await userRef.set({
+        'username': username,
+        'email': currentUser!.emailAddress,
+        'firstName': firstName,
+        'lastName': lastName,
+        'address': address,
+        'contactNumber': contactNumber,
+        'profilePic': currentUser!.profilePic,
+        'type': 'Farmer',
+        'farmId': farmRef,
+        'created_at': FieldValue.serverTimestamp(),
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      currentUser = User(
+        id: uid,
+        username: username,
+        password: '',
+        firstName: firstName,
+        lastName: lastName,
+        emailAddress: currentUser!.emailAddress,
+        address: address,
+        contactNumber: contactNumber,
+        profilePic: currentUser!.profilePic,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        type: 'Farmer',
+        farmId: farmRef,
+      );
+    } catch (e) {
+      debugPrint('Error creating farmer account: $e');
+      rethrow;
+    }
   }
 
   // Get current user
