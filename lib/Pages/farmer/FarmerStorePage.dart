@@ -173,17 +173,18 @@ class _FarmerStorePageState extends State<FarmerStorePage>
           ),
           TextButton(
             onPressed: () async {
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
               Navigator.pop(context);
               try {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  scaffoldMessenger.showSnackBar(
                     const SnackBar(content: Text('Archiving product...')),
                   );
                 }
                 await _farmService.archiveProduct(product.id);
                 if (mounted) {
                   _fetchProducts();
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  scaffoldMessenger.showSnackBar(
                     SnackBar(
                       content: Text('${product.name} archived successfully'),
                       backgroundColor: AppColors.SUCCESS_GREEN,
@@ -192,7 +193,7 @@ class _FarmerStorePageState extends State<FarmerStorePage>
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  scaffoldMessenger.showSnackBar(
                     SnackBar(
                       content: Text('Error archiving: $e'),
                       backgroundColor: AppColors.ERROR_RED,
