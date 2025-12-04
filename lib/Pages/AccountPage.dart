@@ -63,8 +63,10 @@ class _AccountPageState extends State<AccountPage> {
   }
 
   User? _user;
+  bool _isLoadingUser = true;
 
   Future<void> _reloadCurrentUser() async {
+    setState(() => _isLoadingUser = true);
     try {
       final uid = UserService().getSafeUserId();
       final fresh = await UserService().getUserById(uid);
@@ -85,6 +87,8 @@ class _AccountPageState extends State<AccountPage> {
       }
     } catch (e) {
       debugPrint('Failed to reload user: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingUser = false);
     }
   }
 
@@ -318,7 +322,7 @@ class _AccountPageState extends State<AccountPage> {
 
                   // Username
                   Text(
-                    '@${user?.username ?? 'User'}',
+                    '@${_isLoadingUser ? 'Loading...' : (user?.username ?? 'User')}',
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -330,7 +334,9 @@ class _AccountPageState extends State<AccountPage> {
 
                   // Email
                   Text(
-                    user?.emailAddress ?? 'email@example.com',
+                    _isLoadingUser
+                        ? 'Loading...'
+                        : (user?.emailAddress ?? 'email@example.com'),
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.white.withOpacity(0.9),
@@ -367,7 +373,9 @@ class _AccountPageState extends State<AccountPage> {
               _buildMenuItem(
                 icon: Icons.location_on_outlined,
                 title: 'My Address',
-                subtitle: _user?.address ?? widget.currentUser?.address,
+                subtitle: _isLoadingUser
+                    ? 'Loading...'
+                    : (_user?.address ?? widget.currentUser?.address),
                 onTap: () async {
                   HapticFeedback.lightImpact();
                   final result = await Navigator.push<bool?>(
