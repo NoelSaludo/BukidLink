@@ -1,12 +1,15 @@
-// (Farmer View) OrderManagementPage.dart
 import 'dart:typed_data';
 import 'package:bukidlink/data/UserData.dart';
 import 'package:flutter/material.dart';
 import 'package:bukidlink/widgets/farmer/FarmerBottomNavBar.dart';
 import 'package:bukidlink/widgets/farmer/FarmerOrderCard.dart';
+import 'package:bukidlink/widgets/farmer/TradeCard.dart';
 import 'package:bukidlink/models/Order.dart';
+import 'package:bukidlink/models/Trade.dart';
 import 'package:bukidlink/models/FarmerOrderSubStatus.dart';
+import 'package:bukidlink/models/TradeStatus.dart';
 import 'package:bukidlink/services/OrderService.dart';
+import 'package:bukidlink/services/TradeManagementService.dart';
 import 'package:bukidlink/services/UserService.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
@@ -14,20 +17,26 @@ import 'package:cloud_firestore/cloud_firestore.dart' hide Order;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'dart:async';
 
 class OrderManagementPage extends StatefulWidget {
   const OrderManagementPage({super.key});
 
   @override
-  State<OrderManagementPage> createState() => _FarmerOrderManagementPageState();
+  State<OrderManagementPage> createState() => _OrderManagementPageState();
 }
 
-class _FarmerOrderManagementPageState extends State<OrderManagementPage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _OrderManagementPageState extends State<OrderManagementPage>
+    with TickerProviderStateMixin {
+  late TabController _mainTabController;
+  late TabController _orderTabController;
+  late TabController _tradeTabController;
 
-  // UPDATED: Added Cancelled tab
-  final List<String> tabs = [
+  // Cache the trade stream
+  late final Stream<List<Trade>> _tradeStream;
+
+  final List<String> mainTabs = ['Orders', 'Trades'];
+  final List<String> orderTabs = [
     'Pending',
     'To Pack',
     'To Handover',
@@ -35,6 +44,7 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
     'Completed',
     'Cancelled',
   ];
+  final List<String> tradeTabs = ['Active', 'Completed', 'Cancelled'];
 
   String get currentFarmId {
     final user = UserService.currentUser;
@@ -43,15 +53,26 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
     return farmId;
   }
 
+  String get currentUserId {
+    return UserService.currentUser?.id ?? '';
+  }
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: tabs.length, vsync: this);
+    _mainTabController = TabController(length: mainTabs.length, vsync: this);
+    _orderTabController = TabController(length: orderTabs.length, vsync: this);
+    _tradeTabController = TabController(length: tradeTabs.length, vsync: this);
+
+    // Initialize trade stream once
+    _tradeStream = TradeManagementService().streamAllTradesForFarmer(currentUserId);
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _mainTabController.dispose();
+    _orderTabController.dispose();
+    _tradeTabController.dispose();
     super.dispose();
   }
 
@@ -68,7 +89,7 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
       case 'Completed':
         return FarmerSubStatus.completed;
       case 'Cancelled':
-        return null; // Cancelled orders handled separately
+        return null;
       default:
         return FarmerSubStatus.pending;
     }
@@ -364,13 +385,379 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
     return '${date.month}/${date.day}/${date.year}';
   }
 
+  Widget _buildOrdersTab() {
+    return Column(
+      children: [
+        Container(
+          color: AppColors.HEADER_GRADIENT_END,
+          child: TabBar(
+            controller: _orderTabController,
+            isScrollable: true,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
+            indicatorWeight: 3,
+            labelStyle: const TextStyle(
+              fontFamily: 'Outfit',
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontFamily: 'Outfit',
+              fontWeight: FontWeight.w500,
+              fontSize: 13,
+            ),
+            tabs: orderTabs.map((t) => Tab(text: t)).toList(),
+          ),
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _orderTabController,
+            children: orderTabs.map((tabLabel) {
+              if (tabLabel == 'Cancelled') {
+                return StreamBuilder<List<Order>>(
+                  stream: OrderService.shared.farmerCancelledOrdersStream(currentFarmId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text('Error: ${snapshot.error}'),
+                      );
+                    }
+
+                    final orders = snapshot.data ?? [];
+
+                    return orders.isEmpty
+                        ? Center(
+                      child: Text(
+                        'No cancelled orders',
+                        style: const TextStyle(
+                          fontFamily: 'Outfit',
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    )
+                        : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: orders.length,
+                      itemBuilder: (context, index) {
+                        return FarmerOrderCard(order: orders[index]);
+                      },
+                    );
+                  },
+                );
+              }
+
+              final stage = _farmerStageFromTabLabel(tabLabel);
+              if (stage == null) return const SizedBox.shrink();
+
+              return StreamBuilder<List<Order>>(
+                stream: OrderService.shared.farmerOrdersStream(currentFarmId, stage),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text('Error: ${snapshot.error}'),
+                    );
+                  }
+
+                  final orders = snapshot.data ?? [];
+
+                  return Column(
+                    children: [
+                      if (tabLabel == 'Pending' && orders.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12.0),
+                          child: ElevatedButton.icon(
+                            onPressed: () => _acceptAllPending(orders),
+                            icon: const Icon(Icons.check_circle_outline, color: Colors.white),
+                            label: const Text(
+                              'Accept All Orders',
+                              style: TextStyle(
+                                fontFamily: 'Outfit',
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryGreen,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 2,
+                            ),
+                          ),
+                        ),
+                      if (tabLabel == 'To Pack' && orders.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12.0),
+                          child: ElevatedButton.icon(
+                            onPressed: () => _printReceipts(orders),
+                            icon: const Icon(Icons.print, color: Colors.white),
+                            label: const Text(
+                              'Print Receipts',
+                              style: TextStyle(
+                                fontFamily: 'Outfit',
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryGreen,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 2,
+                            ),
+                          ),
+                        ),
+                      if (tabLabel == 'To Handover' && orders.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12.0),
+                          child: ElevatedButton.icon(
+                            onPressed: () => _handoverToCourier(orders),
+                            icon: const Icon(Icons.local_shipping, color: Colors.white),
+                            label: const Text(
+                              'Handover to Courier',
+                              style: TextStyle(
+                                fontFamily: 'Outfit',
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryGreen,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 2,
+                            ),
+                          ),
+                        ),
+                      Expanded(
+                        child: orders.isEmpty
+                            ? Center(
+                          child: Text(
+                            'No orders in "$tabLabel"',
+                            style: const TextStyle(
+                              fontFamily: 'Outfit',
+                              fontSize: 16,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        )
+                            : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: orders.length,
+                          itemBuilder: (context, index) {
+                            return FarmerOrderCard(order: orders[index]);
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTradesTab() {
+    final tradeService = TradeManagementService();
+
+    // Single stream subscription for all tabs
+    return StreamBuilder<List<Trade>>(
+      stream: tradeService.streamAllTradesForFarmer(currentUserId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  'Error loading trades',
+                  style: const TextStyle(
+                    fontFamily: 'Outfit',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${snapshot.error}',
+                  style: const TextStyle(
+                    fontFamily: 'Outfit',
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+
+        final allTrades = snapshot.data ?? [];
+
+        // Pre-filter trades once for all tabs
+        final activeTrades = allTrades.where((t) =>
+        t.status != TradeStatus.completed &&
+            t.status != TradeStatus.cancelled &&
+            t.status != TradeStatus.expired
+        ).toList();
+
+        final completedTrades = allTrades.where((t) =>
+        t.status == TradeStatus.completed
+        ).toList();
+
+        final cancelledTrades = allTrades.where((t) =>
+        t.status == TradeStatus.cancelled ||
+            t.status == TradeStatus.expired
+        ).toList();
+
+        return Column(
+          children: [
+            Container(
+              color: AppColors.HEADER_GRADIENT_END,
+              child: TabBar(
+                controller: _tradeTabController,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                indicatorColor: Colors.white,
+                indicatorWeight: 3,
+                labelStyle: const TextStyle(
+                  fontFamily: 'Outfit',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontFamily: 'Outfit',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                ),
+                tabs: tradeTabs.map((t) => Tab(text: t)).toList(),
+              ),
+            ),
+            Expanded(
+              child: TabBarView(
+                controller: _tradeTabController,
+                children: [
+                  // Active Tab
+                  _buildTradeList(activeTrades, 'Active'),
+                  // Completed Tab
+                  _buildTradeList(completedTrades, 'Completed'),
+                  // Cancelled Tab
+                  _buildTradeList(cancelledTrades, 'Cancelled'),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+// Helper method to build trade list
+  Widget _buildTradeList(List<Trade> trades, String tabLabel) {
+    if (trades.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.inbox_outlined,
+              size: 64,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No $tabLabel trades',
+              style: const TextStyle(
+                fontFamily: 'Outfit',
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      cacheExtent: 500,
+      itemCount: trades.length,
+      itemBuilder: (context, index) {
+        return TradeCard(
+          key: ValueKey(trades[index].id),
+          trade: trades[index],
+        );
+      },
+    );
+  }
+
+
+  Stream<List<Trade>> _combineTradeStreams(TradeManagementService service, String tabLabel) {
+    // Combine both farmer A and B streams
+    return service.streamAllTradesForFarmer(currentUserId);
+  }
+
+  List<Trade> _filterTradesByTab(List<Trade> trades, String tabLabel) {
+    switch (tabLabel) {
+      case 'Active':
+        return trades.where((t) =>
+        t.status != TradeStatus.completed &&
+            t.status != TradeStatus.cancelled &&
+            t.status != TradeStatus.expired
+        ).toList();
+      case 'Completed':
+        return trades.where((t) => t.status == TradeStatus.completed).toList();
+      case 'Cancelled':
+        return trades.where((t) =>
+        t.status == TradeStatus.cancelled ||
+            t.status == TradeStatus.expired
+        ).toList();
+      default:
+        return trades;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (currentFarmId.isEmpty) {
       return Scaffold(
         backgroundColor: AppColors.backgroundYellow,
         appBar: AppBar(
-          title: Text('Orders', style: AppTextStyles.PRODUCT_INFO_TITLE),
+          title: Text('Orders & Trades', style: AppTextStyles.PRODUCT_INFO_TITLE),
           backgroundColor: AppColors.HEADER_GRADIENT_START,
         ),
         body: Center(
@@ -414,7 +801,7 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.HEADER_GRADIENT_START,
         elevation: 0,
-        title: Text('Orders', style: AppTextStyles.PRODUCT_INFO_TITLE),
+        title: Text('Orders & Trades', style: AppTextStyles.PRODUCT_INFO_TITLE),
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -428,8 +815,7 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
           ),
         ),
         bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
+          controller: _mainTabController,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           indicatorColor: Colors.white,
@@ -437,229 +823,93 @@ class _FarmerOrderManagementPageState extends State<OrderManagementPage>
           labelStyle: const TextStyle(
             fontFamily: 'Outfit',
             fontWeight: FontWeight.bold,
-            fontSize: 14,
+            fontSize: 16,
           ),
           unselectedLabelStyle: const TextStyle(
             fontFamily: 'Outfit',
             fontWeight: FontWeight.w500,
-            fontSize: 13,
+            fontSize: 15,
           ),
-          tabs: tabs.map((t) => Tab(text: t)).toList(),
+          tabs: mainTabs.map((t) => Tab(text: t)).toList(),
         ),
       ),
       body: TabBarView(
-        controller: _tabController,
-        children: tabs.map((tabLabel) {
-          // UPDATED: Handle cancelled tab separately
-          if (tabLabel == 'Cancelled') {
-            return StreamBuilder<List<Order>>(
-              stream: OrderService.shared.farmerCancelledOrdersStream(currentFarmId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Error loading orders',
-                          style: const TextStyle(
-                            fontFamily: 'Outfit',
-                            fontSize: 16,
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${snapshot.error}',
-                          style: const TextStyle(
-                            fontFamily: 'Outfit',
-                            fontSize: 14,
-                            color: Colors.red,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                final orders = snapshot.data ?? [];
-
-                return orders.isEmpty
-                    ? Center(
-                  child: Text(
-                    'No cancelled orders',
-                    style: const TextStyle(
-                      fontFamily: 'Outfit',
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
-                  ),
-                )
-                    : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: orders.length,
-                  itemBuilder: (context, index) {
-                    return FarmerOrderCard(order: orders[index]);
-                  },
-                );
-              },
-            );
-          }
-
-          final stage = _farmerStageFromTabLabel(tabLabel);
-          if (stage == null) return const SizedBox.shrink();
-
-          return StreamBuilder<List<Order>>(
-            stream: OrderService.shared.farmerOrdersStream(currentFarmId, stage),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (snapshot.hasError) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Error loading orders',
-                        style: const TextStyle(
-                          fontFamily: 'Outfit',
-                          fontSize: 16,
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${snapshot.error}',
-                        style: const TextStyle(
-                          fontFamily: 'Outfit',
-                          fontSize: 14,
-                          color: Colors.red,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              final orders = snapshot.data ?? [];
-
-              return Column(
-                children: [
-                  if (tabLabel == 'Pending' && orders.isNotEmpty)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12.0),
-                      child: ElevatedButton.icon(
-                        onPressed: () => _acceptAllPending(orders),
-                        icon: const Icon(Icons.check_circle_outline, color: Colors.white),
-                        label: const Text(
-                          'Accept All Orders',
-                          style: TextStyle(
-                            fontFamily: 'Outfit',
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryGreen,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          elevation: 2,
-                        ),
-                      ),
-                    ),
-                  if (tabLabel == 'To Pack' && orders.isNotEmpty)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12.0),
-                      child: ElevatedButton.icon(
-                        onPressed: () => _printReceipts(orders),
-                        icon: const Icon(Icons.print, color: Colors.white),
-                        label: const Text(
-                          'Print Receipts',
-                          style: TextStyle(
-                            fontFamily: 'Outfit',
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryGreen,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          elevation: 2,
-                        ),
-                      ),
-                    ),
-                  if (tabLabel == 'To Handover' && orders.isNotEmpty)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12.0),
-                      child: ElevatedButton.icon(
-                        onPressed: () => _handoverToCourier(orders),
-                        icon: const Icon(Icons.local_shipping, color: Colors.white),
-                        label: const Text(
-                          'Handover to Courier',
-                          style: TextStyle(
-                            fontFamily: 'Outfit',
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryGreen,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          elevation: 2,
-                        ),
-                      ),
-                    ),
-                  Expanded(
-                    child: orders.isEmpty
-                        ? Center(
-                      child: Text(
-                        'No orders in "$tabLabel"',
-                        style: const TextStyle(
-                          fontFamily: 'Outfit',
-                          fontSize: 16,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    )
-                        : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: orders.length,
-                      itemBuilder: (context, index) {
-                        return FarmerOrderCard(order: orders[index]);
-                      },
-                    ),
-                  ),
-                ],
-              );
-            },
-          );
-        }).toList(),
+        controller: _mainTabController,
+        children: [
+          _buildOrdersTab(),
+          _buildTradesTab(),
+        ],
       ),
       bottomNavigationBar: const FarmerBottomNavBar(currentIndex: 3),
+    );
+  }
+}
+
+// Helper class for combining streams
+class StreamZip<T> extends Stream<List<T>> {
+  final List<Stream<T>> _streams;
+
+  StreamZip(this._streams);
+
+  @override
+  StreamSubscription<List<T>> listen(
+      void Function(List<T> event)? onData, {
+        Function? onError,
+        void Function()? onDone,
+        bool? cancelOnError,
+      }) {
+    final values = List<T?>.filled(_streams.length, null);
+    final subscriptions = <StreamSubscription<T>>[];
+    final controller = StreamController<List<T>>();
+    var hasEmitted = false;
+
+    void checkAndEmit() {
+      if (values.every((v) => v != null)) {
+        if (!controller.isClosed) {
+          controller.add(values.cast<T>());
+          hasEmitted = true;
+        }
+      }
+    }
+
+    for (var i = 0; i < _streams.length; i++) {
+      final index = i;
+      subscriptions.add(
+        _streams[i].listen(
+              (data) {
+            values[index] = data;
+            checkAndEmit();
+          },
+          onError: (error, stackTrace) {
+            if (!controller.isClosed) {
+              controller.addError(error, stackTrace);
+            }
+          },
+          onDone: () {
+            // Check if all streams are done
+            if (subscriptions.every((sub) => sub.isPaused)) {
+              if (!controller.isClosed) {
+                controller.close();
+              }
+            }
+          },
+          cancelOnError: cancelOnError,
+        ),
+      );
+    }
+
+    // Set up controller cleanup
+    controller.onCancel = () {
+      for (var subscription in subscriptions) {
+        subscription.cancel();
+      }
+    };
+
+    return controller.stream.listen(
+      onData,
+      onError: onError,
+      onDone: onDone,
+      cancelOnError: cancelOnError,
     );
   }
 }

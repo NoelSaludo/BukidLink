@@ -69,17 +69,17 @@ class OrderService {
         .orderBy('date_placed', descending: true)
         .snapshots()
         .asyncMap((snapshot) async {
-          final ordersWithProducts = <Order>[];
-          for (var doc in snapshot.docs) {
-            final order = await _orderFromDocument(doc);
-            if (order != null) {
-              ordersWithProducts.add(order);
-            }
-          }
+      final ordersWithProducts = <Order>[];
+      for (var doc in snapshot.docs) {
+        final order = await _orderFromDocument(doc);
+        if (order != null) {
+          ordersWithProducts.add(order);
+        }
+      }
 
-          _orders = ordersWithProducts;
-          return _orders;
-        });
+      _orders = ordersWithProducts;
+      return _orders;
+    });
   }
 
   Map<String, List<CartItem>> _groupItemsByFarmer(List<CartItem> items) {
@@ -127,12 +127,12 @@ class OrderService {
         final itemsData = farmerItems
             .map(
               (item) => {'product_id': item.productId, 'amount': item.amount},
-            )
+        )
             .toList();
 
         final total = farmerItems.fold<double>(
           0,
-          (sum, item) => sum + item.totalPrice,
+              (sum, item) => sum + item.totalPrice,
         );
 
         await orderRef.set({
@@ -518,9 +518,9 @@ class OrderService {
   }
 
   Stream<List<Order>> farmerOrdersStream(
-    String farmerId,
-    FarmerSubStatus stage,
-  ) {
+      String farmerId,
+      FarmerSubStatus stage,
+      ) {
     final stageString = Order.farmerStageToString(stage);
 
     return _ordersCollection
@@ -529,16 +529,16 @@ class OrderService {
         .orderBy('date_placed', descending: true)
         .snapshots()
         .asyncMap((snapshot) async {
-          final ordersWithProducts = <Order>[];
-          for (var doc in snapshot.docs) {
-            final order = await _orderFromDocument(doc);
-            if (order != null) {
-              ordersWithProducts.add(order);
-            }
-          }
+      final ordersWithProducts = <Order>[];
+      for (var doc in snapshot.docs) {
+        final order = await _orderFromDocument(doc);
+        if (order != null) {
+          ordersWithProducts.add(order);
+        }
+      }
 
-          return ordersWithProducts;
-        });
+      return ordersWithProducts;
+    });
   }
 
   // Stream for cancelled orders (farmer view)
@@ -549,22 +549,22 @@ class OrderService {
         .orderBy('date_placed', descending: true)
         .snapshots()
         .asyncMap((snapshot) async {
-          final ordersWithProducts = <Order>[];
-          for (var doc in snapshot.docs) {
-            final order = await _orderFromDocument(doc);
-            if (order != null) {
-              ordersWithProducts.add(order);
-            }
-          }
+      final ordersWithProducts = <Order>[];
+      for (var doc in snapshot.docs) {
+        final order = await _orderFromDocument(doc);
+        if (order != null) {
+          ordersWithProducts.add(order);
+        }
+      }
 
-          return ordersWithProducts;
-        });
+      return ordersWithProducts;
+    });
   }
 
   Future<void> updateFarmerStage(
-    String orderId,
-    FarmerSubStatus newStage,
-  ) async {
+      String orderId,
+      FarmerSubStatus newStage,
+      ) async {
     try {
       final stageString = Order.farmerStageToString(newStage);
       final customerStatus = _mapFarmerStageToCustomerStatus(newStage);
