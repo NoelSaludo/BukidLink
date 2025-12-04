@@ -166,6 +166,9 @@ class GeminiAIService {
     prompt.writeln(
       'Use `.` as decimal separator and up to two decimal places.',
     );
+    prompt.writeln(
+      'IMPORTANT: First, check the Department of Agriculture price monitoring page at https://www.da.gov.ph/price-monitoring/ and, if available, open the latest price monitoring PDF on that site and use the price listed there for this product. If you can access that PDF, prefer its price and include a short note that it came from the DA PDF. If you cannot access the site/PDF, fall back to your best current knowledge and indicate the source as "model estimate" in the returned message.',
+    );
     prompt.writeln('Product: $name');
     prompt.writeln('Unit: $unit');
 
