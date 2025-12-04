@@ -9,7 +9,7 @@ import 'package:bukidlink/widgets/farmer/SoldOutProductCard.dart';
 import 'package:bukidlink/widgets/farmer/TradeOfferCard.dart';
 import 'package:bukidlink/models/Product.dart';
 import 'package:bukidlink/models/TradeModels.dart';
-import 'package:bukidlink/pages/farmer/SellPage.dart';
+import 'package:bukidlink/pages/farmer/SellDetailsPage.dart';
 import 'package:bukidlink/pages/farmer/EditPage.dart';
 import 'package:bukidlink/services/FarmService.dart';
 import 'package:bukidlink/services/UserService.dart';
@@ -243,7 +243,7 @@ class _FarmerStorePageState extends State<FarmerStorePage>
   void _handleSellProduct() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const SellPage()),
+      MaterialPageRoute(builder: (context) => const SellDetailsPage()),
     ).then((_) => _fetchProducts());
   }
 
@@ -292,7 +292,7 @@ class _FarmerStorePageState extends State<FarmerStorePage>
                     unselectedLabelColor: Colors.white,
                     labelStyle: AppTextStyles.FARMER_TAB_LABEL,
                     unselectedLabelStyle:
-                    AppTextStyles.FARMER_TAB_LABEL_UNSELECTED,
+                        AppTextStyles.FARMER_TAB_LABEL_UNSELECTED,
                     tabs: [
                       Tab(
                         child: Padding(
@@ -412,14 +412,14 @@ class _FarmerStorePageState extends State<FarmerStorePage>
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : TabBarView(
-              controller: _tabController,
-              children: [
-                _buildOnSaleList(),
-                _buildSoldOutList(),
-                _buildArchivedList(),
-                _buildTradesList(),
-              ],
-            ),
+                    controller: _tabController,
+                    children: [
+                      _buildOnSaleList(),
+                      _buildSoldOutList(),
+                      _buildArchivedList(),
+                      _buildTradesList(),
+                    ],
+                  ),
           ),
         ],
       ),
