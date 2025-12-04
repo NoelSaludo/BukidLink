@@ -3,7 +3,6 @@ import 'package:bukidlink/Widgets/Profile/ProfileInfo.dart';
 import 'package:bukidlink/Widgets/Profile/StorePreview.dart';
 import 'package:bukidlink/utils/constants/AppColors.dart';
 import 'package:bukidlink/utils/constants/AppTextStyles.dart';
-import 'package:bukidlink/widgets/common/CustomBottomNavBar.dart';
 import 'package:bukidlink/models/Post.dart';
 import 'package:bukidlink/Widgets/Posts/PostTile.dart';
 import 'package:bukidlink/services/PostService.dart';
@@ -53,10 +52,7 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Column(
               children: [
                 Divider(thickness: 1),
-                Text(
-                  'Posts History',
-                  style: AppTextStyles.PRODUCT_NAME_HEADER,
-                ),
+                Text('Posts History', style: AppTextStyles.PRODUCT_NAME_HEADER),
               ],
             ),
           ),
