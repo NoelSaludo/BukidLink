@@ -121,14 +121,17 @@ class ImagePickerService {
 
   /// Show a bottom sheet to choose between camera and gallery
   /// Returns the selected image path
-  Future<String?> showImageSourceBottomSheet(BuildContext context) async {
+  Future<String?> showImageSourceBottomSheet(
+    BuildContext context,
+    String titleSelect,
+  ) async {
     return await showModalBottomSheet<String>(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (BuildContext context) {
-        return const ImageSourceBottomSheet();
+        return ImageSourceBottomSheet(title: titleSelect);
       },
     );
   }
@@ -136,7 +139,8 @@ class ImagePickerService {
 
 /// Reusable bottom sheet widget for selecting image source
 class ImageSourceBottomSheet extends StatelessWidget {
-  const ImageSourceBottomSheet({super.key});
+  const ImageSourceBottomSheet({super.key, required this.title});
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -157,9 +161,9 @@ class ImageSourceBottomSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Change Profile Picture',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
             ListTile(

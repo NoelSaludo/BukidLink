@@ -86,7 +86,7 @@ class _SellPageState extends State<SellPage> {
   Future<void> _handleImagePicker() async {
     HapticFeedback.lightImpact();
     final String? imagePath = await _imagePickerService
-        .showImageSourceBottomSheet(context);
+        .showImageSourceBottomSheet(context, 'Select Product Image Source');
 
     if (imagePath != null) {
       setState(() {

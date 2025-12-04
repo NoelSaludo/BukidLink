@@ -45,9 +45,11 @@ class _EditPageState extends State<EditPage> {
   bool _hasChanges() {
     // Check if basic fields differ
     if (_productNameController.text != widget.product.name) return true;
-    if (_descriptionController.text != (widget.product.description ?? '')) return true;
+    if (_descriptionController.text != (widget.product.description ?? ''))
+      return true;
     if (_priceController.text != widget.product.price.toString()) return true;
-    if (_stockController.text != widget.product.stockCount.toString()) return true;
+    if (_stockController.text != widget.product.stockCount.toString())
+      return true;
 
     // Check if image changed
     if (_productImagePath != widget.product.imagePath) return true;
@@ -87,13 +89,8 @@ class _EditPageState extends State<EditPage> {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: Text(
-          'Discard Changes?',
-          style: AppTextStyles.DIALOG_TITLE,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Discard Changes?', style: AppTextStyles.DIALOG_TITLE),
         content: Text(
           'You have unsaved changes. Are you sure you want to discard them?',
           style: AppTextStyles.BODY_TEXT,
@@ -137,9 +134,15 @@ class _EditPageState extends State<EditPage> {
   void initState() {
     super.initState();
     _productNameController = TextEditingController(text: widget.product.name);
-    _descriptionController = TextEditingController(text: widget.product.description ?? '');
-    _priceController = TextEditingController(text: widget.product.price.toString());
-    _stockController = TextEditingController(text: widget.product.stockCount.toString());
+    _descriptionController = TextEditingController(
+      text: widget.product.description ?? '',
+    );
+    _priceController = TextEditingController(
+      text: widget.product.price.toString(),
+    );
+    _stockController = TextEditingController(
+      text: widget.product.stockCount.toString(),
+    );
     _productImagePath = widget.product.imagePath;
     _selectedCategory = widget.product.category;
 
@@ -185,7 +188,8 @@ class _EditPageState extends State<EditPage> {
 
   Future<void> _handleImagePicker() async {
     HapticFeedback.lightImpact();
-    final String? imagePath = await _imagePickerService.showImageSourceBottomSheet(context);
+    final String? imagePath = await _imagePickerService
+        .showImageSourceBottomSheet(context, 'Select Product Image Source');
     if (imagePath != null) {
       setState(() {
         _productImagePath = imagePath;
@@ -341,7 +345,8 @@ class _EditPageState extends State<EditPage> {
       _customUnit = _customUnitController.text;
     }
 
-    if (_selectedUnit == 'Other' && (_customUnit == null || _customUnit!.trim().isEmpty)) {
+    if (_selectedUnit == 'Other' &&
+        (_customUnit == null || _customUnit!.trim().isEmpty)) {
       _showErrorDialog('Please enter a custom unit');
       return;
     }
@@ -384,9 +389,7 @@ class _EditPageState extends State<EditPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         contentPadding: const EdgeInsets.all(24),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -457,9 +460,7 @@ class _EditPageState extends State<EditPage> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         contentPadding: const EdgeInsets.all(24),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -588,11 +589,7 @@ class _EditPageState extends State<EditPage> {
                   color: Colors.white.withOpacity(0.25),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.edit,
-                  color: Colors.white,
-                  size: 22,
-                ),
+                child: const Icon(Icons.edit, color: Colors.white, size: 22),
               ),
               const SizedBox(width: 12),
               const Text(
@@ -628,11 +625,17 @@ class _EditPageState extends State<EditPage> {
                   key: _formKey,
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 24,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSectionHeader('Basic Information', Icons.info_outline),
+                        _buildSectionHeader(
+                          'Basic Information',
+                          Icons.info_outline,
+                        ),
                         const SizedBox(height: 16),
                         _buildCard(
                           child: Column(
@@ -656,7 +659,10 @@ class _EditPageState extends State<EditPage> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        _buildSectionHeader('Product Image', Icons.image_outlined),
+                        _buildSectionHeader(
+                          'Product Image',
+                          Icons.image_outlined,
+                        ),
                         const SizedBox(height: 16),
                         _buildCard(
                           child: Column(
@@ -673,13 +679,18 @@ class _EditPageState extends State<EditPage> {
                               ImagePickerCard(
                                 imagePath: _productImagePath,
                                 onTap: _handleImagePicker,
-                                onRemove: _productImagePath != null ? _handleRemoveImage : null,
+                                onRemove: _productImagePath != null
+                                    ? _handleRemoveImage
+                                    : null,
                               ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 24),
-                        _buildSectionHeader('Category', Icons.category_outlined),
+                        _buildSectionHeader(
+                          'Category',
+                          Icons.category_outlined,
+                        ),
                         const SizedBox(height: 16),
                         _buildCard(
                           child: CategorySelector(
@@ -688,7 +699,10 @@ class _EditPageState extends State<EditPage> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        _buildSectionHeader('Pricing & Stock', Icons.monetization_on_outlined),
+                        _buildSectionHeader(
+                          'Pricing & Stock',
+                          Icons.monetization_on_outlined,
+                        ),
                         const SizedBox(height: 16),
                         _buildCard(
                           child: Column(
@@ -701,14 +715,18 @@ class _EditPageState extends State<EditPage> {
                                       label: 'Price',
                                       hint: '0.00',
                                       controller: _priceController,
-                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      keyboardType:
+                                          const TextInputType.numberWithOptions(
+                                            decimal: true,
+                                          ),
                                       validator: _validatePrice,
                                       prefix: Text(
                                         '₱',
-                                        style: AppTextStyles.PESO_SYMBOL.copyWith(
-                                          fontSize: 18,
-                                          color: AppColors.primaryGreen,
-                                        ),
+                                        style: AppTextStyles.PESO_SYMBOL
+                                            .copyWith(
+                                              fontSize: 18,
+                                              color: AppColors.primaryGreen,
+                                            ),
                                       ),
                                     ),
                                   ),
@@ -729,7 +747,10 @@ class _EditPageState extends State<EditPage> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        _buildSectionHeader('Unit of Sale', Icons.shopping_basket_outlined),
+                        _buildSectionHeader(
+                          'Unit of Sale',
+                          Icons.shopping_basket_outlined,
+                        ),
                         const SizedBox(height: 16),
                         _buildCard(
                           child: UnitSelector(
@@ -758,9 +779,12 @@ class _EditPageState extends State<EditPage> {
                               onPressed: _isLoading ? null : _handleSubmit,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.ACCENT_LIME,
-                                disabledBackgroundColor: AppColors.ACCENT_LIME.withOpacity(0.6),
+                                disabledBackgroundColor: AppColors.ACCENT_LIME
+                                    .withOpacity(0.6),
                                 foregroundColor: AppColors.DARK_TEXT,
-                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(50),
                                 ),
@@ -768,31 +792,34 @@ class _EditPageState extends State<EditPage> {
                               ),
                               child: _isLoading
                                   ? const SizedBox(
-                                height: 26,
-                                width: 26,
-                                child: CircularProgressIndicator(
-                                  color: AppColors.DARK_TEXT,
-                                  strokeWidth: 2.5,
-                                ),
-                              )
+                                      height: 26,
+                                      width: 26,
+                                      child: CircularProgressIndicator(
+                                        color: AppColors.DARK_TEXT,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    )
                                   : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(
-                                    Icons.save_outlined,
-                                    size: 26,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Save Changes',
-                                    style: AppTextStyles.PRIMARY_BUTTON_TEXT.copyWith(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.5,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.save_outlined,
+                                          size: 26,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          'Save Changes',
+                                          style: AppTextStyles
+                                              .PRIMARY_BUTTON_TEXT
+                                              .copyWith(
+                                                fontSize: 17,
+                                                fontWeight: FontWeight.w700,
+                                                letterSpacing: 0.5,
+                                              ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ],
-                              ),
                             ),
                           ),
                         ),
@@ -825,11 +852,7 @@ class _EditPageState extends State<EditPage> {
             ),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(
-            icon,
-            size: 22,
-            color: AppColors.primaryGreen,
-          ),
+          child: Icon(icon, size: 22, color: AppColors.primaryGreen),
         ),
         const SizedBox(width: 12),
         Text(
