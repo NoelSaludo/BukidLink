@@ -97,7 +97,7 @@ class _AccountPageState extends State<AccountPage> {
     HapticFeedback.lightImpact();
 
     final String? imagePath = await _imagePickerService
-        .showImageSourceBottomSheet(context);
+        .showImageSourceBottomSheet(context, 'Select Profile Picture Source');
 
     if (imagePath != null) {
       // If the picker returned a remote URL (Cloudinary), don't try to copy it locally.
